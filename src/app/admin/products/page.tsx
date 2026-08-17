@@ -72,6 +72,7 @@ export default function AdminProductsPage() {
       setProducts(Array.isArray(data.products) ? data.products : []);
     } catch (err) {
       console.error(err);
+
       setError(
         err instanceof Error
           ? err.message
@@ -175,20 +176,23 @@ export default function AdminProductsPage() {
         active: form.active,
       };
 
-      const response = await fetch("/api/products", {
-        method: editingId ? "PATCH" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(
-          editingId
-            ? {
-                id: editingId,
-                ...payload,
-              }
-            : payload
-        ),
-      });
+      const response = await fetch(
+        "/api/products",
+        {
+          method: editingId ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(
+            editingId
+              ? {
+                  id: editingId,
+                  ...payload,
+                }
+              : payload
+          ),
+        }
+      );
 
       const data = await response.json();
 
@@ -239,11 +243,11 @@ export default function AdminProductsPage() {
       setMessage("");
 
       const response = await fetch(
-  "/api/products?id=" + encodeURIComponent(id),
-  {
-    method: "DELETE",
-  }
-);
+        "/api/products?id=" + encodeURIComponent(id),
+        {
+          method: "DELETE",
+        }
+      );
 
       const data = await response.json();
 
@@ -272,16 +276,19 @@ export default function AdminProductsPage() {
       setError("");
       setMessage("");
 
-      const response = await fetch("/api/products", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: product._id,
-          active: !product.active,
-        }),
-      });
+      const response = await fetch(
+        "/api/products",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: product._id,
+            active: !product.active,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -782,7 +789,4 @@ export default function AdminProductsPage() {
                   style={{
                     background: "#0f172a",
                     border: "1px solid #1e293b",
-                    borderRadius: "18px",
-                    overflow: "hidden",
-                  }}
- 
+           
