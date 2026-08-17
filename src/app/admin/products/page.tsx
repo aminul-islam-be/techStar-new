@@ -239,11 +239,11 @@ export default function AdminProductsPage() {
       setMessage("");
 
       const response = await fetch(
-        `/api/products?id=${encodeURIComponent(id)}`,
-        {
-          method: "DELETE",
-        }
-      );
+  "/api/products?id=" + encodeURIComponent(id),
+  {
+    method: "DELETE",
+  }
+);
 
       const data = await response.json();
 
