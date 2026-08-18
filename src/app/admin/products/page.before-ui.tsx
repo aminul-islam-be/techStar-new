@@ -440,9 +440,10 @@ export default function AdminProductsPage() {
               <div
                 key={product._id}
                 style={{
-                  ...cardStyle,
+                  background: "#0f172a",
+                  border: "1px solid #1e293b",
+                  borderRadius: "15px",
                   overflow: "hidden",
-                  transition: "transform 0.2s ease",
                 }}
               >
                 {product.image ? (
@@ -459,12 +460,11 @@ export default function AdminProductsPage() {
                   <div
                     style={{
                       height: "180px",
-                      background:
-                        "linear-gradient(135deg, #1e293b, #020617)",
+                      background: "#1e293b",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "55px",
+                      fontSize: "50px",
                     }}
                   >
                     📦
@@ -484,72 +484,26 @@ export default function AdminProductsPage() {
                     {product.description}
                   </p>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: "10px",
-                      margin: "15px 0",
-                    }}
-                  >
-                    <strong
-                      style={{
-                        fontSize: "20px",
-                        color: "#60a5fa",
-                      }}
-                    >
-                      {product.currency} {product.price}
-                    </strong>
+                  <strong>
+                    {product.currency} {product.price}
+                  </strong>
 
-                    <span
-                      style={{
-                        ...badgeStyle,
-                        background:
-                          product.stock > 0
-                            ? "#14532d"
-                            : "#7f1d1d",
-                        color: "#fff",
-                      }}
-                    >
-                      📦 {product.stock} in stock
-                    </span>
-                  </div>
+                  <p>
+                    📦 Stock: {product.stock}
+                  </p>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      flexWrap: "wrap",
-                      marginBottom: "15px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        ...badgeStyle,
-                        background: product.active
-                          ? "#14532d"
-                          : "#7f1d1d",
-                        color: "#fff",
-                      }}
-                    >
-                      {product.active
-                        ? "● Active"
-                        : "● Inactive"}
-                    </span>
+                  <p>
+                    Status:{" "}
+                    {product.active
+                      ? "✅ Active"
+                      : "⛔ Inactive"}
+                  </p>
 
-                    {product.featured && (
-                      <span
-                        style={{
-                          ...badgeStyle,
-                          background: "#713f12",
-                          color: "#fde68a",
-                        }}
-                      >
-                        ⭐ Featured
-                      </span>
-                    )}
-                  </div>
+                  <p>
+                    {product.featured
+                      ? "⭐ Featured"
+                      : "☆ Not Featured"}
+                  </p>
 
                   <div
                     style={{
@@ -626,22 +580,6 @@ export default function AdminProductsPage() {
     </main>
   );
 }
-
-const cardStyle = {
-  background: "linear-gradient(145deg, #0f172a, #111827)",
-  border: "1px solid #1e293b",
-  borderRadius: "18px",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-};
-
-const badgeStyle = {
-  display: "inline-flex",
-  alignItems: "center",
-  padding: "5px 9px",
-  borderRadius: "999px",
-  fontSize: "12px",
-  fontWeight: 700,
-};
 
 const inputStyle = {
   width: "100%",

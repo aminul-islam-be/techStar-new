@@ -23,11 +23,6 @@ export default function AdminProductsPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editPrice, setEditPrice] = useState("");
-  const [editStock, setEditStock] = useState("");
-  const [editCategory, setEditCategory] = useState("");
-  const [editDescription, setEditDescription] = useState("");
 
   async function loadProducts() {
     try {
@@ -103,49 +98,6 @@ export default function AdminProductsPage() {
       );
     }
   }
-  function startEdit(product: Product) {
-    setEditing(product);
-    setEditName(product.name);
-    setEditPrice(String(product.price));
-    setEditStock(String(product.stock));
-    setEditCategory(product.category);
-    setEditDescription(product.description);
-    setError("");
-    setMessage("");
-  }
-
-  async function saveEdit() {
-    if (!editing) return;
-
-    const price = Number(editPrice);
-    const stock = Number(editStock);
-
-    if (!editName.trim() || !editCategory.trim()) {
-      setError("Name and category are required.");
-      return;
-    }
-
-    if (!Number.isFinite(price) || price < 0) {
-      setError("Please enter a valid price.");
-      return;
-    }
-
-    if (!Number.isFinite(stock) || stock < 0) {
-      setError("Please enter a valid stock.");
-      return;
-    }
-
-    await updateProduct(editing._id, {
-      name: editName.trim(),
-      category: editCategory.trim(),
-      description: editDescription.trim(),
-      price,
-      stock,
-    });
-
-    setEditing(null);
-  }
-
   async function changeStock(product: Product) {
     const value = window.prompt(
       "Enter new stock:",
@@ -348,85 +300,6 @@ export default function AdminProductsPage() {
             </Link>
           </div>
         )}
-        {editing && (
-          <div
-            style={{
-              background: "#0f172a",
-              border: "1px solid #334155",
-              borderRadius: "15px",
-              padding: "20px",
-              marginBottom: "25px",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>
-              ✏️ Edit Product
-            </h2>
-
-            <input
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              placeholder="Product Name"
-              style={inputStyle}
-            />
-
-            <input
-              value={editCategory}
-              onChange={(e) => setEditCategory(e.target.value)}
-              placeholder="Category"
-              style={inputStyle}
-            />
-
-            <textarea
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Description"
-              rows={4}
-              style={inputStyle}
-            />
-
-            <input
-              type="number"
-              value={editPrice}
-              onChange={(e) => setEditPrice(e.target.value)}
-              placeholder="Price"
-              style={inputStyle}
-            />
-
-            <input
-              type="number"
-              value={editStock}
-              onChange={(e) => setEditStock(e.target.value)}
-              placeholder="Stock"
-              style={inputStyle}
-            />
-
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-                flexWrap: "wrap",
-              }}
-            >
-              <button
-                onClick={saveEdit}
-                style={{
-                  ...buttonStyle,
-                  background: "#2563eb",
-                }}
-              >
-                💾 Save Changes
-              </button>
-
-              <button
-                onClick={() => setEditing(null)}
-                style={buttonStyle}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
         {!loading && products.length > 0 && (
           <div
             style={{
@@ -440,9 +313,10 @@ export default function AdminProductsPage() {
               <div
                 key={product._id}
                 style={{
-                  ...cardStyle,
+                  background: "#0f172a",
+                  border: "1px solid #1e293b",
+                  borderRadius: "15px",
                   overflow: "hidden",
-                  transition: "transform 0.2s ease",
                 }}
               >
                 {product.image ? (
@@ -459,12 +333,11 @@ export default function AdminProductsPage() {
                   <div
                     style={{
                       height: "180px",
-                      background:
-                        "linear-gradient(135deg, #1e293b, #020617)",
+                      background: "#1e293b",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "55px",
+                      fontSize: "50px",
                     }}
                   >
                     📦
@@ -484,72 +357,26 @@ export default function AdminProductsPage() {
                     {product.description}
                   </p>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: "10px",
-                      margin: "15px 0",
-                    }}
-                  >
-                    <strong
-                      style={{
-                        fontSize: "20px",
-                        color: "#60a5fa",
-                      }}
-                    >
-                      {product.currency} {product.price}
-                    </strong>
+                  <strong>
+                    {product.currency} {product.price}
+                  </strong>
 
-                    <span
-                      style={{
-                        ...badgeStyle,
-                        background:
-                          product.stock > 0
-                            ? "#14532d"
-                            : "#7f1d1d",
-                        color: "#fff",
-                      }}
-                    >
-                      📦 {product.stock} in stock
-                    </span>
-                  </div>
+                  <p>
+                    📦 Stock: {product.stock}
+                  </p>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "8px",
-                      flexWrap: "wrap",
-                      marginBottom: "15px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        ...badgeStyle,
-                        background: product.active
-                          ? "#14532d"
-                          : "#7f1d1d",
-                        color: "#fff",
-                      }}
-                    >
-                      {product.active
-                        ? "● Active"
-                        : "● Inactive"}
-                    </span>
+                  <p>
+                    Status:{" "}
+                    {product.active
+                      ? "✅ Active"
+                      : "⛔ Inactive"}
+                  </p>
 
-                    {product.featured && (
-                      <span
-                        style={{
-                          ...badgeStyle,
-                          background: "#713f12",
-                          color: "#fde68a",
-                        }}
-                      >
-                        ⭐ Featured
-                      </span>
-                    )}
-                  </div>
+                  <p>
+                    {product.featured
+                      ? "⭐ Featured"
+                      : "☆ Not Featured"}
+                  </p>
 
                   <div
                     style={{
@@ -559,13 +386,6 @@ export default function AdminProductsPage() {
                       marginTop: "15px",
                     }}
                   >
-                    <button
-                      onClick={() => startEdit(product)}
-                      style={buttonStyle}
-                    >
-                      ✏️ Edit
-                    </button>
-
                     <button
                       onClick={() => changeStock(product)}
                       style={buttonStyle}
@@ -626,34 +446,6 @@ export default function AdminProductsPage() {
     </main>
   );
 }
-
-const cardStyle = {
-  background: "linear-gradient(145deg, #0f172a, #111827)",
-  border: "1px solid #1e293b",
-  borderRadius: "18px",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-};
-
-const badgeStyle = {
-  display: "inline-flex",
-  alignItems: "center",
-  padding: "5px 9px",
-  borderRadius: "999px",
-  fontSize: "12px",
-  fontWeight: 700,
-};
-
-const inputStyle = {
-  width: "100%",
-  boxSizing: "border-box" as const,
-  background: "#020617",
-  color: "white",
-  border: "1px solid #334155",
-  padding: "12px",
-  borderRadius: "8px",
-  marginBottom: "12px",
-  fontSize: "15px",
-};
 
 const buttonStyle = {
   background: "#1e293b",
