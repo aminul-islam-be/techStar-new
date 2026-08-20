@@ -1,6 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { getCustomerUserId } from "@/lib/customerAuth";
+
+type Product = {
+  _id: string;
+  name: string;
+  slug: string;
+  category: string;
+  description?: string;
+  price: number;
+  currency?: string;
+  image?: string;
+  stock: number;
+  featured?: boolean;
+  active?: boolean;
+};
 
 const categories = [
   ["⚡", "Electrical", "Switches, breakers & wiring"],
@@ -13,36 +29,212 @@ const categories = [
 
 export default function Home() {
   const [search, setSearch] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productError, setProductError] = useState("");
+  const [addingId, setAddingId] = useState("");
+  const [cartCount, setCartCount] = useState(0);
+  const [message, setMessage] = useState("");
+
+  async function loadProducts(query = "") {
+    try {
+      setLoadingProducts(true);
+      setProductError("");
+
+      const url = query.trim()
+        ? `/api/products?search=${encodeURIComponent(query.trim())}`
+        : "/api/products";
+
+      const response = await fetch(url, {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Unable to load products."
+        );
+      }
+
+      setProducts(data.products || []);
+    } catch (error) {
+      console.error(error);
+
+      setProductError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load products."
+      );
+    } finally {
+      setLoadingProducts(false);
+    }
+  }
+
+  async function loadCartCount() {
+    const userId = getCustomerUserId();
+
+    if (!userId) {
+      setCartCount(0);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/cart", {
+        headers: {
+          "x-user-id": userId,
+        },
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const count = (data.cart?.items || []).reduce(
+          (total: number, item: { quantity: number }) =>
+            total + item.quantity,
+          0
+        );
+
+        setCartCount(count);
+      }
+    } catch (error) {
+      console.error("Cart count error:", error);
+    }
+  }
+
+  useEffect(() => {
+    loadProducts();
+    loadCartCount();
+  }, []);
+
+  async function handleSearch() {
+    await loadProducts(search);
+  }
+
+  function handleSearchKeyDown(
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) {
+    if (event.key === "Enter") {
+      handleSearch();
+    }
+  }
+  async function addToCart(product: Product) {
+    const userId = getCustomerUserId();
+
+    if (!userId) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (product.stock <= 0) {
+      setMessage("This product is out of stock.");
+      return;
+    }
+
+    try {
+      setAddingId(product._id);
+      setMessage("");
+
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": userId,
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: 1,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Unable to add product to cart."
+        );
+      }
+
+      const count = (data.cart?.items || []).reduce(
+        (total: number, item: { quantity: number }) =>
+          total + item.quantity,
+        0
+      );
+
+      setCartCount(count);
+      setMessage(`${product.name} added to cart.`);
+    } catch (error) {
+      console.error(error);
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to add product to cart."
+      );
+    } finally {
+      setAddingId("");
+    }
+  }
+
+  const featuredProducts = useMemo(() => {
+    return products.filter((product) => product.featured);
+  }, [products]);
+
+  const visibleProducts = search.trim()
+    ? products
+    : products;
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-2xl">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-          <a href="#" className="flex shrink-0 items-center gap-2.5">
+
+          <Link
+            href="/"
+            className="flex shrink-0 items-center gap-2.5"
+          >
             <div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-black shadow-lg shadow-blue-600/20">
               T
             </div>
+
             <div>
               <div className="text-[18px] font-extrabold tracking-tight">
                 TechStar
               </div>
+
               <div className="hidden text-[10px] font-medium tracking-[0.18em] text-slate-500 sm:block">
                 SMART MARKETPLACE
               </div>
             </div>
-          </a>
+          </Link>
 
           <nav className="hidden items-center gap-8 text-[14px] font-medium text-slate-400 lg:flex">
-            <a href="#" className="text-white transition hover:text-blue-400">
+            <a
+              href="#"
+              className="text-white transition hover:text-blue-400"
+            >
               Home
             </a>
-            <a href="#products" className="transition hover:text-white">
+
+            <a
+              href="#products"
+              className="transition hover:text-white"
+            >
               Products
             </a>
-            <a href="#categories" className="transition hover:text-white">
+
+            <a
+              href="#categories"
+              className="transition hover:text-white"
+            >
               Categories
             </a>
-            <a href="#about" className="transition hover:text-white">
+
+            <a
+              href="#about"
+              className="transition hover:text-white"
+            >
               About
             </a>
           </nav>
@@ -52,13 +244,30 @@ export default function Home() {
               USD
             </button>
 
-            <button className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white sm:px-3">
+            <button className="hidden rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white sm:block sm:px-3">
               EN
             </button>
 
-            <a href="/login" className="ml-1 hidden rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-slate-200 sm:block">
+            <Link
+              href="/cart"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-lg transition hover:bg-white/[0.08]"
+              aria-label="Shopping Cart"
+            >
+              🛒
+
+              {cartCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-black text-white">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/login"
+              className="ml-1 hidden rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-slate-200 sm:block"
+            >
               Sign In
-            </a>
+            </Link>
 
             <button className="ml-1 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-lg text-slate-300 transition hover:bg-white/10 lg:hidden">
               ☰
@@ -66,12 +275,12 @@ export default function Home() {
           </div>
         </div>
       </header>
-
       <section className="relative isolate overflow-hidden">
         <div className="pointer-events-none absolute -left-32 top-0 h-[420px] w-[420px] rounded-full bg-blue-600/15 blur-[110px]" />
         <div className="pointer-events-none absolute -right-32 top-20 h-[380px] w-[380px] rounded-full bg-indigo-600/10 blur-[110px]" />
 
         <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-20 lg:px-8 lg:pb-24 lg:pt-28">
+
           <div className="mb-7 flex justify-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/15 bg-blue-500/[0.08] px-4 py-2 text-xs font-semibold text-blue-300">
               <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
@@ -95,20 +304,35 @@ export default function Home() {
 
           <div className="mx-auto mt-9 max-w-3xl">
             <div className="flex h-[58px] items-stretch rounded-2xl border border-white/10 bg-white/[0.055] p-1.5 shadow-2xl shadow-black/30 backdrop-blur-xl transition focus-within:border-blue-500/40">
+
               <div className="flex min-w-0 flex-1 items-center">
-                <span className="pl-3 pr-2 text-lg text-slate-500">⌕</span>
+                <span className="pl-3 pr-2 text-lg text-slate-500">
+                  ⌕
+                </span>
+
                 <input
                   type="search"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(event) =>
+                    setSearch(event.target.value)
+                  }
+                  onKeyDown={handleSearchKeyDown}
                   placeholder="Search products..."
                   className="min-w-0 flex-1 bg-transparent px-1 text-sm text-white outline-none placeholder:text-slate-500 sm:text-[15px]"
                 />
               </div>
 
-              <button className="shrink-0 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500 active:scale-[0.98] sm:px-6">
-                <span className="hidden sm:inline">Search</span>
-                <span className="text-base sm:hidden">→</span>
+              <button
+                onClick={handleSearch}
+                className="shrink-0 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500 active:scale-[0.98] sm:px-6"
+              >
+                <span className="hidden sm:inline">
+                  Search
+                </span>
+
+                <span className="text-base sm:hidden">
+                  →
+                </span>
               </button>
             </div>
 
@@ -142,34 +366,50 @@ export default function Home() {
         className="border-y border-white/[0.07] bg-white/[0.018]"
       >
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
+
           <div className="mb-8">
             <div className="mb-2 text-[11px] font-bold tracking-[0.2em] text-blue-400">
               EXPLORE
             </div>
+
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
               Shop by category
             </h2>
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {categories.map(([icon, name, description]) => (
-              <button
-                key={name}
-                className="group rounded-2xl border border-white/[0.08] bg-slate-900/70 p-4 text-left transition duration-300 hover:-translate-y-1 hover:border-blue-500/30 hover:bg-slate-800/80 sm:p-5"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05] text-xl transition group-hover:bg-blue-500/10">
-                  {icon}
-                </div>
-                <div className="mt-4 text-sm font-bold">{name}</div>
-                <div className="mt-1 text-[10px] leading-4 text-slate-500">
-                  {description}
-                </div>
-              </button>
-            ))}
+            {categories.map(
+              ([icon, name, description]) => (
+                <button
+                  key={name}
+                  onClick={() => {
+                    setSearch(name);
+                    loadProducts(name);
+                    document
+                      .getElementById("products")
+                      ?.scrollIntoView({
+                        behavior: "smooth",
+                      });
+                  }}
+                  className="group rounded-2xl border border-white/[0.08] bg-slate-900/70 p-4 text-left transition duration-300 hover:-translate-y-1 hover:border-blue-500/30 hover:bg-slate-800/80 sm:p-5"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05] text-xl transition group-hover:bg-blue-500/10">
+                    {icon}
+                  </div>
+
+                  <div className="mt-4 text-sm font-bold">
+                    {name}
+                  </div>
+
+                  <div className="mt-1 text-[10px] leading-4 text-slate-500">
+                    {description}
+                  </div>
+                </button>
+              )
+            )}
           </div>
         </div>
       </section>
-
       <section
         id="products"
         className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20"
@@ -178,28 +418,198 @@ export default function Home() {
           <div className="mb-2 text-[11px] font-bold tracking-[0.2em] text-blue-400">
             MARKETPLACE
           </div>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Products
-          </h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-            Real products added by TechStar will appear here.
-          </p>
-        </div>
 
-        <div className="relative overflow-hidden rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-20 text-center">
-          <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-[26px] border border-white/10 bg-slate-900 text-4xl shadow-2xl">
-            🛍️
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                Products
+              </h2>
+
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
+                Browse the latest electrical, electronics and
+                automation products from TechStar.
+              </p>
+            </div>
+
+            {!loadingProducts && products.length > 0 && (
+              <div className="text-xs font-semibold text-slate-500">
+                {products.length}{" "}
+                {products.length === 1
+                  ? "product"
+                  : "products"}
+              </div>
+            )}
           </div>
-
-          <h3 className="mt-6 text-xl font-bold">No Products Available</h3>
-
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-            Products will appear here automatically when they are added by
-            the TechStar administrator.
-          </p>
         </div>
-      </section>
 
+        {message && (
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+            <span>✓ {message}</span>
+
+            <Link
+              href="/cart"
+              className="shrink-0 font-bold text-white hover:text-blue-300"
+            >
+              View Cart →
+            </Link>
+          </div>
+        )}
+
+        {loadingProducts ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="animate-pulse overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/70"
+              >
+                <div className="h-56 bg-white/[0.04]" />
+
+                <div className="space-y-3 p-5">
+                  <div className="h-3 w-20 rounded bg-white/[0.06]" />
+                  <div className="h-5 w-4/5 rounded bg-white/[0.06]" />
+                  <div className="h-4 w-full rounded bg-white/[0.04]" />
+                  <div className="h-10 w-full rounded-xl bg-white/[0.06]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : productError ? (
+          <div className="rounded-3xl border border-red-500/20 bg-red-500/[0.06] px-5 py-16 text-center">
+            <div className="text-4xl">⚠️</div>
+
+            <h3 className="mt-4 text-xl font-bold">
+              Unable to load products
+            </h3>
+
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+              {productError}
+            </p>
+
+            <button
+              onClick={() => loadProducts(search)}
+              className="mt-6 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-500"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : visibleProducts.length === 0 ? (
+          <div className="relative overflow-hidden rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-5 py-20 text-center">
+            <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-[26px] border border-white/10 bg-slate-900 text-4xl shadow-2xl">
+              🛍️
+            </div>
+
+            <h3 className="mt-6 text-xl font-bold">
+              {search
+                ? "No matching products"
+                : "No Products Available"}
+            </h3>
+
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+              {search
+                ? `No products found for "${search}". Try another search.`
+                : "Products will appear here automatically when they are added by the TechStar administrator."}
+            </p>
+
+            {search && (
+              <button
+                onClick={() => {
+                  setSearch("");
+                  loadProducts();
+                }}
+                className="mt-6 rounded-xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-bold text-white hover:bg-white/[0.08]"
+              >
+                Show All Products
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {visibleProducts.map((product) => (
+              <article
+                key={product._id}
+                className="group overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/70 transition duration-300 hover:-translate-y-1 hover:border-blue-500/30 hover:bg-slate-900"
+              >
+                <div className="relative h-56 overflow-hidden bg-slate-950">
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 text-6xl">
+                      ⚡
+                    </div>
+                  )}
+
+                  <div className="absolute left-3 top-3 rounded-full border border-white/10 bg-slate-950/80 px-3 py-1.5 text-[10px] font-bold text-blue-300 backdrop-blur">
+                    {product.category}
+                  </div>
+
+                  {product.featured && (
+                    <div className="absolute right-3 top-3 rounded-full bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-lg">
+                      Featured
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-5">
+                  <h3 className="line-clamp-2 min-h-[48px] text-base font-bold leading-6 text-white">
+                    {product.name}
+                  </h3>
+
+                  <p className="mt-2 line-clamp-2 min-h-[40px] text-xs leading-5 text-slate-500">
+                    {product.description ||
+                      "Quality electrical and electronics product from TechStar."}
+                  </p>
+
+                  <div className="mt-4 flex items-end justify-between gap-3">
+                    <div>
+                      <div className="text-xl font-extrabold tracking-tight">
+                        {product.currency === "USD"
+                          ? "$"
+                          : "৳"}
+                        {product.price.toLocaleString()}
+                      </div>
+
+                      <div
+                        className={`mt-1 text-[11px] font-semibold ${
+                          product.stock > 0
+                            ? "text-emerald-400"
+                            : "text-red-400"
+                        }`}
+                      >
+                        {product.stock > 0
+                          ? `${product.stock} in stock`
+                          : "Out of stock"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => addToCart(product)}
+                    disabled={
+                      product.stock <= 0 ||
+                      addingId === product._id
+                    }
+                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/10 transition hover:bg-blue-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {addingId === product._id ? (
+                      "Adding..."
+                    ) : product.stock <= 0 ? (
+                      "Out of Stock"
+                    ) : (
+                      <>
+                        🛒 Add to Cart
+                      </>
+                    )}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
       <section
         id="about"
         className="border-y border-white/[0.07] bg-white/[0.018]"
@@ -210,10 +620,14 @@ export default function Home() {
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-xl">
                 🌍
               </div>
-              <h3 className="mt-5 font-bold">Global experience</h3>
+
+              <h3 className="mt-5 font-bold">
+                Global experience
+              </h3>
+
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Multiple languages and currencies designed for customers
-                around the world.
+                Multiple languages and currencies designed
+                for customers around the world.
               </p>
             </div>
 
@@ -221,10 +635,14 @@ export default function Home() {
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-xl">
                 🔐
               </div>
-              <h3 className="mt-5 font-bold">Secure shopping</h3>
+
+              <h3 className="mt-5 font-bold">
+                Secure shopping
+              </h3>
+
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Browse freely as a guest and sign in only when you need to
-                complete checkout.
+                Browse freely as a guest and sign in only when
+                you need to complete checkout.
               </p>
             </div>
 
@@ -232,10 +650,14 @@ export default function Home() {
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-xl">
                 ✦
               </div>
-              <h3 className="mt-5 font-bold">TechStar AI</h3>
+
+              <h3 className="mt-5 font-bold">
+                TechStar AI
+              </h3>
+
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                An AI assistant designed to understand English, Bangla and
-                Banglish.
+                An AI assistant designed to understand English,
+                Bangla and Banglish.
               </p>
             </div>
           </div>
@@ -248,7 +670,10 @@ export default function Home() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-black">
               T
             </div>
-            <span className="font-bold">TechStar</span>
+
+            <span className="font-bold">
+              TechStar
+            </span>
           </div>
 
           <p className="text-xs text-slate-600">
@@ -257,12 +682,20 @@ export default function Home() {
         </div>
       </footer>
 
-      <button
-        aria-label="Open TechStar AI"
+      <Link
+        href="/cart"
+        aria-label="Open Shopping Cart"
         className="fixed bottom-5 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-blue-400/20 bg-blue-600 text-xl shadow-2xl shadow-blue-600/30 transition duration-300 hover:scale-105 hover:bg-blue-500 active:scale-95 sm:right-6"
       >
-        ✦
-      </button>
+        🛒
+
+        {cartCount > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-black text-blue-600">
+            {cartCount > 99 ? "99+" : cartCount}
+          </span>
+        )}
+      </Link>
     </main>
   );
 }
+
