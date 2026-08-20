@@ -312,6 +312,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [showPicture, setShowPicture] = useState(false);
 
   useEffect(() => {
     loadProfile();

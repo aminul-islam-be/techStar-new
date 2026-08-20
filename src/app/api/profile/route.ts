@@ -91,25 +91,109 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
 
+    const hasProfilePicture =
+      typeof body.profilePicture === "string" &&
+      body.profilePicture.trim() !== "";
+
+    // Profile picture can be updated independently.
+    if (hasProfilePicture) {
+      const user = await User.findByIdAndUpdate(
+        userId,
+        {
+          profilePicture:
+            body.profilePicture.trim(),
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
+        .select("-password")
+        .lean();
+
+      if (!user) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "User not found.",
+          },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Profile picture updated successfully.",
+        user: {
+          id: user._id.toString(),
+          fullName: user.fullName,
+          phone: user.phone,
+          email: user.email || "",
+          permanentAddress:
+            user.permanentAddress || "",
+          profilePicture:
+            user.profilePicture || "",
+          dateOfBirth:
+            user.dateOfBirth || "",
+          gender: user.gender || "",
+          bloodGroup:
+            user.bloodGroup || "",
+          maritalStatus:
+            user.maritalStatus || "",
+          country:
+            user.country || "Bangladesh",
+          division:
+            user.division || "",
+          area:
+            user.area || "",
+          city:
+            user.city || "",
+          office:
+            user.office || "",
+          study:
+            user.study || "",
+          role: user.role,
+          active: user.active,
+        },
+      });
+    }
+
     const update = {
       fullName: String(body.fullName || "").trim(),
       email: String(body.email || "").trim(),
       permanentAddress: String(
         body.permanentAddress || ""
       ).trim(),
-      profilePicture: String(
-        body.profilePicture || ""
+      dateOfBirth: String(
+        body.dateOfBirth || ""
       ).trim(),
-      dateOfBirth: String(body.dateOfBirth || "").trim(),
-      gender: String(body.gender || "").trim(),
-      bloodGroup: String(body.bloodGroup || "").trim(),
-      maritalStatus: String(body.maritalStatus || "").trim(),
-      country: String(body.country || "Bangladesh").trim(),
-      division: String(body.division || "").trim(),
-      area: String(body.area || "").trim(),
-      city: String(body.city || "").trim(),
-      office: String(body.office || "").trim(),
-      study: String(body.study || "").trim(),
+      gender: String(
+        body.gender || ""
+      ).trim(),
+      bloodGroup: String(
+        body.bloodGroup || ""
+      ).trim(),
+      maritalStatus: String(
+        body.maritalStatus || ""
+      ).trim(),
+      country: String(
+        body.country || "Bangladesh"
+      ).trim(),
+      division: String(
+        body.division || ""
+      ).trim(),
+      area: String(
+        body.area || ""
+      ).trim(),
+      city: String(
+        body.city || ""
+      ).trim(),
+      office: String(
+        body.office || ""
+      ).trim(),
+      study: String(
+        body.study || ""
+      ).trim(),
     };
 
     if (!update.fullName) {
