@@ -56,9 +56,9 @@ export default function Home() {
               EN
             </button>
 
-            <button className="ml-1 hidden rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-slate-200 sm:block">
+            <a href="/login" className="ml-1 hidden rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-slate-200 sm:block">
               Sign In
-            </button>
+            </a>
 
             <button className="ml-1 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-lg text-slate-300 transition hover:bg-white/10 lg:hidden">
               ☰

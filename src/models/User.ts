@@ -33,7 +33,7 @@ const UserSchema = new Schema<IUser>(
       type: String,
       trim: true,
       lowercase: true,
-      default: "",
+      default: undefined,
     },
     role: {
       type: String,
