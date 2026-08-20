@@ -667,32 +667,6 @@ export default function ProfilePage() {
 
 
 
-                  const cloudName =
-                    process.env
-                      .NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-
-                  const uploadPreset =
-                    process.env
-                      .NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
-                    "techstar_profiles";
-
-                  if (!cloudName) {
-                    throw new Error(
-                      "Cloudinary cloud name is missing."
-                    );
-                  }
-
-                  const formData = new FormData();
-
-                  formData.append(
-                    "file",
-                    compressedFile
-                  );
-
-                  formData.append(
-                    "upload_preset",
-                    uploadPreset
-                  );
 
                   const uploadResponse =
                     await fetch(
