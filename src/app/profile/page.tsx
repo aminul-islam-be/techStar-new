@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Cropper from "react-easy-crop";
 import { getCustomerUser, saveCustomerUser } from "@/lib/customerAuth";
 
 type ProfileData = {
@@ -180,53 +181,61 @@ async function compressImage(file: File): Promise<File> {
       }
     );
 
-    let width = image.naturalWidth;
-    let height = image.naturalHeight;
+    // Facebook-style square profile image.
+    // The shorter side becomes the square size.
+    const squareSize = Math.min(
+      image.naturalWidth,
+      image.naturalHeight
+    );
 
-    const maxDimension = 1200;
+    const sourceX =
+      (image.naturalWidth - squareSize) / 2;
 
-    if (width > maxDimension || height > maxDimension) {
-      const ratio =
-        Math.min(
-          maxDimension / width,
-          maxDimension / height
-        );
+    const sourceY =
+      (image.naturalHeight - squareSize) / 2;
 
-      width = Math.round(width * ratio);
-      height = Math.round(height * ratio);
-    }
+    const maxDimension = 1000;
+
+    const outputSize = Math.min(
+      squareSize,
+      maxDimension
+    );
 
     const canvas = document.createElement("canvas");
 
-    let quality = 0.85;
+    canvas.width = outputSize;
+    canvas.height = outputSize;
 
-    for (let attempt = 0; attempt < 8; attempt++) {
-      canvas.width = width;
-      canvas.height = height;
+    const context = canvas.getContext("2d");
 
-      const context = canvas.getContext("2d");
-
-      if (!context) {
-        throw new Error(
-          "Your browser does not support image compression."
-        );
-      }
-
-      context.clearRect(
-        0,
-        0,
-        width,
-        height
+    if (!context) {
+      throw new Error(
+        "Your browser does not support image compression."
       );
+    }
 
-      context.drawImage(
-        image,
-        0,
-        0,
-        width,
-        height
-      );
+    context.clearRect(
+      0,
+      0,
+      outputSize,
+      outputSize
+    );
 
+    context.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      squareSize,
+      squareSize,
+      0,
+      0,
+      outputSize,
+      outputSize
+    );
+
+    let quality = 0.88;
+
+    for (let attempt = 0; attempt < 10; attempt++) {
       const blob = await new Promise<Blob | null>(
         (resolve) =>
           canvas.toBlob(
@@ -252,12 +261,10 @@ async function compressImage(file: File): Promise<File> {
         );
       }
 
-      quality -= 0.08;
+      quality -= 0.07;
 
       if (quality < 0.35) {
-        width = Math.round(width * 0.85);
-        height = Math.round(height * 0.85);
-        quality = 0.7;
+        break;
       }
     }
 
@@ -267,7 +274,7 @@ async function compressImage(file: File): Promise<File> {
           canvas.toBlob(
             resolve,
             "image/jpeg",
-            0.3
+            0.30
           )
       );
 
@@ -287,6 +294,82 @@ async function compressImage(file: File): Promise<File> {
   } finally {
     URL.revokeObjectURL(imageUrl);
   }
+}
+
+
+async function createCroppedImage(
+  imageSrc: string,
+  pixelCrop: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+): Promise<File> {
+  const image = await new Promise<HTMLImageElement>(
+    (resolve, reject) => {
+      const img = new Image();
+
+      img.onload = () => resolve(img);
+      img.onerror = () =>
+        reject(new Error("Unable to load image."));
+
+      img.src = imageSrc;
+    }
+  );
+
+  const canvas = document.createElement("canvas");
+
+  const size = Math.min(
+    pixelCrop.width,
+    pixelCrop.height
+  );
+
+  canvas.width = size;
+  canvas.height = size;
+
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error(
+      "Canvas is not supported by this browser."
+    );
+  }
+
+  context.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    size,
+    size,
+    0,
+    0,
+    size,
+    size
+  );
+
+  const blob = await new Promise<Blob | null>(
+    (resolve) =>
+      canvas.toBlob(
+        resolve,
+        "image/jpeg",
+        0.9
+      )
+  );
+
+  if (!blob) {
+    throw new Error(
+      "Unable to create cropped image."
+    );
+  }
+
+  return new File(
+    [blob],
+    "profile-picture.jpg",
+    {
+      type: "image/jpeg",
+    }
+  );
 }
 
 export default function ProfilePage() {
@@ -313,6 +396,15 @@ export default function ProfilePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [showPicture, setShowPicture] = useState(false);
+
+  const [cropImage, setCropImage] = useState("");
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] =
+    useState<any>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [uploadingPicture, setUploadingPicture] =
+    useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -489,11 +581,22 @@ export default function ProfilePage() {
 
         <div className="mt-5 flex flex-col items-center">
 
-          <label
-            htmlFor="profile-picture"
-            className="group relative cursor-pointer"
-          >
-            <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-blue-500/30 bg-slate-800 shadow-xl">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                if (form.profilePicture) {
+                  setShowPicture(true);
+                } else {
+                  document
+                    .getElementById("profile-picture")
+                    ?.click();
+                }
+              }}
+              className="group relative block rounded-full"
+              aria-label="View profile picture"
+            >
+              <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-blue-500/30 bg-slate-800 shadow-xl transition group-hover:border-blue-400">
 
               {form.profilePicture ? (
                 <img
@@ -507,11 +610,19 @@ export default function ProfilePage() {
                 </span>
               )}
 
-            </div>
+              </div>
+            </button>
 
-            <div className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-950 bg-blue-600 text-lg shadow-lg transition group-hover:bg-blue-500">
+            <button
+              type="button"
+              onClick={() => {
+                document
+                  .getElementById("profile-picture")
+                  ?.click();
+              }}
+              className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-950 bg-blue-600 text-lg shadow-lg transition group-hover:bg-blue-500">
               📷
-            </div>
+            </button>
 
             <input
               id="profile-picture"
@@ -535,10 +646,26 @@ export default function ProfilePage() {
 
                 try {
                   setError("");
-                  setMessage("Uploading profile picture...");
 
-                  const compressedFile =
-                    await compressImage(file);
+                  const imageUrl =
+                    URL.createObjectURL(file);
+
+                  setCropImage(imageUrl);
+                  setCrop({ x: 0, y: 0 });
+                  setZoom(1);
+                  setShowCropper(true);
+                } catch (err) {
+                  setError(
+                    err instanceof Error
+                      ? err.message
+                      : "Unable to prepare image."
+                  );
+                }
+
+                e.target.value = "";
+              }}
+
+
 
                   const cloudName =
                     process.env
@@ -654,7 +781,304 @@ export default function ProfilePage() {
                 e.target.value = "";
               }}
             />
-          </label>
+
+            {showCropper && cropImage && (
+              <div className="fixed inset-0 z-[60] bg-black">
+
+                <div className="flex h-full flex-col">
+
+                  <div className="flex items-center justify-between border-b border-white/10 bg-slate-950 px-4 py-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        URL.revokeObjectURL(cropImage);
+                        setCropImage("");
+                        setShowCropper(false);
+                      }}
+                      className="text-sm font-semibold text-white"
+                    >
+                      Cancel
+                    </button>
+
+                    <h2 className="text-base font-bold text-white">
+                      Adjust Profile Picture
+                    </h2>
+
+                    <button
+                      type="button"
+                      disabled={uploadingPicture}
+                      onClick={async () => {
+                        try {
+                          setUploadingPicture(true);
+                          setError("");
+                          setMessage(
+                            "Preparing profile picture..."
+                          );
+
+                          if (!croppedAreaPixels) {
+                            throw new Error(
+                              "Please adjust the picture first."
+                            );
+                          }
+
+                          const croppedFile =
+                            await createCroppedImage(
+                              cropImage,
+                              croppedAreaPixels
+                            );
+
+                          const finalFile =
+                            await compressImage(
+                              croppedFile
+                            );
+
+                          const cloudName =
+                            process.env
+                              .NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+                          const uploadPreset =
+                            process.env
+                              .NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
+                            "techstar_profiles";
+
+                          if (!cloudName) {
+                            throw new Error(
+                              "Cloudinary cloud name is missing."
+                            );
+                          }
+
+                          const formData =
+                            new FormData();
+
+                          formData.append(
+                            "file",
+                            finalFile
+                          );
+
+                          formData.append(
+                            "upload_preset",
+                            uploadPreset
+                          );
+
+                          setMessage(
+                            "Uploading profile picture..."
+                          );
+
+                          const uploadResponse =
+                            await fetch(
+                              `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+                              {
+                                method: "POST",
+                                body: formData,
+                              }
+                            );
+
+                          const uploadData =
+                            await uploadResponse.json();
+
+                          if (!uploadResponse.ok) {
+                            throw new Error(
+                              uploadData.error?.message ||
+                                "Cloudinary upload failed."
+                            );
+                          }
+
+                          const uploadedUrl =
+                            uploadData.secure_url;
+
+                          const backgroundRemovedUrl =
+                            uploadedUrl.replace(
+                              "/upload/",
+                              "/upload/e_background_removal/"
+                            );
+
+                          const user =
+                            getCustomerUser();
+
+                          if (!user) {
+                            window.location.href =
+                              "/login";
+                            return;
+                          }
+
+                          const profileResponse =
+                            await fetch(
+                              "/api/profile",
+                              {
+                                method: "PATCH",
+                                headers: {
+                                  "Content-Type":
+                                    "application/json",
+                                  "x-user-id":
+                                    user.id,
+                                },
+                                body: JSON.stringify({
+                                  profilePicture:
+                                    backgroundRemovedUrl,
+                                }),
+                              }
+                            );
+
+                          const profileData =
+                            await profileResponse.json();
+
+                          if (
+                            !profileResponse.ok ||
+                            !profileData.success
+                          ) {
+                            throw new Error(
+                              profileData.message ||
+                                "Unable to save profile picture."
+                            );
+                          }
+
+                          setForm((current) => ({
+                            ...current,
+                            profilePicture:
+                              backgroundRemovedUrl,
+                          }));
+
+                          URL.revokeObjectURL(
+                            cropImage
+                          );
+
+                          setCropImage("");
+                          setShowCropper(false);
+
+                          setMessage(
+                            "Profile picture uploaded successfully."
+                          );
+                        } catch (err) {
+                          setMessage("");
+
+                          setError(
+                            err instanceof Error
+                              ? err.message
+                              : "Unable to upload profile picture."
+                          );
+                        } finally {
+                          setUploadingPicture(false);
+                        }
+                      }}
+                      className="text-sm font-extrabold text-blue-400 disabled:opacity-50"
+                    >
+                      {uploadingPicture
+                        ? "Saving..."
+                        : "Done"}
+                    </button>
+                  </div>
+
+                  <div className="relative flex-1 bg-black">
+
+                    <Cropper
+                      image={cropImage}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={1}
+                      cropShape="round"
+                      showGrid={false}
+                      onCropChange={setCrop}
+                      onZoomChange={setZoom}
+                      onCropComplete={(
+                        _,
+                        pixels
+                      ) =>
+                        setCroppedAreaPixels(
+                          pixels
+                        )
+                      }
+                    />
+
+                  </div>
+
+                  <div className="border-t border-white/10 bg-slate-950 px-6 py-5">
+
+                    <div className="mx-auto max-w-md">
+
+                      <div className="mb-3 flex items-center justify-between text-xs text-slate-400">
+                        <span>Zoom</span>
+                        <span>
+                          {zoom.toFixed(1)}x
+                        </span>
+                      </div>
+
+                      <input
+                        type="range"
+                        min={1}
+                        max={3}
+                        step={0.1}
+                        value={zoom}
+                        onChange={(e) =>
+                          setZoom(
+                            Number(e.target.value)
+                          )
+                        }
+                        className="w-full"
+                      />
+
+                      <p className="mt-3 text-center text-xs text-slate-500">
+                        Move the photo and adjust
+                        the zoom so your face is
+                        positioned perfectly.
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+            )}
+
+            {showPicture && form.profilePicture && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-5 backdrop-blur-sm"
+                onClick={() => setShowPicture(false)}
+              >
+                <div
+                  className="relative w-full max-w-lg"
+                  onClick={(event) =>
+                    event.stopPropagation()
+                  }
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowPicture(false)
+                    }
+                    className="absolute -right-2 -top-12 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl text-white hover:bg-white/20"
+                  >
+                    ✕
+                  </button>
+
+                  <div className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-2 shadow-2xl">
+                    <img
+                      src={form.profilePicture}
+                      alt="Profile picture"
+                      className="max-h-[70vh] w-full rounded-2xl object-contain"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPicture(false);
+
+                      document
+                        .getElementById(
+                          "profile-picture"
+                        )
+                        ?.click();
+                    }}
+                    className="mx-auto mt-4 flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-500"
+                  >
+                    📷 Change Picture
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           <h1 className="mt-4 text-3xl font-extrabold">
             My Profile
