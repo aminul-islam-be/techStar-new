@@ -38,7 +38,7 @@ export default function CheckoutPage() {
     address: "",
     city: "",
     area: "",
-    paymentMethod: "manual",
+    paymentMethod: "cod",
   });
 
   const [loading, setLoading] = useState(true);
@@ -407,31 +407,167 @@ export default function CheckoutPage() {
                 Payment Method
               </h2>
 
-              <div className="mt-4 rounded-2xl border border-blue-500/30 bg-blue-500/[0.06] p-4">
-                <label className="flex cursor-pointer items-start gap-3">
-                  <input
-                    type="radio"
-                    checked={form.paymentMethod === "manual"}
-                    onChange={() =>
-                      updateField(
-                        "paymentMethod",
-                        "manual"
-                      )
-                    }
-                    className="mt-1"
-                  />
+              <p className="mt-1 text-xs text-slate-500">
+                Select your preferred payment method.
+              </p>
 
-                  <span>
-                    <span className="block font-bold">
-                      Manual Payment
-                    </span>
+              <div className="mt-4 space-y-3">
 
-                    <span className="mt-1 block text-xs leading-5 text-slate-500">
-                      Payment instructions will be provided by TechStar
-                      after your order is submitted.
+                <label
+                  className={`block cursor-pointer rounded-2xl border p-4 transition ${
+                    form.paymentMethod === "bkash"
+                      ? "border-pink-500/50 bg-pink-500/[0.08]"
+                      : "border-white/[0.08] bg-slate-950 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      checked={form.paymentMethod === "bkash"}
+                      onChange={() =>
+                        updateField("paymentMethod", "bkash")
+                      }
+                    />
+
+                    <span className="font-bold">
+                      bKash
                     </span>
-                  </span>
+                  </div>
+
+                  {form.paymentMethod === "bkash" && (
+                    <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3">
+                      <p className="text-xs text-slate-500">
+                        Send payment to
+                      </p>
+                      <p className="mt-1 text-lg font-extrabold tracking-wide text-pink-300">
+                        01922964696
+                      </p>
+                    </div>
+                  )}
                 </label>
+
+                <label
+                  className={`block cursor-pointer rounded-2xl border p-4 transition ${
+                    form.paymentMethod === "nagad"
+                      ? "border-orange-500/50 bg-orange-500/[0.08]"
+                      : "border-white/[0.08] bg-slate-950 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      checked={form.paymentMethod === "nagad"}
+                      onChange={() =>
+                        updateField("paymentMethod", "nagad")
+                      }
+                    />
+
+                    <span className="font-bold">
+                      Nagad
+                    </span>
+                  </div>
+
+                  {form.paymentMethod === "nagad" && (
+                    <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3">
+                      <p className="text-xs text-slate-500">
+                        Send payment to
+                      </p>
+                      <p className="mt-1 text-lg font-extrabold tracking-wide text-orange-300">
+                        01922964696
+                      </p>
+                    </div>
+                  )}
+                </label>
+
+                <label
+                  className={`block cursor-pointer rounded-2xl border p-4 transition ${
+                    form.paymentMethod === "rocket"
+                      ? "border-purple-500/50 bg-purple-500/[0.08]"
+                      : "border-white/[0.08] bg-slate-950 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      checked={form.paymentMethod === "rocket"}
+                      onChange={() =>
+                        updateField("paymentMethod", "rocket")
+                      }
+                    />
+
+                    <span className="font-bold">
+                      Rocket
+                    </span>
+                  </div>
+
+                  {form.paymentMethod === "rocket" && (
+                    <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3">
+                      <p className="text-xs text-slate-500">
+                        Send payment to
+                      </p>
+                      <p className="mt-1 text-lg font-extrabold tracking-wide text-purple-300">
+                        01922964696
+                      </p>
+                    </div>
+                  )}
+                </label>
+
+                <label
+                  className={`block cursor-pointer rounded-2xl border p-4 transition ${
+                    form.paymentMethod === "cod"
+                      ? "border-emerald-500/50 bg-emerald-500/[0.08]"
+                      : "border-white/[0.08] bg-slate-950 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      checked={form.paymentMethod === "cod"}
+                      onChange={() =>
+                        updateField("paymentMethod", "cod")
+                      }
+                    />
+
+                    <span className="font-bold">
+                      Cash on Delivery
+                    </span>
+                  </div>
+
+                  {form.paymentMethod === "cod" && (
+                    <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3 text-xs leading-5 text-slate-400">
+                      Pay in cash when your order is delivered.
+                    </div>
+                  )}
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessage(
+                      "সাময়িক সময়ের জন্য SSLCommerz বন্ধ আছে।"
+                    );
+                  }}
+                  className="w-full rounded-2xl border border-white/[0.08] bg-slate-950 p-4 text-left transition hover:border-white/20"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold">
+                      SSLCommerz
+                    </span>
+
+                    <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold text-amber-300">
+                      OFF
+                    </span>
+                  </div>
+
+                  <p className="mt-1 text-xs text-slate-500">
+                    Online payment gateway temporarily unavailable.
+                  </p>
+                </button>
+
               </div>
             </div>
           </section>
