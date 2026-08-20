@@ -1,13 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Cropper from "react-easy-crop";
-
-type Props = {
-  currentImage?: string;
-  onSaved: (url: string) => void;
-  onError: (message: string) => void;
-};
 
 type Area = {
   x: number;
@@ -16,124 +10,253 @@ type Area = {
   height: number;
 };
 
+type ProfilePictureCropperProps = {
+  currentImage?: string;
+  onSaved: (url: string) => void;
+  onError?: (message: string) => void;
+};
+
 export default function ProfilePictureCropper({
   currentImage = "",
   onSaved,
   onError,
-}: Props) {
-  const [image, setImage] = useState("");
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
+}: ProfilePictureCropperProps) {
+  const [selectedImage, setSelectedImage] =
+    useState<string>("");
+
+  const [crop, setCrop] = useState({
+    x: 0,
+    y: 0,
+  });
+
   const [zoom, setZoom] = useState(1);
-  const [area, setArea] = useState<Area | null>(null);
-  const [cropOpen, setCropOpen] = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
-  function selectImage(
-    e: React.ChangeEvent<HTMLInputElement>
+  const [croppedAreaPixels, setCroppedAreaPixels] =
+    useState<Area | null>(null);
+
+  const [showCropper, setShowCropper] =
+    useState(false);
+
+  const [showViewer, setShowViewer] =
+    useState(false);
+
+  const [uploading, setUploading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  useEffect(() => {
+    return () => {
+      if (selectedImage) {
+        URL.revokeObjectURL(selectedImage);
+      }
+    };
+  }, [selectedImage]);
+
+  function showError(message: string) {
+    setError(message);
+
+    if (onError) {
+      onError(message);
+    }
+  }
+
+  function handlePictureSelect(
+    event: React.ChangeEvent<HTMLInputElement>
   ) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
+    const file =
+      event.target.files?.[0];
 
-    if (!file) return;
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    setError("");
 
     if (!file.type.startsWith("image/")) {
-      onError("Please select an image file.");
+      showError(
+        "Please select a valid image."
+      );
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      onError("Image must be smaller than 10 MB.");
+    if (
+      file.size >
+      10 * 1024 * 1024
+    ) {
+      showError(
+        "Image size must be less than 10 MB."
+      );
       return;
     }
 
-    setImage(URL.createObjectURL(file));
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
-    setArea(null);
-    setCropOpen(true);
-  }
+    const imageUrl =
+      URL.createObjectURL(file);
 
-  function closeCrop() {
-    if (image) URL.revokeObjectURL(image);
-    setImage("");
-    setCropOpen(false);
-    setArea(null);
-    setZoom(1);
-  }
+    setSelectedImage(imageUrl);
 
-  async function createFile() {
-    if (!image || !area) {
-      throw new Error("Please adjust the picture first.");
-    }
-
-    const img = new Image();
-    img.src = image;
-
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () =>
-        reject(new Error("Unable to load image."));
+    setCrop({
+      x: 0,
+      y: 0,
     });
 
-    const canvas = document.createElement("canvas");
-    canvas.width = 500;
-    canvas.height = 500;
+    setZoom(1);
 
-    const ctx = canvas.getContext("2d");
+    setCroppedAreaPixels(null);
 
-    if (!ctx) {
-      throw new Error("Unable to process image.");
+    setShowCropper(true);
+  }
+
+  function closeCropper() {
+    if (selectedImage) {
+      URL.revokeObjectURL(
+        selectedImage
+      );
     }
 
-    ctx.drawImage(
-      img,
-      area.x,
-      area.y,
-      area.width,
-      area.height,
-      0,
-      0,
-      500,
-      500
+    setSelectedImage("");
+
+    setShowCropper(false);
+
+    setCroppedAreaPixels(null);
+
+    setZoom(1);
+
+    setError("");
+  }
+
+  function handleCropComplete(
+    _area: Area,
+    pixels: Area
+  ) {
+    setCroppedAreaPixels(pixels);
+  }
+
+  async function createCroppedFile(): Promise<File> {
+    if (
+      !selectedImage ||
+      !croppedAreaPixels
+    ) {
+      throw new Error(
+        "Please adjust the image first."
+      );
+    }
+
+    const image =
+      new Image();
+
+    image.src = selectedImage;
+
+    await new Promise<void>(
+      (resolve, reject) => {
+        image.onload = () => {
+          resolve();
+        };
+
+        image.onerror = () => {
+          reject(
+            new Error(
+              "Unable to load image."
+            )
+          );
+        };
+      }
     );
 
-    let quality = 0.85;
+    const canvas =
+      document.createElement(
+        "canvas"
+      );
+
+    const outputSize = 500;
+
+    canvas.width = outputSize;
+    canvas.height = outputSize;
+
+    const context =
+      canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error(
+        "Unable to process image."
+      );
+    }
+
+    context.drawImage(
+      image,
+      croppedAreaPixels.x,
+      croppedAreaPixels.y,
+      croppedAreaPixels.width,
+      croppedAreaPixels.height,
+      0,
+      0,
+      outputSize,
+      outputSize
+    );
+
+    let quality = 0.9;
+
     let blob: Blob | null = null;
 
-    while (quality >= 0.25) {
-      blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, "image/jpeg", quality);
-      });
+    while (
+      quality >= 0.2
+    ) {
+      blob =
+        await new Promise<Blob | null>(
+          (resolve) => {
+            canvas.toBlob(
+              resolve,
+              "image/jpeg",
+              quality
+            );
+          }
+        );
 
-      if (blob && blob.size <= 150 * 1024) break;
+      if (
+        blob &&
+        blob.size <=
+          150 * 1024
+      ) {
+        break;
+      }
 
       quality -= 0.1;
     }
 
     if (!blob) {
-      throw new Error("Unable to compress image.");
+      throw new Error(
+        "Unable to compress image."
+      );
     }
 
     return new File(
       [blob],
       "profile-picture.jpg",
-      { type: "image/jpeg" }
+      {
+        type: "image/jpeg",
+      }
     );
   }
 
-  async function upload() {
+  async function uploadCroppedImage() {
     try {
       setUploading(true);
-      onError("");
 
-      const file = await createFile();
+      setError("");
+
+      const croppedFile =
+        await createCroppedFile();
 
       const cloudName =
-        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        process.env
+          .NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
-      const preset =
-        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
+      const uploadPreset =
+        process.env
+          .NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
         "techstar_profiles";
 
       if (!cloudName) {
@@ -142,33 +265,62 @@ export default function ProfilePictureCropper({
         );
       }
 
-      const data = new FormData();
-      data.append("file", file);
-      data.append("upload_preset", preset);
+      const formData =
+        new FormData();
 
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: data,
-        }
+      formData.append(
+        "file",
+        croppedFile
       );
 
-      const result = await response.json();
+      formData.append(
+        "upload_preset",
+        uploadPreset
+      );
 
-      if (!response.ok) {
+      const uploadResponse =
+        await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+      const uploadData =
+        await uploadResponse.json();
+
+      if (
+        !uploadResponse.ok
+      ) {
         throw new Error(
-          result.error?.message ||
-          "Cloudinary upload failed."
+          uploadData.error?.message ||
+            "Cloudinary upload failed."
         );
       }
 
-      closeCrop();
-      onSaved(String(result.secure_url));
-    } catch (error) {
-      onError(
-        error instanceof Error
-          ? error.message
+      if (
+        !uploadData.secure_url
+      ) {
+        throw new Error(
+          "Cloudinary did not return an image URL."
+        );
+      }
+
+      const uploadedUrl =
+        String(
+          uploadData.secure_url
+        );
+
+      closeCropper();
+
+      onSaved(
+        uploadedUrl
+      );
+    } catch (err) {
+      showError(
+        err instanceof Error
+          ? err.message
           : "Unable to upload profile picture."
       );
     } finally {
@@ -178,35 +330,41 @@ export default function ProfilePictureCropper({
 
   return (
     <>
-      <div className="relative">
+      <div className="relative inline-block">
         <button
           type="button"
           onClick={() => {
-            if (currentImage) setViewerOpen(true);
+            if (currentImage) {
+              setShowViewer(true);
+            }
           }}
-          className="h-28 w-28 overflow-hidden rounded-full border-4 border-blue-500/30 bg-slate-800"
+          className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-blue-500/30 bg-slate-800 shadow-xl"
+          aria-label="View profile picture"
         >
           {currentImage ? (
             <img
               src={currentImage}
-              alt="Profile"
+              alt="Profile picture"
               className="h-full w-full object-cover"
             />
           ) : (
-            <span className="text-5xl text-slate-500">
+            <div className="flex h-full w-full items-center justify-center text-5xl">
               👤
-            </span>
+            </div>
           )}
         </button>
 
         <button
           type="button"
-          onClick={() =>
+          onClick={() => {
             document
-              .getElementById("profile-picture-file")
-              ?.click()
-          }
-          className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-950 bg-blue-600"
+              .getElementById(
+                "profile-picture-file"
+              )
+              ?.click();
+          }}
+          className="absolute bottom-0 right-0 flex h-10 w-10 items-center justify-center rounded-full border-2 border-slate-950 bg-blue-600 text-lg text-white shadow-lg"
+          aria-label="Change profile picture"
         >
           📷
         </button>
@@ -216,80 +374,147 @@ export default function ProfilePictureCropper({
           type="file"
           accept="image/jpeg,image/png,image/webp"
           className="hidden"
-          onChange={selectImage}
+          onChange={
+            handlePictureSelect
+          }
         />
       </div>
 
-      {viewerOpen && currentImage && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setViewerOpen(false)}
-        >
-          <img
-            src={currentImage}
-            alt="Profile picture"
-            className="h-[min(80vw,500px)] w-[min(80vw,500px)] rounded-full object-cover"
-          />
-        </div>
+      {error && (
+        <p className="mt-2 text-sm text-red-500">
+          {error}
+        </p>
       )}
 
-      {cropOpen && image && (
-        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/90 p-4">
-          <div className="w-full max-w-md rounded-3xl bg-slate-900 p-5">
-            <h2 className="mb-4 text-center text-xl font-bold text-white">
-              Adjust Profile Picture
-            </h2>
-
-            <div className="relative h-80 w-full overflow-hidden rounded-2xl bg-black">
-              <Cropper
-                image={image}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                showGrid={false}
-                onCropChange={setCrop}
-                onCropComplete={(_, pixels) =>
-                  setArea(pixels)
-                }
-                onZoomChange={setZoom}
-              />
-            </div>
-
-            <input
-              type="range"
-              min={1}
-              max={3}
-              step={0.1}
-              value={zoom}
-              onChange={(e) =>
-                setZoom(Number(e.target.value))
+      {showViewer &&
+        currentImage && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4"
+            onClick={() =>
+              setShowViewer(false)
+            }
+          >
+            <div
+              className="relative"
+              onClick={(event) =>
+                event.stopPropagation()
               }
-              className="mt-5 w-full"
-            />
-
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={closeCrop}
-                disabled={uploading}
-                className="rounded-xl bg-slate-700 px-4 py-3 font-bold text-white"
-              >
-                Cancel
-              </button>
+            >
+              <img
+                src={currentImage}
+                alt="Profile picture"
+                className="h-[min(80vw,500px)] w-[min(80vw,500px)] rounded-full object-cover shadow-2xl"
+              />
 
               <button
                 type="button"
-                onClick={upload}
-                disabled={uploading || !area}
-                className="rounded-xl bg-blue-600 px-4 py-3 font-bold text-white"
+                onClick={() =>
+                  setShowViewer(false)
+                }
+                className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-black/80 text-2xl text-white"
+                aria-label="Close"
               >
-                {uploading ? "Uploading..." : "Apply"}
+                ×
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+      {showCropper &&
+        selectedImage && (
+          <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/90 p-4">
+            <div className="w-full max-w-md rounded-3xl bg-slate-900 p-5 shadow-2xl">
+              <h2 className="mb-2 text-center text-xl font-bold text-white">
+                Adjust Profile Picture
+              </h2>
+
+              <p className="mb-4 text-center text-sm text-slate-400">
+                Drag the image and use zoom to
+                fit it perfectly.
+              </p>
+
+              <div className="relative h-80 w-full overflow-hidden rounded-2xl bg-black">
+                <Cropper
+                  image={selectedImage}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  cropShape="round"
+                  showGrid={false}
+                  restrictPosition={true}
+                  onCropChange={
+                    setCrop
+                  }
+                  onCropComplete={
+                    handleCropComplete
+                  }
+                  onZoomChange={
+                    setZoom
+                  }
+                />
+              </div>
+
+              <div className="mt-5">
+                <div className="mb-2 flex justify-between text-sm text-slate-400">
+                  <span>
+                    Zoom
+                  </span>
+
+                  <span>
+                    {zoom.toFixed(1)}x
+                  </span>
+                </div>
+
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="0.1"
+                  value={zoom}
+                  onChange={(event) =>
+                    setZoom(
+                      Number(
+                        event.target.value
+                      )
+                    )
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={
+                    closeCropper
+                  }
+                  disabled={
+                    uploading
+                  }
+                  className="rounded-xl bg-slate-700 px-4 py-3 font-bold text-white"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    uploadCroppedImage
+                  }
+                  disabled={
+                    uploading ||
+                    !croppedAreaPixels
+                  }
+                  className="rounded-xl bg-blue-600 px-4 py-3 font-bold text-white disabled:opacity-50"
+                >
+                  {uploading
+                    ? "Uploading..."
+                    : "Apply"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </>
   );
-}
+  }

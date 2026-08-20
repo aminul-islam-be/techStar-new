@@ -348,7 +348,7 @@ async function createCroppedImage(
     size,
     size
   );
-
+  
   const blob = await new Promise<Blob | null>(
     (resolve) =>
       canvas.toBlob(
@@ -698,7 +698,7 @@ export default function ProfilePage() {
                           setError("");
                           setMessage(
                             "Preparing profile picture..."
-                          );
+                                                    );
 
                           if (!croppedAreaPixels) {
                             throw new Error(
@@ -1048,7 +1048,7 @@ export default function ProfilePage() {
                 type="date"
                 value={form.dateOfBirth}
                 onChange={(e) =>
-                  updateField(
+                                   updateField(
                     "dateOfBirth",
                     e.target.value
                   )
@@ -1368,4 +1368,4 @@ export default function ProfilePage() {
       </div>
     </main>
   );
-}
+                                     }
