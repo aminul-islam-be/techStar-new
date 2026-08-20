@@ -463,16 +463,15 @@ export default function CartPage() {
               </div>
 
               <button
-                disabled
-                className="mt-6 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-extrabold text-white opacity-50"
+                type="button"
+                onClick={() => {
+                  window.location.href = "/checkout";
+                }}
+                className="mt-6 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-extrabold text-white transition hover:bg-blue-500 active:scale-[0.98]"
               >
-                Checkout — Coming Next
+                Proceed to Checkout
               </button>
 
-              <p className="mt-3 text-center text-xs leading-5 text-slate-500">
-                Checkout will be connected after the
-                cart system is fully tested.
-              </p>
             </aside>
           </div>
         )}
