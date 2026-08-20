@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Cropper from "react-easy-crop";
+import type { Area, Point } from "react-easy-crop";
 import { getCustomerUser, saveCustomerUser } from "@/lib/customerAuth";
 
 type ProfileData = {
@@ -347,7 +348,7 @@ async function createCroppedImage(
     size,
     size
   );
-
+  
   const blob = await new Promise<Blob | null>(
     (resolve) =>
       canvas.toBlob(
@@ -398,10 +399,10 @@ export default function ProfilePage() {
   const [showPicture, setShowPicture] = useState(false);
 
   const [cropImage, setCropImage] = useState("");
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] =
-    useState<any>(null);
+    useState<Area | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [uploadingPicture, setUploadingPicture] =
     useState(false);
@@ -664,96 +665,6 @@ export default function ProfilePage() {
 
                 e.target.value = "";
               }}
-
-
-
-
-                  const uploadResponse =
-                    await fetch(
-                      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-                      {
-                        method: "POST",
-                        body: formData,
-                      }
-                    );
-
-                  const uploadData =
-                    await uploadResponse.json();
-
-                  if (!uploadResponse.ok) {
-                    throw new Error(
-                      uploadData.error?.message ||
-                        "Cloudinary upload failed."
-                    );
-                  }
-
-                  const uploadedUrl =
-                    uploadData.secure_url;
-
-                  // Cloudinary AI background removal.
-                  // The original uploaded image remains stored,
-                  // while this URL displays the background-removed version.
-                  const backgroundRemovedUrl =
-                    uploadedUrl.replace(
-                      "/upload/",
-                      "/upload/e_background_removal/"
-                    );
-
-                  const user = getCustomerUser();
-
-                  if (!user) {
-                    window.location.href = "/login";
-                    return;
-                  }
-
-                  const profileResponse =
-                    await fetch("/api/profile", {
-                      method: "PATCH",
-                      headers: {
-                        "Content-Type":
-                          "application/json",
-                        "x-user-id": user.id,
-                      },
-                      body: JSON.stringify({
-                        profilePicture:
-                          backgroundRemovedUrl,
-                      }),
-                    });
-
-                  const profileData =
-                    await profileResponse.json();
-
-                  if (
-                    !profileResponse.ok ||
-                    !profileData.success
-                  ) {
-                    throw new Error(
-                      profileData.message ||
-                        "Unable to save profile picture."
-                    );
-                  }
-
-                  setForm((current) => ({
-                    ...current,
-                    profilePicture:
-                      backgroundRemovedUrl,
-                  }));
-
-                  setMessage(
-                    "Profile picture uploaded successfully."
-                  );
-                } catch (err) {
-                  setMessage("");
-
-                  setError(
-                    err instanceof Error
-                      ? err.message
-                      : "Unable to upload profile picture."
-                  );
-                }
-
-                e.target.value = "";
-              }}
             />
 
             {showCropper && cropImage && (
@@ -787,7 +698,7 @@ export default function ProfilePage() {
                           setError("");
                           setMessage(
                             "Preparing profile picture..."
-                          );
+                                                    );
 
                           if (!croppedAreaPixels) {
                             throw new Error(
@@ -954,11 +865,11 @@ export default function ProfilePage() {
                       onCropChange={setCrop}
                       onZoomChange={setZoom}
                       onCropComplete={(
-                        _,
-                        pixels
+                        _croppedArea: Area,
+                        croppedAreaPixels: Area
                       ) =>
                         setCroppedAreaPixels(
-                          pixels
+                          croppedAreaPixels
                         )
                       }
                     />
@@ -1137,7 +1048,7 @@ export default function ProfilePage() {
                 type="date"
                 value={form.dateOfBirth}
                 onChange={(e) =>
-                  updateField(
+                                   updateField(
                     "dateOfBirth",
                     e.target.value
                   )
@@ -1457,4 +1368,4 @@ export default function ProfilePage() {
       </div>
     </main>
   );
-}
+                                     }
