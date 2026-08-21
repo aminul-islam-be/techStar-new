@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getCustomerUserId } from "@/lib/customerAuth";
 import LocationCurrencySelector from "@/components/LocationCurrencySelector";
 
@@ -19,6 +20,14 @@ type Product = {
   active?: boolean;
 };
 
+type Banner = {
+  _id: string;
+  title?: string;
+  type: "image" | "video";
+  mediaUrl: string;
+  linkUrl?: string;
+};
+
 const categories = [
   ["⚡", "Electrical", "Switches, breakers & wiring"],
   ["◉", "Electronics", "Components & modules"],
@@ -29,13 +38,37 @@ const categories = [
 ];
 
 export default function Home() {
+  const router = useRouter();
+
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productError, setProductError] = useState("");
   const [addingId, setAddingId] = useState("");
+  const [buyingId, setBuyingId] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [message, setMessage] = useState("");
+
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [currentBanner, setCurrentBanner] = useState(0);
+
+  async function loadBanners() {
+    try {
+      const response = await fetch("/api/banners", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setBanners(
+          Array.isArray(data.banners) ? data.banners : []
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   async function loadProducts(query = "") {
     try {
@@ -107,6 +140,7 @@ export default function Home() {
   useEffect(() => {
     loadProducts();
     loadCartCount();
+    loadBanners();
   }, []);
 
   async function handleSearch() {
@@ -120,6 +154,18 @@ export default function Home() {
       handleSearch();
     }
   }
+  useEffect(() => {
+    if (banners.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrentBanner(
+        (current) => (current + 1) % banners.length
+      );
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [banners.length]);
+
   async function addToCart(product: Product) {
     const userId = getCustomerUserId();
 
@@ -185,6 +231,57 @@ export default function Home() {
   const visibleProducts = search.trim()
     ? products
     : products;
+
+  async function buyNow(product: Product) {
+    const userId = getCustomerUserId();
+
+    if (!userId) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (product.stock <= 0) {
+      setMessage("This product is out of stock.");
+      return;
+    }
+
+    try {
+      setBuyingId(product._id);
+      setMessage("");
+
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": userId,
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: 1,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Unable to process order."
+        );
+      }
+
+      router.push("/checkout");
+    } catch (error) {
+      console.error(error);
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to process order."
+      );
+    } finally {
+      setBuyingId("");
+    }
+  }
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
@@ -360,6 +457,77 @@ export default function Home() {
         </div>
       </section>
 
+      {banners.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+          <div className="relative aspect-video w-full overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900">
+            {banners.map((banner, index) => {
+              const isActive = index === currentBanner;
+
+              const media =
+                banner.type === "video" ? (
+                  <video
+                    src={banner.mediaUrl}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={banner.mediaUrl}
+                    alt={banner.title || "Banner"}
+                    className="h-full w-full object-cover"
+                  />
+                );
+
+              return (
+                <div
+                  key={banner._id}
+                  className={`absolute inset-0 transition-opacity duration-700 ${
+                    isActive
+                      ? "opacity-100"
+                      : "pointer-events-none opacity-0"
+                  }`}
+                >
+                  {banner.linkUrl ? (
+                    <Link
+                      href={banner.linkUrl}
+                      className="block h-full w-full"
+                    >
+                      {media}
+                    </Link>
+                  ) : (
+                    media
+                  )}
+                </div>
+              );
+            })}
+
+            {banners.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+                {banners.map((banner, index) => (
+                  <button
+                    key={banner._id}
+                    onClick={() =>
+                      setCurrentBanner(index)
+                    }
+                    className={`h-2 rounded-full transition-all ${
+                      index === currentBanner
+                        ? "w-6 bg-white"
+                        : "w-2 bg-white/40"
+                    }`}
+                    aria-label={`Go to banner ${
+                      index + 1
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       <section
         id="categories"
         className="border-y border-white/[0.07] bg-white/[0.018]"
@@ -522,11 +690,14 @@ export default function Home() {
             )}
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {visibleProducts.map((product) => (
               <article
                 key={product._id}
-                className="group overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/70 transition duration-300 hover:-translate-y-1 hover:border-blue-500/30 hover:bg-slate-900"
+                onClick={() =>
+                  router.push(`/products/${product.slug}`)
+                }
+                className="group cursor-pointer overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/70 transition duration-300 hover:-translate-y-1 hover:border-blue-500/30 hover:bg-slate-900"
               >
                 <div className="relative h-56 overflow-hidden bg-slate-950">
                   {product.image ? (
@@ -585,24 +756,45 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => addToCart(product)}
-                    disabled={
-                      product.stock <= 0 ||
-                      addingId === product._id
-                    }
-                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/10 transition hover:bg-blue-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {addingId === product._id ? (
-                      "Adding..."
-                    ) : product.stock <= 0 ? (
-                      "Out of Stock"
-                    ) : (
-                      <>
-                        🛒 Add to Cart
-                      </>
-                    )}
-                  </button>
+                  <div className="mt-5 flex items-center gap-2">
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        addToCart(product);
+                      }}
+                      disabled={
+                        product.stock <= 0 ||
+                        addingId === product._id ||
+                        buyingId === product._id
+                      }
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-800 px-3 py-3 text-xs font-bold text-white shadow-lg transition hover:bg-slate-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+                    >
+                      {addingId === product._id ? (
+                        "Adding..."
+                      ) : product.stock <= 0 ? (
+                        "Out of Stock"
+                      ) : (
+                        <>🛒 Add to Cart</>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        buyNow(product);
+                      }}
+                      disabled={
+                        product.stock <= 0 ||
+                        addingId === product._id ||
+                        buyingId === product._id
+                      }
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-3 text-xs font-bold text-white shadow-lg shadow-blue-600/10 transition hover:bg-blue-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+                    >
+                      {buyingId === product._id
+                        ? "Processing..."
+                        : "Buy Now"}
+                    </button>
+                  </div>
                 </div>
               </article>
             ))}
