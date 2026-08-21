@@ -41,6 +41,43 @@ export default function Home() {
   const router = useRouter();
 
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const touchStartX = useRef<number | null>(null);
+
+  function handleBannerTouchStart(
+    event: React.TouchEvent
+  ) {
+    touchStartX.current = event.touches[0].clientX;
+  }
+
+  function handleBannerTouchEnd(
+    event: React.TouchEvent
+  ) {
+    if (touchStartX.current === null) return;
+    if (banners.length <= 1) {
+      touchStartX.current = null;
+      return;
+    }
+
+    const deltaX =
+      event.changedTouches[0].clientX -
+      touchStartX.current;
+
+    const SWIPE_THRESHOLD = 50;
+
+    if (deltaX > SWIPE_THRESHOLD) {
+      setCurrentBanner(
+        (current) =>
+          (current - 1 + banners.length) %
+          banners.length
+      );
+    } else if (deltaX < -SWIPE_THRESHOLD) {
+      setCurrentBanner(
+        (current) => (current + 1) % banners.length
+      );
+    }
+
+    touchStartX.current = null;
+  }
 
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
@@ -484,7 +521,11 @@ export default function Home() {
 
       {banners.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
-          <div className="relative aspect-video w-full overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900">
+          <div
+            onTouchStart={handleBannerTouchStart}
+            onTouchEnd={handleBannerTouchEnd}
+            className="relative aspect-video w-full touch-pan-y overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900"
+          >
             {banners.map((banner, index) => {
               const isActive = index === currentBanner;
 
