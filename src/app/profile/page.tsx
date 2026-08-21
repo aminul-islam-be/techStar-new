@@ -968,7 +968,7 @@ export default function ProfilePage() {
                     <img
                       src={form.profilePicture}
                       alt="Profile picture"
-                      className="h-full w-full rounded-2xl object-cover"
+                      className="h-full w-full rounded-2xl object-contain bg-black"
                     />
                   </div>
 
