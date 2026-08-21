@@ -567,19 +567,38 @@ export default function ProfilePage() {
     );
   }
 
+  function getWatermarkedDownloadUrl(url: string) {
+    if (!url) return url;
+
+    return url.replace(
+      "/upload/",
+      "/upload/l_text:Arial_60_bold:techStar,co_white,g_south,y_30,o_85/"
+    );
+  }
+
   async function downloadProfilePicture() {
     if (!form.profilePicture) return;
 
     try {
       setDownloadingPicture(true);
 
-      const response = await fetch(form.profilePicture);
+      const downloadUrl = getWatermarkedDownloadUrl(
+        form.profilePicture
+      );
+
+      const response = await fetch(downloadUrl);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
 
       const link = document.createElement("a");
       link.href = url;
-      link.download = "profile-picture.jpg";
+
+      const safeName = form.fullName
+        ? form.fullName.trim().replace(/\s+/g, "_")
+        : "profile";
+
+      link.download = `techStar_${safeName}.jpg`;
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
