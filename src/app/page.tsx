@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCustomerUserId } from "@/lib/customerAuth";
@@ -39,6 +39,10 @@ const categories = [
 
 export default function Home() {
   const router = useRouter();
+
+  const videoRefs = useRef
+    Record<string, HTMLVideoElement | null>
+  >({});
 
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
@@ -169,6 +173,25 @@ export default function Home() {
 
     return () => clearInterval(timer);
   }, [banners, currentBanner]);
+
+  useEffect(() => {
+    const activeBanner = banners[currentBanner];
+
+    if (!activeBanner) return;
+
+    Object.entries(videoRefs.current).forEach(
+      ([id, videoEl]) => {
+        if (!videoEl) return;
+
+        if (id === activeBanner._id) {
+          videoEl.currentTime = 0;
+          videoEl.play().catch(() => {});
+        } else {
+          videoEl.pause();
+        }
+      }
+    );
+  }, [currentBanner, banners]);
 
   async function addToCart(product: Product) {
     const userId = getCustomerUserId();
@@ -479,8 +502,12 @@ export default function Home() {
                   {banner.type === "video" ? (
                     <>
                       <video
+                        ref={(el) => {
+                          videoRefs.current[
+                            banner._id
+                          ] = el;
+                        }}
                         src={banner.mediaUrl}
-                        autoPlay={isActive}
                         muted
                         controls
                         playsInline
