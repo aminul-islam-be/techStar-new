@@ -40,9 +40,7 @@ const categories = [
 export default function Home() {
   const router = useRouter();
 
-  const videoRefs = useRef
-    Record<string, HTMLVideoElement | null>
-  >({});
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   const [search, setSearch] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
