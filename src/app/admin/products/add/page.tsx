@@ -24,6 +24,7 @@ export default function AddProductPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   function updateField(
     field: string,
@@ -33,6 +34,207 @@ export default function AddProductPage() {
       ...current,
       [field]: value,
     }));
+  }
+
+  async function compressProductImage(
+    file: File
+  ): Promise<File> {
+    const MAX_SIZE = 145 * 1024;
+
+    const imageUrl = URL.createObjectURL(file);
+
+    try {
+      const image = await new Promise<HTMLImageElement>(
+        (resolve, reject) => {
+          const img = new Image();
+
+          img.onload = () => resolve(img);
+          img.onerror = () =>
+            reject(new Error("Unable to read image."));
+
+          img.src = imageUrl;
+        }
+      );
+
+      const squareSize = Math.min(
+        image.naturalWidth,
+        image.naturalHeight
+      );
+
+      const sourceX =
+        (image.naturalWidth - squareSize) / 2;
+
+      const sourceY =
+        (image.naturalHeight - squareSize) / 2;
+
+      const maxDimension = 1200;
+
+      const outputSize = Math.min(
+        squareSize,
+        maxDimension
+      );
+
+      const canvas = document.createElement("canvas");
+
+      canvas.width = outputSize;
+      canvas.height = outputSize;
+
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        throw new Error(
+          "Your browser does not support image compression."
+        );
+      }
+
+      context.clearRect(0, 0, outputSize, outputSize);
+
+      context.drawImage(
+        image,
+        sourceX,
+        sourceY,
+        squareSize,
+        squareSize,
+        0,
+        0,
+        outputSize,
+        outputSize
+      );
+
+      let quality = 0.88;
+
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const blob = await new Promise<Blob | null>(
+          (resolve) =>
+            canvas.toBlob(
+              resolve,
+              "image/jpeg",
+              quality
+            )
+        );
+
+        if (!blob) {
+          throw new Error("Unable to compress image.");
+        }
+
+        if (blob.size <= MAX_SIZE) {
+          return new File([blob], "product-image.jpg", {
+            type: "image/jpeg",
+          });
+        }
+
+        quality -= 0.07;
+
+        if (quality < 0.35) {
+          break;
+        }
+      }
+
+      const finalBlob = await new Promise<Blob | null>(
+        (resolve) =>
+          canvas.toBlob(resolve, "image/jpeg", 0.3)
+      );
+
+      if (!finalBlob) {
+        throw new Error("Unable to compress image.");
+      }
+
+      return new File([finalBlob], "product-image.jpg", {
+        type: "image/jpeg",
+      });
+    } finally {
+      URL.revokeObjectURL(imageUrl);
+    }
+  }
+
+  async function handleProductImageUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image must be smaller than 10 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      setError("");
+      setMessage("Preparing image...");
+
+      const compressedFile = await compressProductImage(
+        file
+      );
+
+      const cloudName =
+        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+      const uploadPreset =
+        process.env
+          .NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
+        "techstar_profiles";
+
+      if (!cloudName) {
+        throw new Error(
+          "Cloudinary cloud name is missing."
+        );
+      }
+
+      const formData = new FormData();
+
+      formData.append("file", compressedFile);
+      formData.append("upload_preset", uploadPreset);
+
+      setMessage("Uploading image...");
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const uploadData = await uploadResponse.json();
+
+      if (!uploadResponse.ok) {
+        throw new Error(
+          uploadData.error?.message ||
+            "Cloudinary upload failed."
+        );
+      }
+
+      const uploadedUrl = uploadData.secure_url;
+
+      const backgroundRemovedUrl = uploadedUrl.replace(
+        "/upload/",
+        "/upload/e_background_removal/"
+      );
+
+      updateField("image", backgroundRemovedUrl);
+
+      setMessage("Image uploaded successfully.");
+    } catch (err) {
+      setMessage("");
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to upload image."
+      );
+    } finally {
+      setUploadingImage(false);
+      event.target.value = "";
+    }
   }
 
   function makeSlug(value: string) {
@@ -374,21 +576,98 @@ export default function AddProductPage() {
           {/* Image */}
 
           <label style={labelStyle}>
-            Product Image URL
+            Product Image
           </label>
 
-          <input
-            type="url"
-            value={form.image}
-            onChange={(event) =>
-              updateField(
-                "image",
-                event.target.value
-              )
-            }
-            placeholder="https://example.com/product.jpg"
-            style={inputStyle}
-          />
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <input
+              type="url"
+              value={form.image}
+              onChange={(event) =>
+                updateField(
+                  "image",
+                  event.target.value
+                )
+              }
+              placeholder="https://example.com/product.jpg"
+              style={{ ...inputStyle, flex: 1 }}
+            />
+
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "13px 18px",
+                borderRadius: "10px",
+                background: uploadingImage
+                  ? "#1e3a8a"
+                  : "#2563eb",
+                color: "#ffffff",
+                fontWeight: 700,
+                fontSize: "14px",
+                cursor: uploadingImage
+                  ? "not-allowed"
+                  : "pointer",
+                whiteSpace: "nowrap",
+                opacity: uploadingImage ? 0.7 : 1,
+              }}
+            >
+              {uploadingImage
+                ? "Uploading..."
+                : "📷 Upload Picture"}
+
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleProductImageUpload}
+                disabled={uploadingImage}
+                style={{ display: "none" }}
+              />
+            </label>
+          </div>
+
+          <p
+            style={{
+              marginTop: "6px",
+              fontSize: "12px",
+              color: "#94a3b8",
+            }}
+          >
+            Uploaded pictures are automatically background-removed,
+            cropped to 1:1, and compressed under 150 KB.
+          </p>
+
+          {form.image && (
+            <div
+              style={{
+                marginTop: "12px",
+                width: "120px",
+                height: "120px",
+                borderRadius: "12px",
+                overflow: "hidden",
+                border: "1px solid #334155",
+                background: "#000000",
+              }}
+            >
+              <img
+                src={form.image}
+                alt="Product preview"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            </div>
+          )}
 
           {/* Options */}
 
