@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   getCustomerUserId,
 } from "@/lib/customerAuth";
+import { useCurrency } from "@/lib/useCurrency";
 
 type CartItem = {
   productId: string;
@@ -19,6 +20,12 @@ type CartData = {
 };
 
 export default function CartPage() {
+  const {
+    currency,
+    symbol,
+    format,
+  } = useCurrency();
+
   const [cart, setCart] = useState<CartData>({
     items: [],
   });
@@ -343,8 +350,7 @@ export default function CartPage() {
                       </h2>
 
                       <p className="mt-2 text-sm text-slate-400">
-                        ৳{item.price.toLocaleString()}
-                        {" "}each
+                        {format(item.price)} each
                       </p>
 
                       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -403,10 +409,7 @@ export default function CartPage() {
 
                     <div className="hidden text-right sm:block">
                       <p className="text-lg font-extrabold">
-                        ৳
-                        {(
-                          item.price * item.quantity
-                        ).toLocaleString()}
+                        {format(item.price * item.quantity)}
                       </p>
                     </div>
                   </div>
@@ -417,10 +420,7 @@ export default function CartPage() {
                     </span>
 
                     <span className="font-bold">
-                      ৳
-                      {(
-                        item.price * item.quantity
-                      ).toLocaleString()}
+                      {format(item.price * item.quantity)}
                     </span>
                   </div>
                 </div>
@@ -440,7 +440,7 @@ export default function CartPage() {
                 <div className="flex justify-between text-slate-400">
                   <span>Subtotal</span>
                   <span>
-                    ৳{subtotal.toLocaleString()}
+                    {format(subtotal)}
                   </span>
                 </div>
 
@@ -456,7 +456,7 @@ export default function CartPage() {
                     </span>
 
                     <span className="text-xl font-extrabold">
-                      ৳{subtotal.toLocaleString()}
+                      {format(subtotal)}
                     </span>
                   </div>
                 </div>

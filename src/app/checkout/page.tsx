@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getCustomerUser } from "@/lib/customerAuth";
+import { useCurrency } from "@/lib/useCurrency";
 
 type CartItem = {
   productId: string;
@@ -27,6 +28,8 @@ type FormData = {
 };
 
 export default function CheckoutPage() {
+  const { format } = useCurrency();
+
   const [cart, setCart] = useState<CartData>({
     items: [],
   });
@@ -602,16 +605,12 @@ export default function CheckoutPage() {
                     </p>
 
                     <p className="mt-1 text-xs text-slate-500">
-                      {item.quantity} × ৳
-                      {item.price.toLocaleString()}
+                      {item.quantity} × {format(item.price)}
                     </p>
                   </div>
 
                   <div className="text-sm font-bold">
-                    ৳
-                    {(
-                      item.price * item.quantity
-                    ).toLocaleString()}
+                    {format(item.price * item.quantity)}
                   </div>
                 </div>
               ))}
@@ -625,7 +624,7 @@ export default function CheckoutPage() {
 
               <div className="flex justify-between text-slate-400">
                 <span>Subtotal</span>
-                <span>৳{subtotal.toLocaleString()}</span>
+                <span>{format(subtotal)}</span>
               </div>
 
               <div className="flex justify-between text-slate-400">
@@ -639,7 +638,7 @@ export default function CheckoutPage() {
                 </span>
 
                 <span className="text-xl font-extrabold">
-                  ৳{subtotal.toLocaleString()}
+                  {format(subtotal)}
                 </span>
               </div>
             </div>

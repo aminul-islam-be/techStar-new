@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useCurrency } from "@/lib/useCurrency";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCustomerUserId } from "@/lib/customerAuth";
@@ -38,6 +39,7 @@ const categories = [
 ];
 
 export default function Home() {
+  const { format } = useCurrency();
   const router = useRouter();
 
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});

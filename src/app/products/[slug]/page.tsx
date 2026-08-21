@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use as usePromise } from "react";
+import { useCurrency } from "@/lib/useCurrency";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCustomerUserId } from "@/lib/customerAuth";
@@ -24,6 +25,7 @@ export default function ProductDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const { format } = useCurrency();
   const { slug } = usePromise(params);
   const router = useRouter();
 

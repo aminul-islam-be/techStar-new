@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getCustomerUser } from "@/lib/customerAuth";
+import { useCurrency } from "@/lib/useCurrency";
 
 type OrderItem = {
   productId: string;
@@ -36,6 +37,7 @@ type Order = {
 };
 
 export default function OrdersPage() {
+  const { format } = useCurrency();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -280,20 +282,13 @@ export default function OrdersPage() {
                           </p>
 
                           <p className="mt-1 text-xs text-slate-500">
-                            Unit price: ৳
-                            {Number(
-                              item.price
-                            ).toLocaleString()}
+                            Unit price: {format(Number(item.price))}
                           </p>
                         </div>
 
                         <div className="shrink-0 text-right">
                           <p className="text-sm font-extrabold">
-                            ৳
-                            {(
-                              Number(item.price) *
-                              Number(item.quantity)
-                            ).toLocaleString()}
+                            {format(Number(item.price) * Number(item.quantity))}
                           </p>
                         </div>
                       </div>
@@ -344,10 +339,7 @@ export default function OrdersPage() {
                         </span>
 
                         <span className="text-xl font-extrabold">
-                          ৳
-                          {Number(
-                            order.totalAmount
-                          ).toLocaleString()}
+                          {format(Number(order.totalAmount))}
                         </span>
                       </div>
                     </div>
