@@ -406,6 +406,8 @@ export default function ProfilePage() {
   const [showCropper, setShowCropper] = useState(false);
   const [uploadingPicture, setUploadingPicture] =
     useState(false);
+  const [downloadingPicture, setDownloadingPicture] =
+    useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -553,6 +555,31 @@ export default function ProfilePage() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function downloadProfilePicture() {
+    if (!form.profilePicture) return;
+
+    try {
+      setDownloadingPicture(true);
+
+      const response = await fetch(form.profilePicture);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "profile-picture.jpg";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError("Unable to download profile picture.");
+    } finally {
+      setDownloadingPicture(false);
     }
   }
 
@@ -922,7 +949,7 @@ export default function ProfilePage() {
                 onClick={() => setShowPicture(false)}
               >
                 <div
-                  className="relative w-full max-w-lg"
+                  className="relative w-full max-w-sm"
                   onClick={(event) =>
                     event.stopPropagation()
                   }
@@ -937,29 +964,42 @@ export default function ProfilePage() {
                     ✕
                   </button>
 
-                  <div className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-2 shadow-2xl">
+                  <div className="aspect-square w-full overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-2 shadow-2xl">
                     <img
                       src={form.profilePicture}
                       alt="Profile picture"
-                      className="max-h-[70vh] w-full rounded-2xl object-contain"
+                      className="h-full w-full rounded-2xl object-cover"
                     />
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowPicture(false);
+                  <div className="mt-4 flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPicture(false);
 
-                      document
-                        .getElementById(
-                          "profile-picture"
-                        )
-                        ?.click();
-                    }}
-                    className="mx-auto mt-4 flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-500"
-                  >
-                    📷 Change Picture
-                  </button>
+                        document
+                          .getElementById(
+                            "profile-picture"
+                          )
+                          ?.click();
+                      }}
+                      className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-500"
+                    >
+                      📷 Change
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={downloadingPicture}
+                      onClick={downloadProfilePicture}
+                      className="flex items-center gap-2 rounded-xl bg-slate-700 px-5 py-3 text-sm font-bold text-white hover:bg-slate-600 disabled:opacity-50"
+                    >
+                      {downloadingPicture
+                        ? "Downloading..."
+                        : "⬇️ Download"}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
