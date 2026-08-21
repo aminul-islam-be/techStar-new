@@ -157,6 +157,10 @@ export default function Home() {
   useEffect(() => {
     if (banners.length <= 1) return;
 
+    const activeBanner = banners[currentBanner];
+
+    if (activeBanner?.type === "video") return;
+
     const timer = setInterval(() => {
       setCurrentBanner(
         (current) => (current + 1) % banners.length
@@ -164,7 +168,7 @@ export default function Home() {
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [banners.length]);
+  }, [banners, currentBanner]);
 
   async function addToCart(product: Product) {
     const userId = getCustomerUserId();
@@ -463,24 +467,6 @@ export default function Home() {
             {banners.map((banner, index) => {
               const isActive = index === currentBanner;
 
-              const media =
-                banner.type === "video" ? (
-                  <video
-                    src={banner.mediaUrl}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <img
-                    src={banner.mediaUrl}
-                    alt={banner.title || "Banner"}
-                    className="h-full w-full object-cover"
-                  />
-                );
-
               return (
                 <div
                   key={banner._id}
@@ -490,15 +476,50 @@ export default function Home() {
                       : "pointer-events-none opacity-0"
                   }`}
                 >
-                  {banner.linkUrl ? (
+                  {banner.type === "video" ? (
+                    <>
+                      <video
+                        src={banner.mediaUrl}
+                        autoPlay={isActive}
+                        muted
+                        controls
+                        playsInline
+                        onEnded={() =>
+                          setCurrentBanner(
+                            (current) =>
+                              (current + 1) %
+                              banners.length
+                          )
+                        }
+                        className="h-full w-full object-cover"
+                      />
+
+                      {banner.linkUrl && (
+                        <Link
+                          href={banner.linkUrl}
+                          className="absolute bottom-4 right-4 z-10 rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-500"
+                        >
+                          Learn more →
+                        </Link>
+                      )}
+                    </>
+                  ) : banner.linkUrl ? (
                     <Link
                       href={banner.linkUrl}
                       className="block h-full w-full"
                     >
-                      {media}
+                      <img
+                        src={banner.mediaUrl}
+                        alt={banner.title || "Banner"}
+                        className="h-full w-full object-cover"
+                      />
                     </Link>
                   ) : (
-                    media
+                    <img
+                      src={banner.mediaUrl}
+                      alt={banner.title || "Banner"}
+                      className="h-full w-full object-cover"
+                    />
                   )}
                 </div>
               );
