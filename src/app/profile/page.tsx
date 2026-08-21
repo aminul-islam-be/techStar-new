@@ -558,6 +558,15 @@ export default function ProfilePage() {
     }
   }
 
+  function getFaceCroppedUrl(url: string) {
+    if (!url) return url;
+
+    return url.replace(
+      "/upload/",
+      "/upload/c_fill,g_face,ar_1:1,z_0.85,q_auto,f_auto/"
+    );
+  }
+
   async function downloadProfilePicture() {
     if (!form.profilePicture) return;
 
@@ -628,7 +637,7 @@ export default function ProfilePage() {
 
               {form.profilePicture ? (
                 <img
-                  src={form.profilePicture}
+                  src={getFaceCroppedUrl(form.profilePicture)}
                   alt="Profile"
                   className="h-full w-full object-cover"
                 />
@@ -966,9 +975,9 @@ export default function ProfilePage() {
 
                   <div className="aspect-square w-full overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-2 shadow-2xl">
                     <img
-                      src={form.profilePicture}
+                      src={getFaceCroppedUrl(form.profilePicture)}
                       alt="Profile picture"
-                      className="h-full w-full rounded-2xl object-contain bg-black"
+                      className="h-full w-full rounded-2xl object-cover"
                     />
                   </div>
 
