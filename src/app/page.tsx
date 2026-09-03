@@ -6,6 +6,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCustomerUserId } from "@/lib/customerAuth";
 import LocationCurrencySelector from "@/components/LocationCurrencySelector";
+import SideMenu from "@/components/SideMenu";
+import FilterSortModal, {
+  type SortOrder,
+} from "@/components/FilterSortModal";
+import BottomNav from "@/components/BottomNav";
 
 type Product = {
   _id: string;
@@ -29,14 +34,7 @@ type Banner = {
   linkUrl?: string;
 };
 
-const categories = [
-  ["⚡", "Electrical", "Switches, breakers & wiring"],
-  ["◉", "Electronics", "Components & modules"],
-  ["✦", "Lighting", "LEDs, bulbs & fixtures"],
-  ["◈", "Automation", "Smart control & IoT"],
-  ["⌁", "Tools", "Professional equipment"],
-  ["⌘", "Accessories", "Useful tech accessories"],
-];
+import { categories } from "@/lib/categories";
 
 export default function Home() {
   const { format } = useCurrency();
@@ -92,6 +90,15 @@ export default function Home() {
 
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentBanner, setCurrentBanner] = useState(0);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [wishlistBusyId, setWishlistBusyId] = useState("");
 
   async function loadBanners() {
     try {
@@ -178,9 +185,115 @@ export default function Home() {
     }
   }
 
+  async function loadWishlist() {
+    const userId = getCustomerUserId();
+
+    if (!userId) {
+      setWishlistIds(new Set());
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/wishlist", {
+        headers: {
+          "x-user-id": userId,
+        },
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setWishlistIds(
+          new Set(
+            (data.products || []).map(
+              (product: { _id: string }) => product._id
+            )
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Wishlist load error:", error);
+    }
+  }
+
+  async function toggleWishlist(
+    product: Product,
+    event: React.MouseEvent
+  ) {
+    event.stopPropagation();
+
+    const userId = getCustomerUserId();
+
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+
+    const isSaved = wishlistIds.has(product._id);
+
+    setWishlistBusyId(product._id);
+
+    try {
+      if (isSaved) {
+        await fetch(
+          `/api/wishlist?productId=${product._id}`,
+          {
+            method: "DELETE",
+            headers: { "x-user-id": userId },
+          }
+        );
+
+        setWishlistIds((prev) => {
+          const next = new Set(prev);
+          next.delete(product._id);
+          return next;
+        });
+      } else {
+        await fetch("/api/wishlist", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": userId,
+          },
+          body: JSON.stringify({ productId: product._id }),
+        });
+
+        setWishlistIds((prev) => {
+          const next = new Set(prev);
+          next.add(product._id);
+          return next;
+        });
+      }
+    } catch (error) {
+      console.error("Wishlist toggle error:", error);
+    } finally {
+      setWishlistBusyId("");
+    }
+  }
+
   useEffect(() => {
-    loadProducts();
+    const pendingCategory =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("techstar_pending_category")
+        : null;
+
+    if (pendingCategory) {
+      sessionStorage.removeItem("techstar_pending_category");
+      setSearch(pendingCategory);
+      loadProducts(pendingCategory);
+
+      setTimeout(() => {
+        document
+          .getElementById("products")
+          ?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    } else {
+      loadProducts();
+    }
+
     loadCartCount();
+    loadWishlist();
     loadBanners();
   }, []);
 
@@ -292,9 +405,35 @@ export default function Home() {
     return products.filter((product) => product.featured);
   }, [products]);
 
-  const visibleProducts = search.trim()
-    ? products
-    : products;
+  const productCategories = useMemo(() => {
+    const unique = new Set(
+      products
+        .map((product) => product.category?.trim())
+        .filter((value): value is string => Boolean(value))
+    );
+    return Array.from(unique).sort();
+  }, [products]);
+
+  const visibleProducts = useMemo(() => {
+    let list = [...products];
+
+    if (categoryFilter !== "all") {
+      list = list.filter(
+        (product) => product.category === categoryFilter
+      );
+    }
+
+    if (sortOrder === "low") {
+      list.sort((a, b) => a.price - b.price);
+    } else if (sortOrder === "high") {
+      list.sort((a, b) => b.price - a.price);
+    }
+
+    return list;
+  }, [products, categoryFilter, sortOrder]);
+
+  const activeFilterCount =
+    (sortOrder ? 1 : 0) + (categoryFilter !== "all" ? 1 : 0);
 
   async function buyNow(product: Product) {
     const userId = getCustomerUserId();
@@ -348,7 +487,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
+    <main className="min-h-screen overflow-x-hidden bg-slate-950 pb-20 text-white sm:pb-0">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-2xl">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
 
@@ -429,12 +568,30 @@ export default function Home() {
               Sign In
             </Link>
 
-            <button className="ml-1 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-lg text-slate-300 transition hover:bg-white/10 lg:hidden">
+            <button
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+              className="ml-1 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-lg text-slate-300 transition hover:bg-white/10"
+            >
               ☰
             </button>
           </div>
         </div>
       </header>
+
+      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      <FilterSortModal
+        open={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        categories={productCategories}
+        sortOrder={sortOrder}
+        selectedCategory={categoryFilter}
+        onApply={(nextSort, nextCategory) => {
+          setSortOrder(nextSort);
+          setCategoryFilter(nextCategory);
+        }}
+      />
       <section className="relative isolate overflow-hidden">
         <div className="pointer-events-none absolute -left-32 top-0 h-[420px] w-[420px] rounded-full bg-blue-600/15 blur-[110px]" />
         <div className="pointer-events-none absolute -right-32 top-20 h-[380px] w-[380px] rounded-full bg-indigo-600/10 blur-[110px]" />
@@ -687,14 +844,29 @@ export default function Home() {
               </p>
             </div>
 
-            {!loadingProducts && products.length > 0 && (
-              <div className="text-xs font-semibold text-slate-500">
-                {products.length}{" "}
-                {products.length === 1
-                  ? "product"
-                  : "products"}
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {!loadingProducts && products.length > 0 && (
+                <div className="text-xs font-semibold text-slate-500">
+                  {visibleProducts.length}{" "}
+                  {visibleProducts.length === 1
+                    ? "product"
+                    : "products"}
+                </div>
+              )}
+
+              <button
+                onClick={() => setFilterModalOpen(true)}
+                className="relative flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-bold text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
+              >
+                <span>⚙️</span>
+                Filter & Sort
+                {activeFilterCount > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-black text-white">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -805,11 +977,32 @@ export default function Home() {
                     {product.category}
                   </div>
 
-                  {product.featured && (
-                    <div className="absolute right-3 top-3 rounded-full bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-lg">
-                      Featured
-                    </div>
-                  )}
+                  <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
+                    <button
+                      onClick={(event) =>
+                        toggleWishlist(product, event)
+                      }
+                      disabled={
+                        wishlistBusyId === product._id
+                      }
+                      aria-label="Toggle wishlist"
+                      className={`flex h-9 w-9 items-center justify-center rounded-full border text-base shadow-lg backdrop-blur transition disabled:opacity-60 ${
+                        wishlistIds.has(product._id)
+                          ? "border-red-500/40 bg-red-500/20"
+                          : "border-white/10 bg-slate-950/80 hover:bg-slate-900"
+                      }`}
+                    >
+                      {wishlistIds.has(product._id)
+                        ? "❤️"
+                        : "🤍"}
+                    </button>
+
+                    {product.featured && (
+                      <div className="rounded-full bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-lg">
+                        Featured
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="p-5">
@@ -965,7 +1158,7 @@ export default function Home() {
       <Link
         href="/cart"
         aria-label="Open Shopping Cart"
-        className="fixed bottom-5 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border border-blue-400/20 bg-blue-600 text-xl shadow-2xl shadow-blue-600/30 transition duration-300 hover:scale-105 hover:bg-blue-500 active:scale-95 sm:right-6"
+        className="fixed bottom-5 right-4 z-50 hidden h-14 w-14 items-center justify-center rounded-full border border-blue-400/20 bg-blue-600 text-xl shadow-2xl shadow-blue-600/30 transition duration-300 hover:scale-105 hover:bg-blue-500 active:scale-95 sm:flex sm:right-6"
       >
         🛒
 
@@ -975,6 +1168,8 @@ export default function Home() {
           </span>
         )}
       </Link>
+
+      <BottomNav cartCount={cartCount} />
     </main>
   );
 }
