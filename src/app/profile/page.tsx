@@ -5,6 +5,7 @@ import Link from "next/link";
 import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { getCustomerUser, saveCustomerUser } from "@/lib/customerAuth";
+import { getAllCountries } from "@/lib/locationCurrency";
 
 type ProfileData = {
   profilePicture: string;
@@ -24,102 +25,7 @@ type ProfileData = {
   study: string;
 };
 
-const countries = [
-  "Afghanistan",
-  "Albania",
-  "Algeria",
-  "Andorra",
-  "Angola",
-  "Antigua and Barbuda",
-  "Argentina",
-  "Armenia",
-  "Australia",
-  "Austria",
-  "Azerbaijan",
-  "Bahamas",
-  "Bahrain",
-  "Bangladesh",
-  "Barbados",
-  "Belarus",
-  "Belgium",
-  "Belize",
-  "Benin",
-  "Bhutan",
-  "Bolivia",
-  "Bosnia and Herzegovina",
-  "Botswana",
-  "Brazil",
-  "Brunei",
-  "Bulgaria",
-  "Burkina Faso",
-  "Burundi",
-  "Cambodia",
-  "Cameroon",
-  "Canada",
-  "Chad",
-  "Chile",
-  "China",
-  "Colombia",
-  "Costa Rica",
-  "Croatia",
-  "Cuba",
-  "Cyprus",
-  "Czechia",
-  "Denmark",
-  "Egypt",
-  "France",
-  "Germany",
-  "Ghana",
-  "Greece",
-  "Hungary",
-  "Iceland",
-  "India",
-  "Indonesia",
-  "Iran",
-  "Iraq",
-  "Ireland",
-  "Italy",
-  "Japan",
-  "Jordan",
-  "Kazakhstan",
-  "Kenya",
-  "Kuwait",
-  "Malaysia",
-  "Maldives",
-  "Mexico",
-  "Myanmar",
-  "Nepal",
-  "Netherlands",
-  "New Zealand",
-  "Nigeria",
-  "Norway",
-  "Oman",
-  "Pakistan",
-  "Philippines",
-  "Poland",
-  "Portugal",
-  "Qatar",
-  "Romania",
-  "Russia",
-  "Saudi Arabia",
-  "Singapore",
-  "South Africa",
-  "South Korea",
-  "Spain",
-  "Sri Lanka",
-  "Sweden",
-  "Switzerland",
-  "Thailand",
-  "Turkey",
-  "Ukraine",
-  "United Arab Emirates",
-  "United Kingdom",
-  "United States",
-  "Vietnam",
-  "Yemen",
-  "Zambia",
-  "Zimbabwe",
-];
+const countries = getAllCountries().map((c) => c.name);
 
 const divisions = [
   "Barishal",
@@ -632,7 +538,7 @@ export default function ProfilePage() {
           href="/"
           className="text-sm text-slate-400 hover:text-white"
         >
-          ← Back to Home
+          {"← Back to Home"}
         </Link>
 
         <div className="mt-5 flex flex-col items-center">

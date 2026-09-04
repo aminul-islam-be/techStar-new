@@ -223,7 +223,7 @@ export default function AdminOrdersPage() {
               textDecoration: "none",
             }}
           >
-            ← Admin Dashboard
+            {"← Admin Dashboard"}
           </Link>
         </header>
 

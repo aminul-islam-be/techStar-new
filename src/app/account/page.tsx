@@ -104,7 +104,7 @@ export default function AccountPage() {
             aria-label="Back"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white"
           >
-            ←
+            {"←"}
           </Link>
 
           <h1 className="text-lg font-bold">My Account</h1>

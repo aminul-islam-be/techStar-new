@@ -207,7 +207,7 @@ export default function AdminBannersPage() {
                 textDecoration: "none",
               }}
             >
-              ← Back to Dashboard
+              {"← Back to Dashboard"}
             </Link>
 
             <h1

@@ -267,7 +267,7 @@ export default function CartPage() {
               href="/"
               className="text-sm font-medium text-slate-400 transition hover:text-white"
             >
-              ← Continue Shopping
+              {"← Continue Shopping"}
             </Link>
 
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">

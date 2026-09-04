@@ -166,7 +166,7 @@ export default function AdminUsersPage() {
               textDecoration: "none",
             }}
           >
-            ← Admin Dashboard
+            {"← Admin Dashboard"}
           </Link>
         </header>
 

@@ -273,7 +273,7 @@ export default function AdminProductsPage() {
                 fontWeight: 700,
               }}
             >
-              ← Admin
+              {"← Admin"}
             </Link>
           </div>
         </div>

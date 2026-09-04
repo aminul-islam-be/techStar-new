@@ -180,7 +180,7 @@ export default function ProductDetailPage({
             href="/"
             className="mt-6 inline-block rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white hover:bg-blue-500"
           >
-            ← Back to Home
+            {"← Back to Home"}
           </Link>
         </div>
       </main>
@@ -194,7 +194,7 @@ export default function ProductDetailPage({
           href="/"
           className="text-sm text-slate-400 hover:text-white"
         >
-          ← Back to Home
+          {"← Back to Home"}
         </Link>
 
         {message && (
@@ -228,8 +228,7 @@ export default function ProductDetailPage({
             </h1>
 
             <p className="mt-3 text-2xl font-bold text-blue-400">
-              {product.currency || "৳"}
-              {product.price}
+              {format(product.price)}
             </p>
 
             <p

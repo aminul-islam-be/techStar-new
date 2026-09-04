@@ -358,7 +358,7 @@ export default function AddProductPage() {
               fontWeight: 700,
             }}
           >
-            ← Products
+            {"← Products"}
           </Link>
         </div>
 
@@ -501,7 +501,7 @@ export default function AddProductPage() {
           >
             <div>
               <label style={labelStyle}>
-                Price *
+                Price (BDT) *
               </label>
 
               <input
@@ -526,28 +526,17 @@ export default function AddProductPage() {
                 Currency
               </label>
 
-              <select
-                value={form.currency}
-                onChange={(event) =>
-                  updateField(
-                    "currency",
-                    event.target.value
-                  )
-                }
-                style={inputStyle}
-              >
-                <option value="BDT">
-                  BDT
-                </option>
-
-                <option value="USD">
-                  USD
-                </option>
-
-                <option value="EUR">
-                  EUR
-                </option>
-              </select>
+              <input
+                type="text"
+                value="BDT"
+                disabled
+                readOnly
+                style={{
+                  ...inputStyle,
+                  opacity: 0.6,
+                  cursor: "not-allowed",
+                }}
+              />
             </div>
           </div>
 

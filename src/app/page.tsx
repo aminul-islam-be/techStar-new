@@ -648,7 +648,7 @@ export default function Home() {
                 </span>
 
                 <span className="text-base sm:hidden">
-                  →
+                  {"→"}
                 </span>
               </button>
             </div>
@@ -1018,10 +1018,7 @@ export default function Home() {
                   <div className="mt-4 flex items-end justify-between gap-3">
                     <div>
                       <div className="text-xl font-extrabold tracking-tight">
-                        {product.currency === "USD"
-                          ? "$"
-                          : "৳"}
-                        {product.price.toLocaleString()}
+                        {format(product.price)}
                       </div>
 
                       <div

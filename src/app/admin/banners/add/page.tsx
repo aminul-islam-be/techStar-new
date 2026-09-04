@@ -362,7 +362,7 @@ export default function AddBannerPage() {
             textDecoration: "none",
           }}
         >
-          ← Back to Banners
+          {"← Back to Banners"}
         </Link>
 
         <h1

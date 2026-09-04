@@ -270,7 +270,7 @@ export default function CheckoutPage() {
             href="/cart"
             className="text-sm font-medium text-slate-400 hover:text-white"
           >
-            ← Back to Cart
+            {"← Back to Cart"}
           </Link>
 
           <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
