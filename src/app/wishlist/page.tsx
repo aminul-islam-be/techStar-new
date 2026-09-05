@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCustomerUser } from "@/lib/customerAuth";
 import { useCurrency } from "@/lib/useCurrency";
+import { useLanguage } from "@/lib/language";
 
 type Product = {
   _id: string;
@@ -20,6 +21,7 @@ type Product = {
 export default function WishlistPage() {
   const router = useRouter();
   const { format } = useCurrency();
+  const { t } = useLanguage();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ export default function WishlistPage() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to load wishlist."
+          data.message || t("wishlist.unableToLoad")
         );
       }
 
@@ -62,7 +64,7 @@ export default function WishlistPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to load wishlist."
+          : t("wishlist.unableToLoad")
       );
     } finally {
       setLoading(false);
@@ -98,15 +100,15 @@ export default function WishlistPage() {
           href="/"
           className="text-sm font-medium text-slate-400 hover:text-white"
         >
-          {"← Continue Shopping"}
+          {`← ${t("settings.continueShopping")}`}
         </Link>
 
         <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-          উইশলিস্ট (Wishlist)
+          {t("wishlist.title")}
         </h1>
 
         <p className="mt-2 text-sm text-slate-400">
-          আপনার পছন্দের প্রোডাক্টগুলো এখানে সেভ আছে।
+          {t("wishlist.subtitle")}
         </p>
 
         {loading ? (
@@ -128,7 +130,7 @@ export default function WishlistPage() {
           <div className="mt-10 rounded-3xl border border-red-500/20 bg-red-500/[0.06] px-5 py-16 text-center">
             <div className="text-4xl">⚠️</div>
             <h3 className="mt-4 text-xl font-bold">
-              Unable to load wishlist
+              {t("wishlist.unableToLoadTitle")}
             </h3>
             <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
               {error}
@@ -138,17 +140,16 @@ export default function WishlistPage() {
           <div className="mt-12 flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-20 text-center">
             <div className="mb-4 text-5xl">❤️</div>
             <h2 className="text-lg font-bold text-white">
-              এখনো কোনো আইটেম যোগ করা হয়নি
+              {t("wishlist.noItemsYet")}
             </h2>
             <p className="mt-2 max-w-sm text-sm text-slate-400">
-              প্রোডাক্ট কার্ডে হার্ট আইকনে ট্যাপ করে যেকোনো প্রোডাক্ট
-              উইশলিস্টে যোগ করতে পারবেন।
+              {t("wishlist.hint")}
             </p>
             <Link
               href="/#products"
               className="mt-6 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500"
             >
-              প্রোডাক্ট দেখুন
+              {t("wishlist.viewProducts")}
             </Link>
           </div>
         ) : (
@@ -207,8 +208,8 @@ export default function WishlistPage() {
                       }`}
                     >
                       {product.stock > 0
-                        ? "In stock"
-                        : "Out of stock"}
+                        ? t("wishlist.inStock")
+                        : t("wishlist.outOfStock")}
                     </span>
                   </div>
 
@@ -216,7 +217,7 @@ export default function WishlistPage() {
                     href={`/products/${product.slug}`}
                     className="mt-4 block rounded-xl bg-slate-800 px-3 py-2.5 text-center text-xs font-bold text-white transition hover:bg-slate-700"
                   >
-                    View Product
+                    {t("wishlist.viewProduct")}
                   </Link>
                 </div>
               </article>

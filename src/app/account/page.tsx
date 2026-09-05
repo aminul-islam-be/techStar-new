@@ -3,46 +3,48 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getCustomerUser, type CustomerUser } from "@/lib/customerAuth";
+import { useLanguage } from "@/lib/language";
 
 type Order = {
   _id: string;
   status?: string;
 };
 
-const statusTabs: {
-  key: string;
-  label: string;
-  icon: string;
-}[] = [
-  { key: "pending", label: "Pending", icon: "💳" },
-  { key: "processing", label: "Processing", icon: "📦" },
-  { key: "shipped", label: "Shipped", icon: "🚚" },
-  { key: "delivered", label: "Delivered", icon: "✅" },
-];
-
-const quickLinks: {
-  icon: string;
-  label: string;
-  href: string;
-}[] = [
-  { icon: "❤️", label: "উইশলিস্ট (Wishlist)", href: "/wishlist" },
-  {
-    icon: "📍",
-    label: "ডেলিভারি ঠিকানা (Shipping Address)",
-    href: "/addresses",
-  },
-  { icon: "🎟️", label: "কুপন ও ভাউচার (Coupons)", href: "/coupons" },
-  {
-    icon: "💳",
-    label: "পেমেন্ট মেথড (Payment Methods)",
-    href: "/payment-methods",
-  },
-];
-
 export default function AccountPage() {
+  const { t } = useLanguage();
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const statusTabs: {
+    key: string;
+    label: string;
+    icon: string;
+  }[] = [
+    { key: "pending", label: t("orders.status.pending"), icon: "💳" },
+    { key: "processing", label: t("orders.status.processing"), icon: "📦" },
+    { key: "shipped", label: t("orders.status.shipped"), icon: "🚚" },
+    { key: "delivered", label: t("orders.status.delivered"), icon: "✅" },
+  ];
+
+  const quickLinks: {
+    icon: string;
+    label: string;
+    href: string;
+  }[] = [
+    { icon: "❤️", label: t("menu.wishlist"), href: "/wishlist" },
+    {
+      icon: "📍",
+      label: t("account.shippingAddress"),
+      href: "/addresses",
+    },
+    { icon: "🎟️", label: t("account.coupons"), href: "/coupons" },
+    {
+      icon: "💳",
+      label: t("account.paymentMethods"),
+      href: "/payment-methods",
+    },
+  ];
 
   useEffect(() => {
     const current = getCustomerUser();
@@ -107,7 +109,7 @@ export default function AccountPage() {
             {"←"}
           </Link>
 
-          <h1 className="text-lg font-bold">My Account</h1>
+          <h1 className="text-lg font-bold">{t("account.title")}</h1>
 
           <Link
             href="/settings"
@@ -135,7 +137,7 @@ export default function AccountPage() {
               href="/profile"
               className="mt-1 inline-block text-xs font-semibold text-blue-300 hover:text-blue-200"
             >
-              প্রোফাইল এডিট করুন →
+              {t("account.editProfile")}
             </Link>
           </div>
         </div>
@@ -146,14 +148,14 @@ export default function AccountPage() {
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <div className="mb-4 flex items-center justify-between">
             <div className="text-sm font-bold text-white">
-              আমার অর্ডারসমূহ
+              {t("account.myOrders")}
             </div>
 
             <Link
               href="/orders"
               className="text-xs font-semibold text-blue-300 hover:text-blue-200"
             >
-              View All
+              {t("common.viewAll")}
             </Link>
           </div>
 

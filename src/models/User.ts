@@ -17,6 +17,7 @@ export interface IUser {
   city?: string;
   office?: string;
   study?: string;
+  historyRetentionDays?: number;
   role: "customer" | "admin";
   active: boolean;
   createdAt?: Date;
@@ -105,6 +106,11 @@ const UserSchema = new Schema<IUser>(
       type: String,
       trim: true,
       default: "",
+    },
+    historyRetentionDays: {
+      type: Number,
+      enum: [1, 7, 30],
+      default: 30,
     },
     role: {
       type: String,

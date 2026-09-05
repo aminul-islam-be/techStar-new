@@ -11,6 +11,7 @@ import FilterSortModal, {
   type SortOrder,
 } from "@/components/FilterSortModal";
 import BottomNav from "@/components/BottomNav";
+import { useLanguage } from "@/lib/language";
 
 type Product = {
   _id: string;
@@ -39,6 +40,7 @@ import { categories } from "@/lib/categories";
 export default function Home() {
   const { format } = useCurrency();
   const router = useRouter();
+  const { t, language, toggleLanguage } = useLanguage();
 
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
   const touchStartX = useRef<number | null>(null);
@@ -135,7 +137,7 @@ export default function Home() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to load products."
+          data.message || t("home.unableToLoadProducts")
         );
       }
 
@@ -146,7 +148,7 @@ export default function Home() {
       setProductError(
         error instanceof Error
           ? error.message
-          : "Unable to load products."
+          : t("home.unableToLoadProducts")
       );
     } finally {
       setLoadingProducts(false);
@@ -376,7 +378,7 @@ export default function Home() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to add product to cart."
+          data.message || t("home.unableToAddToCart")
         );
       }
 
@@ -394,7 +396,7 @@ export default function Home() {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Unable to add product to cart."
+          : t("home.unableToAddToCart")
       );
     } finally {
       setAddingId("");
@@ -468,7 +470,7 @@ export default function Home() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to process order."
+          data.message || t("home.unableToProcessOrder")
         );
       }
 
@@ -479,7 +481,7 @@ export default function Home() {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Unable to process order."
+          : t("home.unableToProcessOrder")
       );
     } finally {
       setBuyingId("");
@@ -505,7 +507,7 @@ export default function Home() {
               </div>
 
               <div className="hidden text-[10px] font-medium tracking-[0.18em] text-slate-500 sm:block">
-                SMART MARKETPLACE
+                {t("home.tagline")}
               </div>
             </div>
           </Link>
@@ -515,36 +517,39 @@ export default function Home() {
               href="#"
               className="text-white transition hover:text-blue-400"
             >
-              Home
+              {t("nav.home")}
             </a>
 
             <a
               href="#products"
               className="transition hover:text-white"
             >
-              Products
+              {t("home.navProducts")}
             </a>
 
             <a
               href="#categories"
               className="transition hover:text-white"
             >
-              Categories
+              {t("menu.categories")}
             </a>
 
             <a
               href="#about"
               className="transition hover:text-white"
             >
-              About
+              {t("home.navAbout")}
             </a>
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
             <LocationCurrencySelector />
 
-            <button className="hidden rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white sm:block sm:px-3">
-              EN
+            <button
+              onClick={toggleLanguage}
+              className="hidden rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white sm:block sm:px-3"
+            >
+              {language === "en" ? "EN" : "বাং"}
             </button>
 
             <Link
@@ -565,7 +570,7 @@ export default function Home() {
               href="/login"
               className="ml-1 hidden rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-slate-200 sm:block"
             >
-              Sign In
+              {t("menu.signIn")}
             </Link>
 
             <button
@@ -601,21 +606,20 @@ export default function Home() {
           <div className="mb-7 flex justify-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/15 bg-blue-500/[0.08] px-4 py-2 text-xs font-semibold text-blue-300">
               <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-              Electrical & Electronics Marketplace
+              {t("home.heroBadge")}
             </div>
           </div>
 
           <div className="text-center">
             <h1 className="mx-auto max-w-5xl text-[42px] font-black leading-[1.02] tracking-[-0.045em] sm:text-6xl lg:text-7xl xl:text-[82px]">
-              Power your ideas.
+              {t("home.heroTitleLine1")}
               <span className="block bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent">
-                Build something better.
+                {t("home.heroTitleLine2")}
               </span>
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base sm:leading-7">
-              Discover electrical, electronics, automation, lighting and
-              technology products in one simple marketplace.
+              {t("home.heroSubtitle")}
             </p>
           </div>
 
@@ -644,7 +648,7 @@ export default function Home() {
                 className="shrink-0 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500 active:scale-[0.98] sm:px-6"
               >
                 <span className="hidden sm:inline">
-                  Search
+                  {t("home.searchButton")}
                 </span>
 
                 <span className="text-base sm:hidden">
@@ -657,13 +661,13 @@ export default function Home() {
               <span>English</span>
               <span>বাংলা</span>
               <span>Banglish</span>
-              <span>Smart search</span>
+              <span>{t("home.smartSearch")}</span>
             </div>
           </div>
 
           {search && (
             <p className="mt-4 text-center text-xs text-slate-500">
-              Searching for{" "}
+              {t("home.searchingFor")}{" "}
               <span className="font-semibold text-slate-300">
                 “{search}”
               </span>
@@ -671,9 +675,9 @@ export default function Home() {
           )}
 
           <div className="mx-auto mt-12 flex max-w-2xl flex-wrap justify-center gap-x-7 gap-y-3 text-xs text-slate-500">
-            <span>✓ Guest browsing</span>
-            <span>✓ Secure checkout</span>
-            <span>✓ Global language support</span>
+            <span>{t("home.guestBrowsing")}</span>
+            <span>{t("home.secureCheckout")}</span>
+            <span>{t("home.globalLanguageSupport")}</span>
           </div>
         </div>
       </section>
@@ -724,7 +728,7 @@ export default function Home() {
                           href={banner.linkUrl}
                           className="absolute bottom-4 right-4 z-10 rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-500"
                         >
-                          Learn more →
+                          {`${t("home.learnMore")} →`}
                         </Link>
                       )}
                     </>
@@ -782,11 +786,11 @@ export default function Home() {
 
           <div className="mb-8">
             <div className="mb-2 text-[11px] font-bold tracking-[0.2em] text-blue-400">
-              EXPLORE
+              {t("home.exploreLabel")}
             </div>
 
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Shop by category
+              {t("home.shopByCategory")}
             </h2>
           </div>
 
@@ -829,18 +833,17 @@ export default function Home() {
       >
         <div className="mb-8">
           <div className="mb-2 text-[11px] font-bold tracking-[0.2em] text-blue-400">
-            MARKETPLACE
+            {t("home.marketplaceLabel")}
           </div>
 
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                Products
+                {t("home.productsHeading")}
               </h2>
 
               <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                Browse the latest electrical, electronics and
-                automation products from TechStar.
+                {t("home.productsSubtitle")}
               </p>
             </div>
 
@@ -849,8 +852,8 @@ export default function Home() {
                 <div className="text-xs font-semibold text-slate-500">
                   {visibleProducts.length}{" "}
                   {visibleProducts.length === 1
-                    ? "product"
-                    : "products"}
+                    ? t("home.productSingular")
+                    : t("home.productPlural")}
                 </div>
               )}
 
@@ -859,7 +862,7 @@ export default function Home() {
                 className="relative flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-bold text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
               >
                 <span>⚙️</span>
-                Filter & Sort
+                {t("home.filterSort")}
                 {activeFilterCount > 0 && (
                   <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-black text-white">
                     {activeFilterCount}
@@ -878,7 +881,7 @@ export default function Home() {
               href="/cart"
               className="shrink-0 font-bold text-white hover:text-blue-300"
             >
-              View Cart →
+              {`${t("home.viewCart")} →`}
             </Link>
           </div>
         )}
@@ -906,7 +909,7 @@ export default function Home() {
             <div className="text-4xl">⚠️</div>
 
             <h3 className="mt-4 text-xl font-bold">
-              Unable to load products
+              {t("home.unableToLoadProductsTitle")}
             </h3>
 
             <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
@@ -917,7 +920,7 @@ export default function Home() {
               onClick={() => loadProducts(search)}
               className="mt-6 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-500"
             >
-              Try Again
+              {t("home.tryAgain")}
             </button>
           </div>
         ) : visibleProducts.length === 0 ? (
@@ -928,14 +931,14 @@ export default function Home() {
 
             <h3 className="mt-6 text-xl font-bold">
               {search
-                ? "No matching products"
-                : "No Products Available"}
+                ? t("home.noMatchingProducts")
+                : t("home.noProductsAvailable")}
             </h3>
 
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
               {search
-                ? `No products found for "${search}". Try another search.`
-                : "Products will appear here automatically when they are added by the TechStar administrator."}
+                ? `${t("home.noProductsFoundFor")} "${search}". ${t("home.tryAnotherSearch")}`
+                : t("home.productsWillAppear")}
             </p>
 
             {search && (
@@ -946,7 +949,7 @@ export default function Home() {
                 }}
                 className="mt-6 rounded-xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-bold text-white hover:bg-white/[0.08]"
               >
-                Show All Products
+                {t("home.showAllProducts")}
               </button>
             )}
           </div>
@@ -999,7 +1002,7 @@ export default function Home() {
 
                     {product.featured && (
                       <div className="rounded-full bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-lg">
-                        Featured
+                        {t("home.featured")}
                       </div>
                     )}
                   </div>
@@ -1012,7 +1015,7 @@ export default function Home() {
 
                   <p className="mt-2 line-clamp-2 min-h-[40px] text-xs leading-5 text-slate-500">
                     {product.description ||
-                      "Quality electrical and electronics product from TechStar."}
+                      t("home.defaultProductDescription")}
                   </p>
 
                   <div className="mt-4 flex items-end justify-between gap-3">
@@ -1029,8 +1032,8 @@ export default function Home() {
                         }`}
                       >
                         {product.stock > 0
-                          ? `${product.stock} in stock`
-                          : "Out of stock"}
+                          ? `${product.stock} ${t("home.inStock")}`
+                          : t("home.outOfStock")}
                       </div>
                     </div>
                   </div>
@@ -1049,11 +1052,11 @@ export default function Home() {
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-800 px-3 py-3 text-xs font-bold text-white shadow-lg transition hover:bg-slate-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
                     >
                       {addingId === product._id ? (
-                        "Adding..."
+                        t("home.adding")
                       ) : product.stock <= 0 ? (
-                        "Out of Stock"
+                        t("home.outOfStockBtn")
                       ) : (
-                        <>🛒 Add to Cart</>
+                        <>🛒 {t("common.addToCart")}</>
                       )}
                     </button>
 
@@ -1070,8 +1073,8 @@ export default function Home() {
                       className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-3 text-xs font-bold text-white shadow-lg shadow-blue-600/10 transition hover:bg-blue-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
                     >
                       {buyingId === product._id
-                        ? "Processing..."
-                        : "Buy Now"}
+                        ? t("home.processing")
+                        : t("common.buyNow")}
                     </button>
                   </div>
                 </div>
@@ -1092,12 +1095,11 @@ export default function Home() {
               </div>
 
               <h3 className="mt-5 font-bold">
-                Global experience
+                {t("home.featureGlobalTitle")}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Multiple languages and currencies designed
-                for customers around the world.
+                {t("home.featureGlobalDesc")}
               </p>
             </div>
 
@@ -1107,12 +1109,11 @@ export default function Home() {
               </div>
 
               <h3 className="mt-5 font-bold">
-                Secure shopping
+                {t("home.featureSecureTitle")}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Browse freely as a guest and sign in only when
-                you need to complete checkout.
+                {t("home.featureSecureDesc")}
               </p>
             </div>
 
@@ -1122,12 +1123,11 @@ export default function Home() {
               </div>
 
               <h3 className="mt-5 font-bold">
-                TechStar AI
+                {t("home.featureAiTitle")}
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                An AI assistant designed to understand English,
-                Bangla and Banglish.
+                {t("home.featureAiDesc")}
               </p>
             </div>
           </div>
@@ -1147,7 +1147,7 @@ export default function Home() {
           </div>
 
           <p className="text-xs text-slate-600">
-            © {new Date().getFullYear()} TechStar. All rights reserved.
+            © {new Date().getFullYear()} TechStar. {t("home.footerRights")}
           </p>
         </div>
       </footer>

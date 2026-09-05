@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { categories } from "@/lib/categories";
+import { useLanguage } from "@/lib/language";
 
 export default function CategoriesPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   function openCategory(name: string) {
     sessionStorage.setItem("techstar_pending_category", name);
@@ -25,7 +27,7 @@ export default function CategoriesPage() {
           </Link>
 
           <h1 className="text-xl font-extrabold tracking-tight">
-            Product Categories
+            {t("categories.title")}
           </h1>
         </div>
       </div>

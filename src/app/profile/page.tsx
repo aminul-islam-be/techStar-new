@@ -6,6 +6,7 @@ import Cropper from "react-easy-crop";
 import type { Area, Point } from "react-easy-crop";
 import { getCustomerUser, saveCustomerUser } from "@/lib/customerAuth";
 import { getAllCountries } from "@/lib/locationCurrency";
+import { useLanguage } from "@/lib/language";
 
 type ProfileData = {
   profilePicture: string;
@@ -315,6 +316,8 @@ export default function ProfilePage() {
   const [downloadingPicture, setDownloadingPicture] =
     useState(false);
 
+  const { t } = useLanguage();
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -511,7 +514,7 @@ export default function ProfilePage() {
 
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError("Unable to download profile picture.");
+      setError(t("profile.errorDownload"));
     } finally {
       setDownloadingPicture(false);
     }
@@ -523,7 +526,7 @@ export default function ProfilePage() {
         <div className="mx-auto max-w-xl text-center">
           <div className="text-5xl">👤</div>
           <h1 className="mt-5 text-2xl font-bold">
-            Loading profile...
+            {t("profile.loadingProfile")}
           </h1>
         </div>
       </main>
@@ -538,7 +541,7 @@ export default function ProfilePage() {
           href="/"
           className="text-sm text-slate-400 hover:text-white"
         >
-          {"← Back to Home"}
+          {`← ${t("profile.backToHome")}`}
         </Link>
 
         <div className="mt-5 flex flex-col items-center">
@@ -597,12 +600,12 @@ export default function ProfilePage() {
                 if (!file) return;
 
                 if (!file.type.startsWith("image/")) {
-                  setError("Please select an image file.");
+                  setError(t("profile.errorSelectImage"));
                   return;
                 }
 
                 if (file.size > 10 * 1024 * 1024) {
-                  setError("Image must be smaller than 10 MB.");
+                  setError(t("profile.errorImageTooLarge"));
                   return;
                 }
 
@@ -620,7 +623,7 @@ export default function ProfilePage() {
                   setError(
                     err instanceof Error
                       ? err.message
-                      : "Unable to prepare image."
+                      : t("profile.errorPrepareImage")
                   );
                 }
 
@@ -643,11 +646,11 @@ export default function ProfilePage() {
                       }}
                       className="text-sm font-semibold text-white"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
 
                     <h2 className="text-base font-bold text-white">
-                      Adjust Profile Picture
+                      {t("profile.cropperTitle")}
                     </h2>
 
                     <button
@@ -658,12 +661,12 @@ export default function ProfilePage() {
                           setUploadingPicture(true);
                           setError("");
                           setMessage(
-                            "Preparing profile picture..."
+                            t("profile.preparingPicture")
                                                     );
 
                           if (!croppedAreaPixels) {
                             throw new Error(
-                              "Please adjust the picture first."
+                              t("profile.errorAdjustFirst")
                             );
                           }
 
@@ -842,7 +845,7 @@ export default function ProfilePage() {
                     <div className="mx-auto max-w-md">
 
                       <div className="mb-3 flex items-center justify-between text-xs text-slate-400">
-                        <span>Zoom</span>
+                        <span>{t("profile.zoom")}</span>
                         <span>
                           {zoom.toFixed(1)}x
                         </span>
@@ -863,9 +866,7 @@ export default function ProfilePage() {
                       />
 
                       <p className="mt-3 text-center text-xs text-slate-500">
-                        Move the photo and adjust
-                        the zoom so your face is
-                        positioned perfectly.
+                        {t("profile.cropperHint")}
                       </p>
 
                     </div>
@@ -920,7 +921,7 @@ export default function ProfilePage() {
                       }}
                       className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-500"
                     >
-                      📷 Change
+                      📷 {t("profile.changePhoto")}
                     </button>
 
                     <button
@@ -930,8 +931,8 @@ export default function ProfilePage() {
                       className="flex items-center gap-2 rounded-xl bg-slate-700 px-5 py-3 text-sm font-bold text-white hover:bg-slate-600 disabled:opacity-50"
                     >
                       {downloadingPicture
-                        ? "Downloading..."
-                        : "⬇️ Download"}
+                        ? t("profile.downloading")
+                        : `⬇️ ${t("profile.download")}`}
                     </button>
                   </div>
                 </div>
@@ -940,11 +941,11 @@ export default function ProfilePage() {
           </div>
 
           <h1 className="mt-4 text-3xl font-extrabold">
-            My Profile
+            {t("profile.title")}
           </h1>
 
           <p className="mt-2 text-center text-sm text-slate-500">
-            Click the picture to change your profile photo.
+            {t("profile.clickToChange")}
           </p>
         </div>
 
@@ -966,14 +967,14 @@ export default function ProfilePage() {
         >
 
           <h2 className="text-lg font-bold">
-            Personal Information
+            {t("profile.personalInfo")}
           </h2>
 
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
 
             <div>
               <label className="mb-2 block text-sm font-semibold">
-                Full Name *
+                {t("profile.fullNameLabel")}
               </label>
 
               <input
@@ -987,7 +988,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="mb-2 block text-sm font-semibold">
-                Phone Number
+                {t("profile.phoneLabel")}
               </label>
 
               <input
@@ -999,7 +1000,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="mb-2 block text-sm font-semibold">
-                Email Address
+                {t("profile.emailLabel")}
               </label>
 
               <input
@@ -1015,7 +1016,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="mb-2 block text-sm font-semibold">
-                Date of Birth
+                {t("profile.dobLabel")}
               </label>
 
               <input
@@ -1032,14 +1033,14 @@ export default function ProfilePage() {
 
               {age !== null && (
                 <p className="mt-2 text-xs text-blue-300">
-                  Age: {age} years
+                  {t("profile.ageLabel")} {age} {t("profile.years")}
                 </p>
               )}
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-semibold">
-                Gender
+                {t("profile.genderLabel")}
               </label>
 
               <select
@@ -1049,16 +1050,16 @@ export default function ProfilePage() {
                 }
                 className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
               >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="others">Others</option>
+                <option value="">{t("profile.selectGender")}</option>
+                <option value="male">{t("profile.male")}</option>
+                <option value="female">{t("profile.female")}</option>
+                <option value="others">{t("profile.others")}</option>
               </select>
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-semibold">
-                Blood Group
+                {t("profile.bloodGroupLabel")}
               </label>
 
               <select
@@ -1072,7 +1073,7 @@ export default function ProfilePage() {
                 className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
               >
                 <option value="">
-                  Select Blood Group
+                  {t("profile.selectBloodGroup")}
                 </option>
 
                 {bloodGroups.map((group) => (
@@ -1085,7 +1086,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="mb-2 block text-sm font-semibold">
-                Marital Status
+                {t("profile.maritalStatusLabel")}
               </label>
 
               <select
@@ -1100,25 +1101,26 @@ export default function ProfilePage() {
                 className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
               >
                 <option value="" disabled>
-                  Select Marital Status
+                  {t("profile.selectMaritalStatus")}
                 </option>
                 <option value="married">
-                  Married
+                  {t("profile.married")}
                 </option>
                 <option value="unmarried">
-                  Unmarried
+                  {t("profile.unmarried")}
                 </option>
                 <option value="single">
-                  Single
+                  {t("profile.single")}
                 </option>
               </select>
 
               {age !== null && (
                 <p className="mt-2 text-[11px] text-slate-500">
-                  Default:{" "}
+                  t("profile.defaultLabel"){" "}
                   {age >= 30
-                    ? "Unmarried"
-                    : "Single"}
+                    ? t("profile.unmarried")
+                    : t("profile.single")
+                  }
                 </p>
               )}
             </div>
@@ -1129,14 +1131,14 @@ export default function ProfilePage() {
           <div className="mt-8 border-t border-white/[0.08] pt-7">
 
             <h2 className="text-lg font-bold">
-              Address Information
+              {t("profile.addressInfo")}
             </h2>
 
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
 
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  Country
+                  {t("profile.countryLabel")}
                 </label>
 
                 <select
@@ -1168,7 +1170,7 @@ export default function ProfilePage() {
 
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  Division / State / Province
+                  {t("profile.divisionLabel")}
                 </label>
 
                 {form.country === "Bangladesh" ? (
@@ -1183,7 +1185,7 @@ export default function ProfilePage() {
                     className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
                   >
                     <option value="">
-                      Select Division
+                      {t("profile.selectDivision")}
                     </option>
 
                     {divisions.map((division) => (
@@ -1204,7 +1206,7 @@ export default function ProfilePage() {
                         e.target.value
                       )
                     }
-                    placeholder="State / Province / Region"
+                    placeholder={t("profile.stateProvincePlaceholder")}
                     className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
                   />
                 )}
@@ -1212,7 +1214,7 @@ export default function ProfilePage() {
 
               <div className="sm:col-span-2">
                 <label className="mb-2 block text-sm font-semibold">
-                  Permanent Address
+                  {t("profile.permanentAddressLabel")}
                 </label>
 
                 <textarea
@@ -1224,14 +1226,14 @@ export default function ProfilePage() {
                     )
                   }
                   rows={3}
-                  placeholder="House, Road, Village, etc."
+                  placeholder={t("profile.permanentAddressPlaceholder")}
                   className="w-full resize-none rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  Area / Thana
+                  {t("profile.areaLabel")}
                 </label>
 
                 <input
@@ -1239,14 +1241,14 @@ export default function ProfilePage() {
                   onChange={(e) =>
                     updateField("area", e.target.value)
                   }
-                  placeholder="Area / Thana"
+                  placeholder={t("profile.areaLabel")}
                   className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  City
+                  {t("profile.cityLabel")}
                 </label>
 
                 <input
@@ -1254,7 +1256,7 @@ export default function ProfilePage() {
                   onChange={(e) =>
                     updateField("city", e.target.value)
                   }
-                  placeholder="City"
+                  placeholder={t("profile.cityLabel")}
                   className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
                 />
               </div>
@@ -1266,14 +1268,14 @@ export default function ProfilePage() {
           <div className="mt-8 border-t border-white/[0.08] pt-7">
 
             <h2 className="text-lg font-bold">
-              Education & Work
+              {t("profile.educationWork")}
             </h2>
 
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
 
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  Office / Workplace
+                  {t("profile.officeLabel")}
                 </label>
 
                 <input
@@ -1284,14 +1286,14 @@ export default function ProfilePage() {
                       e.target.value
                     )
                   }
-                  placeholder="Office / Workplace"
+                  placeholder={t("profile.officeLabel")}
                   className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  Study
+                  {t("profile.studyLabel")}
                 </label>
 
                 <select
@@ -1306,23 +1308,23 @@ export default function ProfilePage() {
                   className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
                 >
                   <option value="" disabled>
-                    Select Education Level
+                    {t("profile.selectEducationLevel")}
                   </option>
 
                   <option value="School">
-                    School
+                    {t("profile.school")}
                   </option>
 
                   <option value="College">
-                    College
+                    {t("profile.college")}
                   </option>
 
                   <option value="University">
-                    University
+                    {t("profile.university")}
                   </option>
 
                   <option value="Madrasha">
-                    Madrasha
+                    {t("profile.madrasha")}
                   </option>
                 </select>
               </div>
@@ -1335,7 +1337,7 @@ export default function ProfilePage() {
             disabled={saving}
             className="mt-8 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-extrabold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {saving ? "Saving..." : "Save Profile"}
+            {saving ? t("profile.saving") : t("profile.saveProfile")}
           </button>
 
         </form>
