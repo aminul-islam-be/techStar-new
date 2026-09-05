@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLanguage } from "@/lib/language";
 
 type BottomNavProps = {
   cartCount: number;
@@ -9,6 +10,7 @@ type BottomNavProps = {
 
 export default function BottomNav({ cartCount }: BottomNavProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -27,12 +29,12 @@ export default function BottomNav({ cartCount }: BottomNavProps) {
       <div className="relative mx-auto flex h-16 max-w-lg items-center justify-between px-6">
         <Link href="/" className={tabClass("/")}>
           <span className="text-xl leading-none">🏠</span>
-          Home
+          {t("nav.home")}
         </Link>
 
         <Link href="/categories" className={tabClass("/categories")}>
           <span className="text-xl leading-none">⊞</span>
-          Category
+          {t("nav.category")}
         </Link>
 
         {/* Elevated center cart button */}
@@ -54,12 +56,12 @@ export default function BottomNav({ cartCount }: BottomNavProps) {
 
         <Link href="/notifications" className={tabClass("/notifications")}>
           <span className="text-xl leading-none">🔔</span>
-          Alerts
+          {t("nav.alerts")}
         </Link>
 
         <Link href="/account" className={tabClass("/account")}>
           <span className="text-xl leading-none">👤</span>
-          Me
+          {t("nav.me")}
         </Link>
       </div>
     </nav>

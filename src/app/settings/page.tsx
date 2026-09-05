@@ -6,7 +6,7 @@ import { useLanguage } from "@/lib/language";
 
 export default function SettingsPage() {
   const [darkMode, setDarkMode] = useState(true);
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 lg:px-8">
@@ -15,21 +15,21 @@ export default function SettingsPage() {
           href="/"
           className="text-sm font-medium text-slate-400 hover:text-white"
         >
-          {"← Continue Shopping"}
+          {`← ${t("settings.continueShopping")}`}
         </Link>
 
         <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-          Settings
+          {t("settings.title")}
         </h1>
 
         <div className="mt-8 space-y-4">
           <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div>
               <div className="text-sm font-bold text-white">
-                Language
+                {t("settings.language")}
               </div>
               <div className="mt-1 text-xs text-slate-400">
-                Choose your preferred language
+                {t("settings.languageHint")}
               </div>
             </div>
 
@@ -60,10 +60,10 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div>
               <div className="text-sm font-bold text-white">
-                Dark Mode
+                {t("settings.darkMode")}
               </div>
               <div className="mt-1 text-xs text-slate-400">
-                TechStar currently uses the dark theme
+                {t("settings.darkModeHint")}
               </div>
             </div>
 

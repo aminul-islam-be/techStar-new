@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getCustomerUser } from "@/lib/customerAuth";
 import { useCurrency } from "@/lib/useCurrency";
+import { useLanguage } from "@/lib/language";
 
 type OrderItem = {
   productId: string;
@@ -38,6 +39,7 @@ type Order = {
 
 export default function OrdersPage() {
   const { format } = useCurrency();
+  const { t, language } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -70,7 +72,7 @@ export default function OrdersPage() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to load orders."
+          data.message || t("orders.unableToLoad")
         );
       }
 
@@ -81,7 +83,7 @@ export default function OrdersPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to load orders."
+          : t("orders.unableToLoad")
       );
     } finally {
       setLoading(false);
@@ -91,13 +93,16 @@ export default function OrdersPage() {
   function formatDate(date?: string) {
     if (!date) return "";
 
-    return new Date(date).toLocaleString("en-BD", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
+    return new Date(date).toLocaleString(
+      language === "bn" ? "bn-BD" : "en-BD",
+      {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }
+    );
   }
 
   function statusClass(status?: string) {
@@ -132,6 +137,20 @@ export default function OrdersPage() {
     }
   }
 
+  function statusLabel(status?: string) {
+    return t(`orders.status.${status || "pending"}`);
+  }
+
+  function paymentStatusLabel(status?: string) {
+    return t(`orders.paymentStatus.${status || "pending"}`);
+  }
+
+  function paymentMethodLabel(method?: string) {
+    const key = `orders.paymentMethod.${method || "manual"}`;
+    const label = t(key);
+    return label === key ? (method || "manual") : label;
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-slate-950 px-4 py-20 text-white">
@@ -139,11 +158,11 @@ export default function OrdersPage() {
           <div className="text-5xl">📦</div>
 
           <h1 className="mt-5 text-2xl font-bold">
-            Loading your orders...
+            {t("orders.loadingOrders")}
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            Please wait.
+            {t("orders.pleaseWait")}
           </p>
         </div>
       </main>
@@ -160,15 +179,15 @@ export default function OrdersPage() {
               href="/"
               className="text-sm font-medium text-slate-400 hover:text-white"
             >
-              {"← Continue Shopping"}
+              {`← ${t("settings.continueShopping")}`}
             </Link>
 
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              My Orders
+              {t("orders.title")}
             </h1>
 
             <p className="mt-2 text-sm text-slate-400">
-              View and track your TechStar orders.
+              {t("orders.subtitle")}
             </p>
           </div>
 
@@ -176,7 +195,7 @@ export default function OrdersPage() {
             href="/cart"
             className="inline-flex w-fit rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-slate-300 hover:bg-white/[0.08] hover:text-white"
           >
-            🛒 My Cart
+            {`🛒 ${t("orders.myCart")}`}
           </Link>
         </div>
 
@@ -191,19 +210,18 @@ export default function OrdersPage() {
             <div className="text-6xl">📦</div>
 
             <h2 className="mt-5 text-2xl font-extrabold">
-              No orders yet
+              {t("orders.noOrdersYet")}
             </h2>
 
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-              You have not placed any orders yet. Browse our electrical
-              and electronics products and place your first order.
+              {t("orders.noOrdersHint")}
             </p>
 
             <Link
               href="/#products"
               className="mt-7 inline-flex rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white hover:bg-blue-500"
             >
-              Browse Products
+              {t("cart.browseProducts")}
             </Link>
           </div>
         ) : (
@@ -218,7 +236,7 @@ export default function OrdersPage() {
 
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        Order ID
+                        {t("orders.orderId")}
                       </p>
 
                       <p className="mt-1 break-all text-sm font-bold text-white">
@@ -236,7 +254,7 @@ export default function OrdersPage() {
                           order.status
                         )}`}
                       >
-                        {order.status || "pending"}
+                        {statusLabel(order.status)}
                       </span>
 
                       <span
@@ -244,7 +262,7 @@ export default function OrdersPage() {
                           order.paymentStatus
                         )}`}
                       >
-                        Payment: {order.paymentStatus || "pending"}
+                        {`${t("orders.paymentLabel")}: ${paymentStatusLabel(order.paymentStatus)}`}
                       </span>
                     </div>
                   </div>
@@ -278,11 +296,11 @@ export default function OrdersPage() {
                           </h3>
 
                           <p className="mt-1 text-xs text-slate-500">
-                            Quantity: {item.quantity}
+                            {t("orders.quantity")}: {item.quantity}
                           </p>
 
                           <p className="mt-1 text-xs text-slate-500">
-                            Unit price: {format(Number(item.price))}
+                            {t("orders.unitPrice")}: {format(Number(item.price))}
                           </p>
                         </div>
 
@@ -298,7 +316,7 @@ export default function OrdersPage() {
                   <aside className="border-t border-white/[0.08] bg-slate-950/30 px-5 py-5 lg:border-l lg:border-t-0 sm:px-7">
 
                     <h3 className="text-sm font-bold">
-                      Delivery Information
+                      {t("orders.deliveryInfo")}
                     </h3>
 
                     <div className="mt-4 space-y-1 text-sm">
@@ -327,15 +345,15 @@ export default function OrdersPage() {
 
                     <div className="mt-6 border-t border-white/[0.08] pt-5">
                       <div className="flex justify-between text-sm text-slate-400">
-                        <span>Payment</span>
+                        <span>{t("orders.paymentLabel")}</span>
                         <span className="capitalize">
-                          {order.paymentMethod || "manual"}
+                          {paymentMethodLabel(order.paymentMethod)}
                         </span>
                       </div>
 
                       <div className="mt-3 flex items-center justify-between">
                         <span className="font-bold">
-                          Total
+                          {t("cart.total")}
                         </span>
 
                         <span className="text-xl font-extrabold">

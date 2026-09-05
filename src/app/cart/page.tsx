@@ -6,6 +6,7 @@ import {
   getCustomerUserId,
 } from "@/lib/customerAuth";
 import { useCurrency } from "@/lib/useCurrency";
+import { useLanguage } from "@/lib/language";
 
 type CartItem = {
   productId: string;
@@ -26,6 +27,8 @@ export default function CartPage() {
     format,
   } = useCurrency();
 
+  const { t } = useLanguage();
+
   const [cart, setCart] = useState<CartData>({
     items: [],
   });
@@ -42,7 +45,7 @@ export default function CartPage() {
       const userId = getCustomerUserId();
 
       if (!userId) {
-        setError("Please login to view your cart.");
+        setError(t("cart.pleaseLoginToView"));
         return;
       }
 
@@ -57,7 +60,7 @@ export default function CartPage() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to load cart."
+          data.message || t("cart.unableToLoad")
         );
       }
 
@@ -68,7 +71,7 @@ export default function CartPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to load cart."
+          : t("cart.unableToLoad")
       );
     } finally {
       setLoading(false);
@@ -121,7 +124,7 @@ export default function CartPage() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to update cart."
+          data.message || t("cart.unableToUpdate")
         );
       }
 
@@ -132,7 +135,7 @@ export default function CartPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to update cart."
+          : t("cart.unableToUpdate")
       );
     } finally {
       setUpdating("");
@@ -162,7 +165,7 @@ export default function CartPage() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to remove product."
+          data.message || t("cart.unableToRemove")
         );
       }
 
@@ -173,7 +176,7 @@ export default function CartPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to remove product."
+          : t("cart.unableToRemove")
       );
     } finally {
       setUpdating("");
@@ -197,7 +200,7 @@ export default function CartPage() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to clear cart."
+          data.message || t("cart.unableToClear")
         );
       }
 
@@ -208,7 +211,7 @@ export default function CartPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to clear cart."
+          : t("cart.unableToClear")
       );
     } finally {
       setUpdating("");
@@ -222,11 +225,11 @@ export default function CartPage() {
           <div className="text-4xl">🛒</div>
 
           <h1 className="mt-4 text-2xl font-bold">
-            Loading your cart...
+            {t("cart.loading")}
           </h1>
 
           <p className="mt-2 text-sm text-slate-400">
-            Please wait a moment.
+            {t("cart.pleaseWaitMoment")}
           </p>
         </div>
       </main>
@@ -240,7 +243,7 @@ export default function CartPage() {
           <div className="text-5xl">🔐</div>
 
           <h1 className="mt-5 text-2xl font-bold">
-            Login Required
+            {t("cart.loginRequired")}
           </h1>
 
           <p className="mt-3 text-slate-400">
@@ -251,7 +254,7 @@ export default function CartPage() {
             href="/login"
             className="mt-7 inline-flex rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-blue-500"
           >
-            Sign In
+            {t("menu.signIn")}
           </Link>
         </div>
       </main>
@@ -267,17 +270,17 @@ export default function CartPage() {
               href="/"
               className="text-sm font-medium text-slate-400 transition hover:text-white"
             >
-              {"← Continue Shopping"}
+              {`← ${t("settings.continueShopping")}`}
             </Link>
 
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Shopping Cart
+              {t("cart.title")}
             </h1>
 
             <p className="mt-2 text-sm text-slate-400">
               {totalItems}{" "}
-              {totalItems === 1 ? "item" : "items"} in
-              your cart
+              {totalItems === 1 ? t("cart.itemSingular") : t("cart.itemPlural")}{" "}
+              {t("cart.inYourCart")}
             </p>
           </div>
 
@@ -288,8 +291,8 @@ export default function CartPage() {
               className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
             >
               {updating === "clear"
-                ? "Clearing..."
-                : "Clear Cart"}
+                ? t("cart.clearing")
+                : t("cart.clear")}
             </button>
           )}
         </div>
@@ -305,19 +308,18 @@ export default function CartPage() {
             <div className="text-6xl">🛒</div>
 
             <h2 className="mt-5 text-2xl font-bold">
-              Your cart is empty
+              {t("cart.empty")}
             </h2>
 
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">
-              Browse our electrical and electronics
-              products and add something to your cart.
+              {t("cart.emptyHint")}
             </p>
 
             <Link
               href="/#products"
               className="mt-7 inline-flex rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-blue-500"
             >
-              Browse Products
+              {t("cart.browseProducts")}
             </Link>
           </div>
         ) : (
@@ -350,7 +352,7 @@ export default function CartPage() {
                       </h2>
 
                       <p className="mt-2 text-sm text-slate-400">
-                        {format(item.price)} each
+                        {format(item.price)} {t("cart.each")}
                       </p>
 
                       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -401,8 +403,8 @@ export default function CartPage() {
                           className="text-xs font-semibold text-red-400 transition hover:text-red-300 disabled:opacity-40"
                         >
                           {updating === item.productId
-                            ? "Removing..."
-                            : "Remove"}
+                            ? t("cart.removing")
+                            : t("cart.remove")}
                         </button>
                       </div>
                     </div>
@@ -416,7 +418,7 @@ export default function CartPage() {
 
                   <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3 sm:hidden">
                     <span className="text-xs text-slate-500">
-                      Item total
+                      {t("cart.itemTotal")}
                     </span>
 
                     <span className="font-bold">
@@ -428,31 +430,31 @@ export default function CartPage() {
             </section>
             <aside className="h-fit rounded-2xl border border-white/[0.08] bg-slate-900/70 p-5 lg:sticky lg:top-6">
               <h2 className="text-lg font-bold">
-                Order Summary
+                {t("cart.orderSummary")}
               </h2>
 
               <div className="mt-5 space-y-3 text-sm">
                 <div className="flex justify-between text-slate-400">
-                  <span>Items</span>
+                  <span>{t("cart.items")}</span>
                   <span>{totalItems}</span>
                 </div>
 
                 <div className="flex justify-between text-slate-400">
-                  <span>Subtotal</span>
+                  <span>{t("cart.subtotal")}</span>
                   <span>
                     {format(subtotal)}
                   </span>
                 </div>
 
                 <div className="flex justify-between text-slate-400">
-                  <span>Delivery</span>
-                  <span>Calculated at checkout</span>
+                  <span>{t("cart.delivery")}</span>
+                  <span>{t("cart.deliveryCalculated")}</span>
                 </div>
 
                 <div className="border-t border-white/[0.08] pt-4">
                   <div className="flex items-center justify-between">
                     <span className="font-bold">
-                      Total
+                      {t("cart.total")}
                     </span>
 
                     <span className="text-xl font-extrabold">
@@ -469,7 +471,7 @@ export default function CartPage() {
                 }}
                 className="mt-6 w-full rounded-xl bg-blue-600 px-5 py-3.5 text-sm font-extrabold text-white transition hover:bg-blue-500 active:scale-[0.98]"
               >
-                Proceed to Checkout
+                {t("cart.checkout")}
               </button>
 
             </aside>
@@ -479,4 +481,3 @@ export default function CartPage() {
     </main>
   );
 }
-

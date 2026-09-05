@@ -8,41 +8,29 @@ import {
   logoutCustomer,
   type CustomerUser,
 } from "@/lib/customerAuth";
+import { useLanguage } from "@/lib/language";
 
 type SideMenuProps = {
   open: boolean;
   onClose: () => void;
 };
 
-type MenuLink = {
-  icon: string;
-  label: string;
-  href: string;
-};
-
-const mainLinks: MenuLink[] = [
-  { icon: "👤", label: "আমার একাউন্ট (My Account)", href: "/account" },
-  { icon: "📦", label: "অর্ডার হিস্টরি (Order History)", href: "/orders" },
-  { icon: "❤️", label: "উইশলিস্ট (Wishlist)", href: "/wishlist" },
-  { icon: "⊞", label: "ক্যাটেগরি (Categories)", href: "/categories" },
-  { icon: "🛒", label: "শপিং কার্ট (Cart)", href: "/cart" },
-  {
-    icon: "🔔",
-    label: "নোটিফিকেশনস (Notifications)",
-    href: "/notifications",
-  },
-  {
-    icon: "📍",
-    label: "ঠিকানা বুক (Saved Addresses)",
-    href: "/addresses",
-  },
-  { icon: "🎧", label: "হেল্প ও সাপোর্ট (Support)", href: "/support" },
-  { icon: "⚙️", label: "সেটিংস (Settings)", href: "/settings" },
-];
-
 export default function SideMenu({ open, onClose }: SideMenuProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [user, setUser] = useState<CustomerUser | null>(null);
+
+  const mainLinks = [
+    { icon: "👤", label: t("menu.myAccount"), href: "/account" },
+    { icon: "📦", label: t("menu.orderHistory"), href: "/orders" },
+    { icon: "❤️", label: t("menu.wishlist"), href: "/wishlist" },
+    { icon: "⊞", label: t("menu.categories"), href: "/categories" },
+    { icon: "🛒", label: t("menu.cart"), href: "/cart" },
+    { icon: "🔔", label: t("menu.notifications"), href: "/notifications" },
+    { icon: "📍", label: t("menu.addresses"), href: "/addresses" },
+    { icon: "🎧", label: t("menu.support"), href: "/support" },
+    { icon: "⚙️", label: t("menu.settings"), href: "/settings" },
+  ];
 
   useEffect(() => {
     if (open) {
@@ -135,14 +123,14 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
                 onClick={onClose}
                 className="flex-1 rounded-xl bg-white px-4 py-2.5 text-center text-xs font-bold text-slate-950 transition hover:bg-slate-200"
               >
-                Sign In
+                {t("menu.signIn")}
               </Link>
               <Link
                 href="/login"
                 onClick={onClose}
                 className="flex-1 rounded-xl border border-white/15 bg-white/[0.03] px-4 py-2.5 text-center text-xs font-bold text-slate-200 transition hover:bg-white/[0.08]"
               >
-                Register
+                {t("menu.register")}
               </Link>
             </div>
           )}
@@ -178,7 +166,7 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
               <span className="flex h-5 w-5 items-center justify-center text-base leading-none">
                 ⏻
               </span>
-              লগআউট (Logout)
+              {t("menu.logout")}
             </button>
           </div>
         )}

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getCustomerUser } from "@/lib/customerAuth";
 import { useCurrency } from "@/lib/useCurrency";
+import { useLanguage } from "@/lib/language";
 
 type CartItem = {
   productId: string;
@@ -29,6 +30,7 @@ type FormData = {
 
 export default function CheckoutPage() {
   const { format } = useCurrency();
+  const { t } = useLanguage();
 
   const [cart, setCart] = useState<CartData>({
     items: [],
@@ -83,7 +85,7 @@ export default function CheckoutPage() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to load cart."
+          data.message || t("cart.unableToLoad")
         );
       }
 
@@ -94,7 +96,7 @@ export default function CheckoutPage() {
       setCart(loadedCart);
 
       if (!loadedCart.items?.length) {
-        setError("Your cart is empty.");
+        setError(t("checkout.cartEmptyError"));
       }
     } catch (err) {
       console.error(err);
@@ -102,7 +104,7 @@ export default function CheckoutPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to load cart."
+          : t("cart.unableToLoad")
       );
     } finally {
       setLoading(false);
@@ -147,7 +149,7 @@ export default function CheckoutPage() {
     }
 
     if (!cart.items.length) {
-      setError("Your cart is empty.");
+      setError(t("checkout.cartEmptyError"));
       return;
     }
 
@@ -156,9 +158,7 @@ export default function CheckoutPage() {
       !form.phone.trim() ||
       !form.address.trim()
     ) {
-      setError(
-        "Full name, phone number and delivery address are required."
-      );
+      setError(t("checkout.requiredFieldsError"));
       return;
     }
 
@@ -192,12 +192,12 @@ export default function CheckoutPage() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to place order."
+          data.message || t("checkout.unableToPlaceOrder")
         );
       }
 
       setMessage(
-        data.message || "Order placed successfully."
+        data.message || t("checkout.orderPlacedSuccess")
       );
 
       setCart({
@@ -213,7 +213,7 @@ export default function CheckoutPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to place order."
+          : t("checkout.unableToPlaceOrder")
       );
     } finally {
       setPlacing(false);
@@ -226,35 +226,35 @@ export default function CheckoutPage() {
         <div className="mx-auto max-w-xl text-center">
           <div className="text-5xl">🛒</div>
           <h1 className="mt-5 text-2xl font-bold">
-            Preparing checkout...
+            {t("checkout.preparingCheckout")}
           </h1>
           <p className="mt-2 text-sm text-slate-400">
-            Please wait.
+            {t("checkout.pleaseWait")}
           </p>
         </div>
       </main>
     );
   }
 
-  if (error === "Your cart is empty.") {
+  if (error === t("checkout.cartEmptyError")) {
     return (
       <main className="min-h-screen bg-slate-950 px-4 py-12 text-white">
         <div className="mx-auto max-w-xl text-center">
           <div className="text-6xl">🛒</div>
 
           <h1 className="mt-5 text-3xl font-extrabold">
-            Your cart is empty
+            {t("cart.empty")}
           </h1>
 
           <p className="mt-3 text-slate-400">
-            Add some products before continuing to checkout.
+            {t("checkout.emptyCartHint")}
           </p>
 
           <Link
             href="/#products"
             className="mt-7 inline-flex rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white hover:bg-blue-500"
           >
-            Browse Products
+            {t("cart.browseProducts")}
           </Link>
         </div>
       </main>
@@ -270,15 +270,15 @@ export default function CheckoutPage() {
             href="/cart"
             className="text-sm font-medium text-slate-400 hover:text-white"
           >
-            {"← Back to Cart"}
+            {`← ${t("checkout.backToCart")}`}
           </Link>
 
           <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Checkout
+            {t("checkout.title")}
           </h1>
 
           <p className="mt-2 text-sm text-slate-400">
-            Complete your delivery information and place your order.
+            {t("checkout.subtitle")}
           </p>
         </div>
 
@@ -302,11 +302,11 @@ export default function CheckoutPage() {
 
             <div className="mb-7">
               <h2 className="text-xl font-bold">
-                Delivery Information
+                {t("checkout.deliveryInfo")}
               </h2>
 
               <p className="mt-1 text-xs text-slate-500">
-                Your login information has been filled automatically.
+                {t("checkout.deliveryInfoHint")}
               </p>
             </div>
 
@@ -314,7 +314,7 @@ export default function CheckoutPage() {
 
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  Full Name *
+                  {t("checkout.fullNameLabel")}
                 </label>
 
                 <input
@@ -322,14 +322,14 @@ export default function CheckoutPage() {
                   onChange={(e) =>
                     updateField("fullName", e.target.value)
                   }
-                  placeholder="Your full name"
+                  placeholder={t("checkout.fullNamePlaceholder")}
                   className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  Phone Number *
+                  {t("checkout.phoneLabel")}
                 </label>
 
                 <input
@@ -337,14 +337,14 @@ export default function CheckoutPage() {
                   onChange={(e) =>
                     updateField("phone", e.target.value)
                   }
-                  placeholder="017XXXXXXXX"
+                  placeholder={t("checkout.phonePlaceholder")}
                   className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500"
                 />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="mb-2 block text-sm font-semibold">
-                  Email Address
+                  {t("checkout.emailLabel")}
                 </label>
 
                 <input
@@ -353,14 +353,14 @@ export default function CheckoutPage() {
                   onChange={(e) =>
                     updateField("email", e.target.value)
                   }
-                  placeholder="example@email.com"
+                  placeholder={t("checkout.emailPlaceholder")}
                   className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500"
                 />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="mb-2 block text-sm font-semibold">
-                  Delivery Address *
+                  {t("checkout.addressLabel")}
                 </label>
 
                 <textarea
@@ -368,7 +368,7 @@ export default function CheckoutPage() {
                   onChange={(e) =>
                     updateField("address", e.target.value)
                   }
-                  placeholder="House/Road/Block and full delivery address"
+                  placeholder={t("checkout.addressPlaceholder")}
                   rows={4}
                   className="w-full resize-none rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500"
                 />
@@ -376,7 +376,7 @@ export default function CheckoutPage() {
 
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  Area
+                  {t("checkout.areaLabel")}
                 </label>
 
                 <input
@@ -384,14 +384,14 @@ export default function CheckoutPage() {
                   onChange={(e) =>
                     updateField("area", e.target.value)
                   }
-                  placeholder="Area / Thana"
+                  placeholder={t("checkout.areaPlaceholder")}
                   className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm font-semibold">
-                  City
+                  {t("checkout.cityLabel")}
                 </label>
 
                 <input
@@ -399,7 +399,7 @@ export default function CheckoutPage() {
                   onChange={(e) =>
                     updateField("city", e.target.value)
                   }
-                  placeholder="City"
+                  placeholder={t("checkout.cityPlaceholder")}
                   className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500"
                 />
               </div>
@@ -407,11 +407,11 @@ export default function CheckoutPage() {
 
             <div className="mt-8 border-t border-white/[0.08] pt-7">
               <h2 className="text-xl font-bold">
-                Payment Method
+                {t("checkout.paymentMethod")}
               </h2>
 
               <p className="mt-1 text-xs text-slate-500">
-                Select your preferred payment method.
+                {t("checkout.paymentMethodHint")}
               </p>
 
               <div className="mt-4 space-y-3">
@@ -434,14 +434,14 @@ export default function CheckoutPage() {
                     />
 
                     <span className="font-bold">
-                      bKash
+                      {t("checkout.bkash")}
                     </span>
                   </div>
 
                   {form.paymentMethod === "bkash" && (
                     <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3">
                       <p className="text-xs text-slate-500">
-                        Send payment to
+                        {t("checkout.sendPaymentTo")}
                       </p>
                       <p className="mt-1 text-lg font-extrabold tracking-wide text-pink-300">
                         01922964696
@@ -468,14 +468,14 @@ export default function CheckoutPage() {
                     />
 
                     <span className="font-bold">
-                      Nagad
+                      {t("checkout.nagad")}
                     </span>
                   </div>
 
                   {form.paymentMethod === "nagad" && (
                     <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3">
                       <p className="text-xs text-slate-500">
-                        Send payment to
+                        {t("checkout.sendPaymentTo")}
                       </p>
                       <p className="mt-1 text-lg font-extrabold tracking-wide text-orange-300">
                         01922964696
@@ -502,14 +502,14 @@ export default function CheckoutPage() {
                     />
 
                     <span className="font-bold">
-                      Rocket
+                      {t("checkout.rocket")}
                     </span>
                   </div>
 
                   {form.paymentMethod === "rocket" && (
                     <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3">
                       <p className="text-xs text-slate-500">
-                        Send payment to
+                        {t("checkout.sendPaymentTo")}
                       </p>
                       <p className="mt-1 text-lg font-extrabold tracking-wide text-purple-300">
                         01922964696
@@ -536,13 +536,13 @@ export default function CheckoutPage() {
                     />
 
                     <span className="font-bold">
-                      Cash on Delivery
+                      {t("checkout.cashOnDelivery")}
                     </span>
                   </div>
 
                   {form.paymentMethod === "cod" && (
                     <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3 text-xs leading-5 text-slate-400">
-                      Pay in cash when your order is delivered.
+                      {t("checkout.codDescription")}
                     </div>
                   )}
                 </label>
@@ -550,24 +550,22 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setMessage(
-                      "সাময়িক সময়ের জন্য SSLCommerz বন্ধ আছে।"
-                    );
+                    setMessage(t("checkout.sslcommerzOffMessage"));
                   }}
                   className="w-full rounded-2xl border border-white/[0.08] bg-slate-950 p-4 text-left transition hover:border-white/20"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold">
-                      SSLCommerz
+                      {t("checkout.sslcommerz")}
                     </span>
 
                     <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold text-amber-300">
-                      OFF
+                      {t("checkout.sslcommerzOff")}
                     </span>
                   </div>
 
                   <p className="mt-1 text-xs text-slate-500">
-                    Online payment gateway temporarily unavailable.
+                    {t("checkout.sslcommerzHint")}
                   </p>
                 </button>
 
@@ -578,7 +576,7 @@ export default function CheckoutPage() {
           <aside className="h-fit rounded-3xl border border-white/[0.08] bg-slate-900/70 p-5 lg:sticky lg:top-6">
 
             <h2 className="text-lg font-bold">
-              Order Summary
+              {t("cart.orderSummary")}
             </h2>
 
             <div className="mt-5 space-y-4">
@@ -618,23 +616,23 @@ export default function CheckoutPage() {
 
             <div className="mt-6 space-y-3 border-t border-white/[0.08] pt-5 text-sm">
               <div className="flex justify-between text-slate-400">
-                <span>Items</span>
+                <span>{t("cart.items")}</span>
                 <span>{totalItems}</span>
               </div>
 
               <div className="flex justify-between text-slate-400">
-                <span>Subtotal</span>
+                <span>{t("cart.subtotal")}</span>
                 <span>{format(subtotal)}</span>
               </div>
 
               <div className="flex justify-between text-slate-400">
-                <span>Delivery</span>
-                <span>Calculated later</span>
+                <span>{t("cart.delivery")}</span>
+                <span>{t("checkout.deliveryCalculatedLater")}</span>
               </div>
 
               <div className="flex justify-between border-t border-white/[0.08] pt-4">
                 <span className="font-bold">
-                  Total
+                  {t("cart.total")}
                 </span>
 
                 <span className="text-xl font-extrabold">
@@ -649,13 +647,12 @@ export default function CheckoutPage() {
               className="mt-6 w-full rounded-xl bg-blue-600 px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {placing
-                ? "Placing Order..."
-                : "Place Order"}
+                ? t("checkout.placingOrder")
+                : t("checkout.placeOrder")}
             </button>
 
             <p className="mt-3 text-center text-[11px] leading-5 text-slate-600">
-              By placing this order, you confirm that the delivery
-              information is correct.
+              {t("checkout.confirmNote")}
             </p>
           </aside>
         </form>
