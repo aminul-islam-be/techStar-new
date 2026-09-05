@@ -32,6 +32,7 @@ export default function AccountPage() {
     label: string;
     href: string;
   }[] = [
+    { icon: "🕘", label: t("menu.myHistory"), href: "/history" },
     { icon: "❤️", label: t("menu.wishlist"), href: "/wishlist" },
     {
       icon: "📍",

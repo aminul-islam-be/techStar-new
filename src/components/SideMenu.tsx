@@ -23,6 +23,7 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
   const mainLinks = [
     { icon: "👤", label: t("menu.myAccount"), href: "/account" },
     { icon: "📦", label: t("menu.orderHistory"), href: "/orders" },
+    { icon: "🕘", label: t("menu.myHistory"), href: "/history" },
     { icon: "❤️", label: t("menu.wishlist"), href: "/wishlist" },
     { icon: "⊞", label: t("menu.categories"), href: "/categories" },
     { icon: "🛒", label: t("menu.cart"), href: "/cart" },

@@ -301,6 +301,18 @@ export default function Home() {
 
   async function handleSearch() {
     await loadProducts(search);
+
+    const searcherId = getCustomerUserId();
+    if (searcherId && search.trim()) {
+      fetch("/api/history/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": searcherId,
+        },
+        body: JSON.stringify({ query: search.trim() }),
+      }).catch(() => {});
+    }
   }
 
   function handleSearchKeyDown(

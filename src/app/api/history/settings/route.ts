@@ -65,26 +65,44 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Step 1 (critical): save the user's chosen retention period.
     await User.findByIdAndUpdate(userId, {
       historyRetentionDays: retentionDays,
     });
 
-    const retentionMs = retentionDays * 24 * 60 * 60 * 1000;
+    // Step 2 (best-effort): re-apply the new window to existing
+    // entries too. If this fails for any reason (older MongoDB
+    // version, etc.) it must NOT block the response above — new
+    // entries will use the new setting regardless.
+    try {
+      const retentionMs = retentionDays * 24 * 60 * 60 * 1000;
 
-    // Re-apply the new retention window to existing entries too,
-    // measured from when each entry was last viewed/searched.
-    await History.updateMany(
-      { userId: new mongoose.Types.ObjectId(userId) },
-      [
-        {
-          $set: {
-            expiresAt: {
-              $add: ["$at", retentionMs],
-            },
-          },
-        },
-      ]
-    );
+      const allEntries = await History.find({
+        userId: new mongoose.Types.ObjectId(userId),
+      })
+        .select("_id at")
+        .lean();
+
+      await Promise.all(
+        allEntries.map((entry: any) =>
+          History.updateOne(
+            { _id: entry._id },
+            {
+              $set: {
+                expiresAt: new Date(
+                  new Date(entry.at).getTime() + retentionMs
+                ),
+              },
+            }
+          )
+        )
+      );
+    } catch (recalcError) {
+      console.error(
+        "History retention recalculation skipped:",
+        recalcError
+      );
+    }
 
     return NextResponse.json({
       success: true,

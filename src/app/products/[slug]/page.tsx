@@ -64,6 +64,18 @@ export default function ProductDetailPage({
       }
 
       setProduct(data.product);
+
+      const viewerId = getCustomerUserId();
+      if (viewerId && data.product?._id) {
+        fetch("/api/history/viewed", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": viewerId,
+          },
+          body: JSON.stringify({ productId: data.product._id }),
+        }).catch(() => {});
+      }
     } catch (err) {
       setError(
         err instanceof Error
