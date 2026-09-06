@@ -16,6 +16,13 @@ export async function POST(request: NextRequest) {
     const price = Number(body.price);
     const stock = Number(body.stock);
 
+    const compareAtPriceRaw =
+      body.compareAtPrice === "" ||
+      body.compareAtPrice === null ||
+      body.compareAtPrice === undefined
+        ? undefined
+        : Number(body.compareAtPrice);
+
     const currency = String(body.currency || "BDT")
       .trim()
       .toUpperCase();
@@ -41,6 +48,20 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           message: "Please enter a valid price.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (
+      compareAtPriceRaw !== undefined &&
+      (!Number.isFinite(compareAtPriceRaw) ||
+        compareAtPriceRaw < 0)
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Please enter a valid compare-at price.",
         },
         { status: 400 }
       );
@@ -74,6 +95,11 @@ export async function POST(request: NextRequest) {
       category,
       description,
       price,
+      compareAtPrice:
+        compareAtPriceRaw !== undefined &&
+        compareAtPriceRaw > price
+          ? compareAtPriceRaw
+          : undefined,
       currency,
       image,
       stock,

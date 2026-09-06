@@ -14,6 +14,7 @@ export default function AddProductPage() {
     category: "",
     description: "",
     price: "",
+    compareAtPrice: "",
     currency: "BDT",
     image: "",
     stock: "",
@@ -264,6 +265,10 @@ export default function AddProductPage() {
           category: form.category,
           description: form.description,
           price: Number(form.price),
+          compareAtPrice:
+            form.compareAtPrice === ""
+              ? undefined
+              : Number(form.compareAtPrice),
           currency: form.currency,
           image: form.image,
           stock: Number(form.stock),
@@ -517,6 +522,27 @@ export default function AddProductPage() {
                 }
                 placeholder="1500"
                 required
+                style={inputStyle}
+              />
+            </div>
+
+            <div>
+              <label style={labelStyle}>
+                Compare-at Price (optional)
+              </label>
+
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.compareAtPrice}
+                onChange={(event) =>
+                  updateField(
+                    "compareAtPrice",
+                    event.target.value
+                  )
+                }
+                placeholder="e.g. 2000 (shows a strikethrough sale price)"
                 style={inputStyle}
               />
             </div>

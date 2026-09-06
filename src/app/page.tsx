@@ -20,6 +20,7 @@ type Product = {
   category: string;
   description?: string;
   price: number;
+  compareAtPrice?: number;
   currency?: string;
   image?: string;
   stock: number;
@@ -1012,6 +1013,13 @@ export default function Home() {
                         : "🤍"}
                     </button>
 
+                    {product.compareAtPrice &&
+                      product.compareAtPrice > product.price && (
+                        <div className="rounded-full bg-emerald-500 px-3 py-1.5 text-[10px] font-bold text-white shadow-lg">
+                          {t("home.promotion")}
+                        </div>
+                      )}
+
                     {product.featured && (
                       <div className="rounded-full bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-lg">
                         {t("home.featured")}
@@ -1032,9 +1040,21 @@ export default function Home() {
 
                   <div className="mt-4 flex items-end justify-between gap-3">
                     <div>
-                      <div className="text-xl font-extrabold tracking-tight">
-                        {format(product.price)}
-                      </div>
+                      {product.compareAtPrice &&
+                      product.compareAtPrice > product.price ? (
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-extrabold tracking-tight text-red-400">
+                            {format(product.price)}
+                          </span>
+                          <span className="text-xs font-medium text-slate-500 line-through">
+                            {format(product.compareAtPrice)}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-xl font-extrabold tracking-tight">
+                          {format(product.price)}
+                        </div>
+                      )}
 
                       <div
                         className={`mt-1 text-[11px] font-semibold ${

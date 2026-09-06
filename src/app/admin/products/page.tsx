@@ -10,6 +10,7 @@ type Product = {
   category: string;
   description: string;
   price: number;
+  compareAtPrice?: number;
   currency: string;
   image?: string;
   stock: number;
@@ -25,6 +26,7 @@ export default function AdminProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [editCompareAtPrice, setEditCompareAtPrice] = useState("");
   const [editStock, setEditStock] = useState("");
   const [editCategory, setEditCategory] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -107,6 +109,9 @@ export default function AdminProductsPage() {
     setEditing(product);
     setEditName(product.name);
     setEditPrice(String(product.price));
+    setEditCompareAtPrice(
+      product.compareAtPrice ? String(product.compareAtPrice) : ""
+    );
     setEditStock(String(product.stock));
     setEditCategory(product.category);
     setEditDescription(product.description);
@@ -140,6 +145,10 @@ export default function AdminProductsPage() {
       category: editCategory.trim(),
       description: editDescription.trim(),
       price,
+      compareAtPrice:
+        editCompareAtPrice.trim() === ""
+          ? undefined
+          : Number(editCompareAtPrice),
       stock,
     });
 
@@ -394,6 +403,14 @@ export default function AdminProductsPage() {
 
             <input
               type="number"
+              value={editCompareAtPrice}
+              onChange={(e) => setEditCompareAtPrice(e.target.value)}
+              placeholder="Compare-at Price (optional, for showing a discount)"
+              style={inputStyle}
+            />
+
+            <input
+              type="number"
               value={editStock}
               onChange={(e) => setEditStock(e.target.value)}
               placeholder="Stock"
@@ -500,6 +517,19 @@ export default function AdminProductsPage() {
                       }}
                     >
                       {product.currency} {product.price}
+                      {product.compareAtPrice &&
+                      product.compareAtPrice > product.price ? (
+                        <span
+                          style={{
+                            marginLeft: "8px",
+                            color: "#94a3b8",
+                            textDecoration: "line-through",
+                            fontSize: "0.85em",
+                          }}
+                        >
+                          {product.currency} {product.compareAtPrice}
+                        </span>
+                      ) : null}
                     </strong>
 
                     <span

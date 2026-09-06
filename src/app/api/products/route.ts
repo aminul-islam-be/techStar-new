@@ -69,6 +69,7 @@ export async function PATCH(request: NextRequest) {
       "category",
       "description",
       "price",
+      "compareAtPrice",
       "currency",
       "image",
       "stock",
@@ -98,6 +99,28 @@ export async function PATCH(request: NextRequest) {
       }
 
       cleanUpdates.stock = stock;
+    }
+
+    if ("compareAtPrice" in cleanUpdates) {
+      const raw = cleanUpdates.compareAtPrice;
+
+      if (raw === "" || raw === null || raw === undefined) {
+        cleanUpdates.compareAtPrice = undefined;
+      } else {
+        const compareAtPrice = Number(raw);
+
+        if (!Number.isFinite(compareAtPrice) || compareAtPrice < 0) {
+          return NextResponse.json(
+            {
+              success: false,
+              message: "Invalid compare-at price.",
+            },
+            { status: 400 }
+          );
+        }
+
+        cleanUpdates.compareAtPrice = compareAtPrice;
+      }
     }
 
     const product = await Product.findByIdAndUpdate(
