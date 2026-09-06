@@ -976,7 +976,7 @@ export default function Home() {
                 }
                 className="group cursor-pointer overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/70 transition duration-300 hover:-translate-y-1 hover:border-blue-500/30 hover:bg-slate-900"
               >
-                <div className="relative h-56 overflow-hidden bg-slate-950">
+                <div className="relative h-64 overflow-hidden bg-slate-950">
                   {product.image ? (
                     <img
                       src={product.image}
@@ -989,56 +989,62 @@ export default function Home() {
                     </div>
                   )}
 
+                  {/* Dark gradient so overlaid text stays readable */}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+
                   <div className="absolute left-3 top-3 rounded-full border border-white/10 bg-slate-950/80 px-3 py-1.5 text-[10px] font-bold text-blue-300 backdrop-blur">
                     {product.category}
                   </div>
 
-                  <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
-                    <button
-                      onClick={(event) =>
-                        toggleWishlist(product, event)
-                      }
-                      disabled={
-                        wishlistBusyId === product._id
-                      }
-                      aria-label="Toggle wishlist"
-                      className={`flex h-9 w-9 items-center justify-center rounded-full border text-base shadow-lg backdrop-blur transition disabled:opacity-60 ${
-                        wishlistIds.has(product._id)
-                          ? "border-red-500/40 bg-red-500/20"
-                          : "border-white/10 bg-slate-950/80 hover:bg-slate-900"
-                      }`}
-                    >
-                      {wishlistIds.has(product._id)
-                        ? "❤️"
-                        : "🤍"}
-                    </button>
+                  <button
+                    onClick={(event) =>
+                      toggleWishlist(product, event)
+                    }
+                    disabled={
+                      wishlistBusyId === product._id
+                    }
+                    aria-label="Toggle wishlist"
+                    className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border text-base shadow-lg backdrop-blur transition disabled:opacity-60 ${
+                      wishlistIds.has(product._id)
+                        ? "border-red-500/40 bg-red-500/20"
+                        : "border-white/10 bg-slate-950/80 hover:bg-slate-900"
+                    }`}
+                  >
+                    {wishlistIds.has(product._id)
+                      ? "❤️"
+                      : "🤍"}
+                  </button>
 
-                    {product.compareAtPrice &&
-                      product.compareAtPrice > product.price && (
-                        <div className="rounded-full bg-emerald-500 px-3 py-1.5 text-[10px] font-bold text-white shadow-lg">
-                          {t("home.promotion")}
-                        </div>
+                  {/* Name + description overlaid on the image */}
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                      {product.compareAtPrice &&
+                        product.compareAtPrice > product.price && (
+                          <span className="rounded-md bg-[#83f511] px-2.5 py-1 text-[11px] font-bold text-white shadow-lg">
+                            {t("home.promotion")}
+                          </span>
+                        )}
+
+                      {product.featured && (
+                        <span className="rounded-lg bg-blue-600 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-lg">
+                          {t("home.featured")}
+                        </span>
                       )}
+                    </div>
 
-                    {product.featured && (
-                      <div className="rounded-full bg-blue-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-lg">
-                        {t("home.featured")}
-                      </div>
-                    )}
+                    <h3 className="line-clamp-2 text-base font-bold leading-5 text-white drop-shadow">
+                      {product.name}
+                    </h3>
+
+                    <p className="mt-0.5 line-clamp-1 text-xs leading-4 text-slate-300">
+                      {product.description ||
+                        t("home.defaultProductDescription")}
+                    </p>
                   </div>
                 </div>
 
                 <div className="p-5">
-                  <h3 className="line-clamp-2 min-h-[48px] text-base font-bold leading-6 text-white">
-                    {product.name}
-                  </h3>
-
-                  <p className="mt-2 line-clamp-2 min-h-[40px] text-xs leading-5 text-slate-500">
-                    {product.description ||
-                      t("home.defaultProductDescription")}
-                  </p>
-
-                  <div className="mt-4 flex items-end justify-between gap-3">
+                  <div className="flex items-end justify-between gap-3">
                     <div>
                       {product.compareAtPrice &&
                       product.compareAtPrice > product.price ? (
