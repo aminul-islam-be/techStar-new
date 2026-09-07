@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/lib/language";
+import { useSeasonTheme } from "@/lib/theme";
 
 type BottomNavProps = {
   cartCount: number;
@@ -11,6 +12,7 @@ type BottomNavProps = {
 export default function BottomNav({ cartCount }: BottomNavProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { seasonInfo } = useSeasonTheme();
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -20,19 +22,26 @@ export default function BottomNav({ cartCount }: BottomNavProps) {
   const tabClass = (href: string) =>
     `flex flex-col items-center gap-1 text-[11px] font-semibold transition ${
       isActive(href)
-        ? "text-blue-400"
+        ? ""
         : "text-slate-500 hover:text-slate-300"
     }`;
+
+  const tabStyle = (href: string) =>
+    isActive(href) ? { color: seasonInfo.accent } : undefined;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-slate-950/95 backdrop-blur-xl sm:hidden">
       <div className="relative mx-auto flex h-16 max-w-lg items-center justify-between px-6">
-        <Link href="/" className={tabClass("/")}>
+        <Link href="/" className={tabClass("/")} style={tabStyle("/")}>
           <span className="text-xl leading-none">🏠</span>
           {t("nav.home")}
         </Link>
 
-        <Link href="/categories" className={tabClass("/categories")}>
+        <Link
+          href="/categories"
+          className={tabClass("/categories")}
+          style={tabStyle("/categories")}
+        >
           <span className="text-xl leading-none">⊞</span>
           {t("nav.category")}
         </Link>
@@ -41,11 +50,15 @@ export default function BottomNav({ cartCount }: BottomNavProps) {
         <Link
           href="/cart"
           aria-label="Open Shopping Cart"
-          className="absolute left-1/2 top-0 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-slate-950 bg-blue-600 text-xl shadow-2xl shadow-blue-600/30 transition hover:bg-blue-500 active:scale-95"
+          className="absolute left-1/2 top-0 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-slate-950 text-xl shadow-2xl transition hover:brightness-110 active:scale-95"
+          style={{ backgroundColor: seasonInfo.accent }}
         >
           🛒
           {cartCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-black text-blue-600">
+            <span
+              className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-black"
+              style={{ color: seasonInfo.accent }}
+            >
               {cartCount > 99 ? "99+" : cartCount}
             </span>
           )}
@@ -54,12 +67,16 @@ export default function BottomNav({ cartCount }: BottomNavProps) {
         {/* Spacer under the floating cart button */}
         <div className="w-10" />
 
-        <Link href="/notifications" className={tabClass("/notifications")}>
+        <Link
+          href="/notifications"
+          className={tabClass("/notifications")}
+          style={tabStyle("/notifications")}
+        >
           <span className="text-xl leading-none">🔔</span>
           {t("nav.alerts")}
         </Link>
 
-        <Link href="/account" className={tabClass("/account")}>
+        <Link href="/account" className={tabClass("/account")} style={tabStyle("/account")}>
           <span className="text-xl leading-none">👤</span>
           {t("nav.me")}
         </Link>

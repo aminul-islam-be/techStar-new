@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useLanguage } from "@/lib/language";
+import { useSeasonTheme } from "@/lib/theme";
+import { seasons, SEASON_ORDER, type Season } from "@/lib/season";
 
 export default function SettingsPage() {
   const [darkMode, setDarkMode] = useState(true);
   const { language, setLanguage, t } = useLanguage();
+  const { season, isAuto, setSeason, seasonInfo } = useSeasonTheme();
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 lg:px-8">
@@ -80,6 +83,63 @@ export default function SettingsPage() {
                 }`}
               />
             </button>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-xl">{seasonInfo.emoji}</span>
+              <div className="text-sm font-bold text-white">
+                {t("settings.seasonTheme")}
+              </div>
+            </div>
+
+            <div className="mb-4 text-xs text-slate-400">
+              {t("settings.seasonThemeHint")}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <button
+                onClick={() => setSeason("auto")}
+                className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition ${
+                  isAuto
+                    ? "border-white/20 bg-white/[0.08] text-white"
+                    : "border-white/10 bg-transparent text-slate-400 hover:bg-white/[0.05]"
+                }`}
+                style={
+                  isAuto
+                    ? { boxShadow: `0 0 0 1.5px ${seasonInfo.accent}` }
+                    : undefined
+                }
+              >
+                <span>🔄</span>
+                {t("settings.autoSeason")}
+              </button>
+
+              {SEASON_ORDER.map((key: Season) => {
+                const info = seasons[key];
+                const active = !isAuto && season === key;
+
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setSeason(key)}
+                    className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition ${
+                      active
+                        ? "border-white/20 bg-white/[0.08] text-white"
+                        : "border-white/10 bg-transparent text-slate-400 hover:bg-white/[0.05]"
+                    }`}
+                    style={
+                      active
+                        ? { boxShadow: `0 0 0 1.5px ${info.accent}` }
+                        : undefined
+                    }
+                  >
+                    <span>{info.emoji}</span>
+                    {language === "bn" ? info.nameBn : info.nameEn}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

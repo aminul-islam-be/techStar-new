@@ -33,6 +33,9 @@ export const translations: Record<Language, Record<string, string>> = {
     "settings.darkMode": "Dark Mode",
     "settings.darkModeHint": "TechStar currently uses the dark theme",
     "settings.continueShopping": "Continue Shopping",
+    "settings.seasonTheme": "Season Theme",
+    "settings.seasonThemeHint": "Colors change automatically with the current Bengali season",
+    "settings.autoSeason": "Auto (Current Season)",
 
     "common.search": "Search products...",
     "common.addToCart": "Add to Cart",
@@ -351,6 +354,9 @@ export const translations: Record<Language, Record<string, string>> = {
     "settings.darkMode": "ডার্ক মোড",
     "settings.darkModeHint": "টেকস্টার বর্তমানে ডার্ক থিমে চলছে",
     "settings.continueShopping": "কেনাকাটা চালিয়ে যান",
+    "settings.seasonTheme": "ঋতু থিম",
+    "settings.seasonThemeHint": "বর্তমান ঋতু অনুযায়ী রঙ স্বয়ংক্রিয়ভাবে বদলে যায়",
+    "settings.autoSeason": "অটো (বর্তমান ঋতু)",
 
     "common.search": "পণ্য খুঁজুন...",
     "common.addToCart": "কার্টে যোগ করুন",
@@ -642,5 +648,6 @@ export const translations: Record<Language, Record<string, string>> = {
     "history.viewedAt": "দেখা হয়েছে",
     "history.searchedAt": "খোঁজা হয়েছে",
     "history.unableToLoad": "ইতিহাস লোড করা যায়নি।",
+
   },
 };

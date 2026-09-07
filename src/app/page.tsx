@@ -12,6 +12,7 @@ import FilterSortModal, {
 } from "@/components/FilterSortModal";
 import BottomNav from "@/components/BottomNav";
 import { useLanguage } from "@/lib/language";
+import { useSeasonTheme } from "@/lib/theme";
 
 type Product = {
   _id: string;
@@ -42,6 +43,7 @@ export default function Home() {
   const { format } = useCurrency();
   const router = useRouter();
   const { t, language, toggleLanguage } = useLanguage();
+  const { seasonInfo } = useSeasonTheme();
 
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
   const touchStartX = useRef<number | null>(null);
@@ -611,7 +613,10 @@ export default function Home() {
         }}
       />
       <section className="relative isolate overflow-hidden">
-        <div className="pointer-events-none absolute -left-32 top-0 h-[420px] w-[420px] rounded-full bg-blue-600/15 blur-[110px]" />
+        <div
+          className="pointer-events-none absolute -left-32 top-0 h-[420px] w-[420px] rounded-full blur-[110px]"
+          style={{ backgroundColor: `${seasonInfo.accent}26` }}
+        />
         <div className="pointer-events-none absolute -right-32 top-20 h-[380px] w-[380px] rounded-full bg-indigo-600/10 blur-[110px]" />
 
         <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-20 lg:px-8 lg:pb-24 lg:pt-28">
@@ -626,7 +631,12 @@ export default function Home() {
           <div className="text-center">
             <h1 className="mx-auto max-w-5xl text-[42px] font-black leading-[1.02] tracking-[-0.045em] sm:text-6xl lg:text-7xl xl:text-[82px]">
               {t("home.heroTitleLine1")}
-              <span className="block bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent">
+              <span
+                className="block bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: `linear-gradient(to right, ${seasonInfo.gradientFrom}, ${seasonInfo.gradientTo})`,
+                }}
+              >
                 {t("home.heroTitleLine2")}
               </span>
             </h1>
@@ -658,7 +668,8 @@ export default function Home() {
 
               <button
                 onClick={handleSearch}
-                className="shrink-0 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500 active:scale-[0.98] sm:px-6"
+                className="shrink-0 rounded-xl px-4 text-sm font-bold text-white shadow-lg transition hover:brightness-110 active:scale-[0.98] sm:px-6"
+                style={{ backgroundColor: seasonInfo.accent }}
               >
                 <span className="hidden sm:inline">
                   {t("home.searchButton")}
@@ -1035,8 +1046,7 @@ export default function Home() {
                     <h3 className="line-clamp-2 text-base font-bold leading-5 text-white drop-shadow">
                       {product.name}
                     </h3>
-
-                    <p className="mt-0.5 line-clamp-1 text-xs leading-4 text-slate-300">
+                    <p className="line-clamp-1 text-xs leading-4 text-slate-300">
                       {product.description ||
                         t("home.defaultProductDescription")}
                     </p>
@@ -1108,7 +1118,8 @@ export default function Home() {
                         addingId === product._id ||
                         buyingId === product._id
                       }
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-3 text-xs font-bold text-white shadow-lg shadow-blue-600/10 transition hover:bg-blue-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-bold text-white shadow-lg transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
+                      style={{ backgroundColor: seasonInfo.accent }}
                     >
                       {buyingId === product._id
                         ? t("home.processing")
@@ -1193,7 +1204,8 @@ export default function Home() {
       <Link
         href="/cart"
         aria-label="Open Shopping Cart"
-        className="fixed bottom-5 right-4 z-50 hidden h-14 w-14 items-center justify-center rounded-full border border-blue-400/20 bg-blue-600 text-xl shadow-2xl shadow-blue-600/30 transition duration-300 hover:scale-105 hover:bg-blue-500 active:scale-95 sm:flex sm:right-6"
+        className="fixed bottom-5 right-4 z-50 hidden h-14 w-14 items-center justify-center rounded-full text-xl shadow-2xl transition duration-300 hover:scale-105 hover:brightness-110 active:scale-95 sm:flex sm:right-6"
+        style={{ backgroundColor: seasonInfo.accent }}
       >
         🛒
 
