@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   getCustomerUser,
   logoutCustomer,
+  saveCustomerUser,
   type CustomerUser,
 } from "@/lib/customerAuth";
 import { useLanguage } from "@/lib/language";
@@ -34,9 +35,35 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
   ];
 
   useEffect(() => {
-    if (open) {
-      setUser(getCustomerUser());
-    }
+    if (!open) return;
+
+    const current = getCustomerUser();
+    setUser(current);
+
+    if (!current) return;
+
+    fetch("/api/profile", {
+      method: "GET",
+      headers: { "x-user-id": current.id },
+      cache: "no-store",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (
+          data?.success &&
+          data.user?.profilePicture !== current.profilePicture
+        ) {
+          const updated = {
+            ...current,
+            profilePicture: data.user?.profilePicture || "",
+          };
+          saveCustomerUser(updated);
+          setUser(updated);
+        }
+      })
+      .catch(() => {
+        // Silently ignore — falls back to the initial letter.
+      });
   }, [open]);
 
   useEffect(() => {
@@ -105,8 +132,16 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
 
           {user ? (
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-sm font-black text-slate-950">
-                {user.fullName?.charAt(0)?.toUpperCase() || "U"}
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-sm font-black text-slate-950">
+                {user.profilePicture ? (
+                  <img
+                    src={user.profilePicture}
+                    alt={user.fullName || "Profile"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  user.fullName?.charAt(0)?.toUpperCase() || "U"
+                )}
               </div>
               <div className="min-w-0">
                 <div className="truncate text-sm font-bold text-white">

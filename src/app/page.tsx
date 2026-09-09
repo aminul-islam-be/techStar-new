@@ -11,6 +11,7 @@ import FilterSortModal, {
   type SortOrder,
 } from "@/components/FilterSortModal";
 import BottomNav from "@/components/BottomNav";
+import SeasonBackgroundVideo from "@/components/SeasonBackgroundVideo";
 import { useLanguage } from "@/lib/language";
 import { useSeasonTheme } from "@/lib/theme";
 
@@ -504,7 +505,10 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-slate-950 pb-20 text-white sm:pb-0">
+    <>
+      <SeasonBackgroundVideo speed={0.25} />
+
+      <main className="relative z-10 min-h-screen overflow-x-hidden pb-20 text-white sm:pb-0">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-2xl">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
 
@@ -613,13 +617,8 @@ export default function Home() {
         }}
       />
       <section className="relative isolate overflow-hidden">
-        <div
-          className="pointer-events-none absolute -left-32 top-0 h-[420px] w-[420px] rounded-full blur-[110px]"
-          style={{ backgroundColor: `${seasonInfo.accent}26` }}
-        />
-        <div className="pointer-events-none absolute -right-32 top-20 h-[380px] w-[380px] rounded-full bg-indigo-600/10 blur-[110px]" />
-
         <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-20 lg:px-8 lg:pb-24 lg:pt-28">
+          <div className="relative z-10 mx-auto max-w-4xl rounded-3xl bg-slate-950/95 px-5 py-10 shadow-2xl shadow-black/40 sm:px-10 sm:py-14">
 
           <div className="mb-7 flex justify-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/15 bg-blue-500/[0.08] px-4 py-2 text-xs font-semibold text-blue-300">
@@ -702,6 +701,7 @@ export default function Home() {
             <span>{t("home.guestBrowsing")}</span>
             <span>{t("home.secureCheckout")}</span>
             <span>{t("home.globalLanguageSupport")}</span>
+          </div>
           </div>
         </div>
       </section>
@@ -978,157 +978,75 @@ export default function Home() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            {visibleProducts.map((product) => (
-              <article
-                key={product._id}
-                onClick={() =>
-                  router.push(`/products/${product.slug}`)
-                }
-                className="group cursor-pointer overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/70 transition duration-300 hover:-translate-y-1 hover:border-blue-500/30 hover:bg-slate-900"
-              >
-                <div className="relative h-64 overflow-hidden bg-slate-950">
-                  {product.image ? (
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950 text-6xl">
-                      ⚡
-                    </div>
-                  )}
-
-                  {/* Dark gradient so overlaid text stays readable */}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
-
-                  <div className="absolute left-3 top-3 rounded-full border border-white/10 bg-slate-950/80 px-3 py-1.5 text-[10px] font-bold text-blue-300 backdrop-blur">
+          <div className="overflow-hidden rounded-3xl bg-white">
+            <div className="grid grid-cols-2 divide-x divide-y divide-slate-200 sm:grid-cols-3 lg:grid-cols-4">
+              {visibleProducts.map((product) => (
+                <article
+                  key={product._id}
+                  onClick={() =>
+                    router.push(`/products/${product.slug}`)
+                  }
+                  className="group cursor-pointer p-4 sm:p-5"
+                >
+                  <div className="mb-1 line-clamp-1 text-[12px] leading-tight text-slate-500">
                     {product.category}
+                    {product.description && (
+                      <> / {product.description}</>
+                    )}
                   </div>
 
-                  <button
-                    onClick={(event) =>
-                      toggleWishlist(product, event)
-                    }
-                    disabled={
-                      wishlistBusyId === product._id
-                    }
-                    aria-label="Toggle wishlist"
-                    className={`absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border text-base shadow-lg backdrop-blur transition disabled:opacity-60 ${
-                      wishlistIds.has(product._id)
-                        ? "border-red-500/40 bg-red-500/20"
-                        : "border-white/10 bg-slate-950/80 hover:bg-slate-900"
-                    }`}
-                  >
-                    {wishlistIds.has(product._id)
-                      ? "❤️"
-                      : "🤍"}
-                  </button>
+                  <h3 className="mb-3 line-clamp-2 text-[15px] font-bold leading-snug text-blue-700">
+                    {product.name}
+                  </h3>
 
-                  {/* Name + description overlaid on the image */}
-                  <div className="absolute inset-x-0 bottom-0 p-4">
-                    <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-                      {product.compareAtPrice &&
-                        product.compareAtPrice > product.price && (
-                          <span className="rounded-md bg-[#83f511] px-2.5 py-1 text-[11px] font-bold text-white shadow-lg">
-                            {t("home.promotion")}
-                          </span>
-                        )}
+                  <div className="relative mb-3 flex h-36 items-center justify-center sm:h-40">
+                    {product.image ? (
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="text-5xl">⚡</div>
+                    )}
 
-                      {product.featured && (
-                        <span className="rounded-lg bg-blue-600 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-lg">
-                          {t("home.featured")}
+                    <button
+                      onClick={(event) =>
+                        toggleWishlist(product, event)
+                      }
+                      disabled={wishlistBusyId === product._id}
+                      aria-label="Toggle wishlist"
+                      className="absolute right-0 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-sm shadow-sm transition hover:scale-110 disabled:opacity-60"
+                    >
+                      {wishlistIds.has(product._id) ? "💗" : "🤍"}
+                    </button>
+
+                    {product.compareAtPrice &&
+                      product.compareAtPrice > product.price && (
+                        <span className="absolute bottom-0 left-0 rounded-md bg-[#3fae29] px-3 py-1.5 text-xs font-bold text-white shadow">
+                          {t("home.promotion")}
                         </span>
                       )}
+                  </div>
+
+                  {product.compareAtPrice &&
+                  product.compareAtPrice > product.price ? (
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <span className="text-lg font-extrabold text-red-600 sm:text-xl">
+                        {format(product.price)}
+                      </span>
+                      <span className="text-sm text-slate-400 line-through">
+                        {format(product.compareAtPrice)}
+                      </span>
                     </div>
-
-                    <h3 className="line-clamp-2 text-base font-bold leading-5 text-white drop-shadow">
-                      {product.name}
-                    </h3>
-                    <p className="line-clamp-1 text-xs leading-4 text-slate-300">
-                      {product.description ||
-                        t("home.defaultProductDescription")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-5">
-                  <div className="flex items-end justify-between gap-3">
-                    <div>
-                      {product.compareAtPrice &&
-                      product.compareAtPrice > product.price ? (
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-xl font-extrabold tracking-tight text-red-400">
-                            {format(product.price)}
-                          </span>
-                          <span className="text-xs font-medium text-slate-500 line-through">
-                            {format(product.compareAtPrice)}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="text-xl font-extrabold tracking-tight">
-                          {format(product.price)}
-                        </div>
-                      )}
-
-                      <div
-                        className={`mt-1 text-[11px] font-semibold ${
-                          product.stock > 0
-                            ? "text-emerald-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {product.stock > 0
-                          ? `${product.stock} ${t("home.inStock")}`
-                          : t("home.outOfStock")}
-                      </div>
+                  ) : (
+                    <div className="text-lg font-extrabold text-slate-900 sm:text-xl">
+                      {format(product.price)}
                     </div>
-                  </div>
-
-                  <div className="mt-5 flex items-center gap-2">
-                    <button
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        addToCart(product);
-                      }}
-                      disabled={
-                        product.stock <= 0 ||
-                        addingId === product._id ||
-                        buyingId === product._id
-                      }
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-800 px-3 py-3 text-xs font-bold text-white shadow-lg transition hover:bg-slate-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
-                    >
-                      {addingId === product._id ? (
-                        t("home.adding")
-                      ) : product.stock <= 0 ? (
-                        t("home.outOfStockBtn")
-                      ) : (
-                        <>🛒 {t("common.addToCart")}</>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        buyNow(product);
-                      }}
-                      disabled={
-                        product.stock <= 0 ||
-                        addingId === product._id ||
-                        buyingId === product._id
-                      }
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-bold text-white shadow-lg transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm"
-                      style={{ backgroundColor: seasonInfo.accent }}
-                    >
-                      {buyingId === product._id
-                        ? t("home.processing")
-                        : t("common.buyNow")}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
+                  )}
+                </article>
+              ))}
+            </div>
           </div>
         )}
       </section>
@@ -1218,6 +1136,7 @@ export default function Home() {
 
       <BottomNav cartCount={cartCount} />
     </main>
+    </>
   );
 }
 

@@ -453,6 +453,7 @@ export default function ProfilePage() {
         fullName: data.user.fullName,
         phone: data.user.phone,
         email: data.user.email || "",
+        profilePicture: data.user.profilePicture || "",
       });
 
       setMessage("Profile updated successfully.");
@@ -786,6 +787,12 @@ export default function ProfilePage() {
                             profilePicture:
                               backgroundRemovedUrl,
                           }));
+
+                          saveCustomerUser({
+                            ...user,
+                            profilePicture:
+                              backgroundRemovedUrl,
+                          });
 
                           URL.revokeObjectURL(
                             cropImage

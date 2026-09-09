@@ -3,6 +3,7 @@ export type CustomerUser = {
   fullName: string;
   phone: string;
   email?: string;
+  profilePicture?: string;
   role: "customer" | "admin";
 };
 

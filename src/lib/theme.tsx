@@ -75,6 +75,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         "--season-from": seasonInfo.gradientFrom,
         "--season-to": seasonInfo.gradientTo,
         "--season-accent": seasonInfo.accent,
+        "--season-secondary": seasonInfo.secondary,
+        "--season-glow-primary": seasonInfo.glowPrimary,
+        "--season-glow-secondary": seasonInfo.glowSecondary,
       }) as CSSProperties,
     [seasonInfo]
   );

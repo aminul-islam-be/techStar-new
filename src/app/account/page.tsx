@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getCustomerUser, type CustomerUser } from "@/lib/customerAuth";
+import {
+  getCustomerUser,
+  saveCustomerUser,
+  type CustomerUser,
+} from "@/lib/customerAuth";
 import { useLanguage } from "@/lib/language";
 
 type Order = {
@@ -57,7 +61,36 @@ export default function AccountPage() {
 
     setUser(current);
     loadOrders(current.id);
+    syncProfilePicture(current);
   }, []);
+
+  async function syncProfilePicture(current: CustomerUser) {
+    try {
+      const response = await fetch("/api/profile", {
+        method: "GET",
+        headers: { "x-user-id": current.id },
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (
+        response.ok &&
+        data.success &&
+        data.user?.profilePicture !== current.profilePicture
+      ) {
+        const updated = {
+          ...current,
+          profilePicture: data.user?.profilePicture || "",
+        };
+
+        saveCustomerUser(updated);
+        setUser(updated);
+      }
+    } catch {
+      // Silently ignore — falls back to the initial letter.
+    }
+  }
 
   async function loadOrders(userId: string) {
     try {
@@ -122,8 +155,16 @@ export default function AccountPage() {
         </div>
 
         <div className="mx-auto mt-6 flex max-w-3xl items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white text-2xl font-black text-slate-950">
-            {user.fullName?.charAt(0)?.toUpperCase() || "U"}
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white text-2xl font-black text-slate-950">
+            {user.profilePicture ? (
+              <img
+                src={user.profilePicture}
+                alt={user.fullName || "Profile"}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              user.fullName?.charAt(0)?.toUpperCase() || "U"
+            )}
           </div>
 
           <div className="min-w-0">
