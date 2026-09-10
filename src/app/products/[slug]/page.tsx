@@ -301,8 +301,9 @@ export default function ProductDetailPage({
           {/* Image */}
           <div>
             <button
+              type="button"
               onClick={() => setLightboxOpen(true)}
-              className="mb-3 flex items-center gap-1.5 text-slate-400 hover:text-orange-500"
+              className="mb-3 -ml-2 flex items-center gap-1.5 rounded-lg p-2 text-lg text-slate-400 hover:bg-slate-50 hover:text-orange-500"
               aria-label="Zoom image"
             >
               🔍
@@ -366,12 +367,12 @@ export default function ProductDetailPage({
               )}
             </div>
 
-            <div className="mt-6 flex items-center overflow-hidden rounded-full border border-slate-200">
+            <div className="mt-6 flex h-9 w-fit items-center overflow-hidden rounded-full border border-slate-200">
                 <button
                   onClick={() =>
                     setQuantity((q) => Math.max(1, q - 1))
                   }
-                  className="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-50"
+                  className="flex h-full w-11 items-center justify-center text-base text-slate-500 hover:bg-slate-50"
                   aria-label="Decrease quantity"
                 >
                   −
@@ -387,11 +388,11 @@ export default function ProductDetailPage({
                       Number.isNaN(value) ? 1 : Math.max(1, value)
                     );
                   }}
-                  className="w-9 border-x border-slate-200 py-1.5 text-center text-xs font-semibold outline-none"
+                  className="h-full w-[38px] border-x border-slate-200 text-center text-sm font-semibold outline-none"
                 />
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-50"
+                  className="flex h-full w-11 items-center justify-center text-base text-slate-500 hover:bg-slate-50"
                   aria-label="Increase quantity"
                 >
                   +
