@@ -986,28 +986,30 @@ export default function Home() {
                   onClick={() =>
                     router.push(`/products/${product.slug}`)
                   }
-                  className="group cursor-pointer p-4 sm:p-5"
+                  className="group cursor-pointer pl-[4mm] pr-[calc(1.25rem+2cm)] pt-[2mm] pb-[4mm] sm:pl-[4mm] sm:pr-[calc(1.5rem+2cm)] sm:pt-[2mm] sm:pb-[4mm]"
                 >
-                  <div className="mb-1 line-clamp-1 text-[12px] leading-tight text-slate-500">
+                  <div className="mb-1 line-clamp-1 text-xs leading-tight text-slate-500">
                     {product.category}
                     {product.description && (
                       <> / {product.description}</>
                     )}
                   </div>
 
-                  <h3 className="mb-3 line-clamp-2 text-[15px] font-bold leading-snug text-blue-700">
+                  <h3 className="mb-5 line-clamp-2 text-sm font-bold leading-snug text-blue-700 sm:mb-6 sm:text-base">
                     {product.name}
                   </h3>
 
-                  <div className="relative mb-3 flex h-36 items-center justify-center sm:h-40">
+                  <div className="relative mb-3 flex h-24 items-center justify-center overflow-hidden sm:h-28">
                     {product.image ? (
                       <img
                         src={product.image}
                         alt={product.name}
-                        className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+                        className="h-full w-full object-contain object-left transition duration-500 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="text-5xl">⚡</div>
+                      <div className="flex h-full w-full items-center justify-center text-5xl">
+                        ⚡
+                      </div>
                     )}
 
                     <button
@@ -1029,21 +1031,21 @@ export default function Home() {
                       )}
                   </div>
 
-                  {product.compareAtPrice &&
-                  product.compareAtPrice > product.price ? (
-                    <div className="flex flex-wrap items-baseline gap-2">
-                      <span className="text-lg font-extrabold text-red-600 sm:text-xl">
-                        {format(product.price)}
-                      </span>
-                      <span className="text-sm text-slate-400 line-through">
-                        {format(product.compareAtPrice)}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="text-lg font-extrabold text-slate-900 sm:text-xl">
-                      {format(product.price)}
-                    </div>
-                  )}
+                                    {product.compareAtPrice &&
+                                                      product.compareAtPrice > product.price ? (
+                                                                          <div className="flex flex-col">
+                                                                                                <span className="text-sm text-slate-600 line-through">
+                                                                                                                        {format(product.compareAtPrice)}
+                                                                                                                                              </span>
+                                                                                                                                                                    <span className="text-xl font-extrabold text-red-600 sm:text-2xl">
+                                                                                                                                                                                            {format(product.price)}
+                                                                                                                                                                                                                  </span>
+                                                                                                                                                                                                                                      </div>
+                                                                                                                                                                                                                                                        ) : (
+                                                                                                                                                                                                                                                                            <div className="text-xl font-extrabold text-slate-900 sm:text-2xl">
+                                                                                                                                                                                                                                                                                                  {format(product.price)}
+                                                                                                                                                                                                                                                                                                                      </div>
+                                                                                                                                                                                                                                                                                                                                        )}
                 </article>
               ))}
             </div>
@@ -1052,9 +1054,9 @@ export default function Home() {
       </section>
       <section
         id="about"
-        className="border-y border-white/[0.07] bg-white/[0.018]"
+        className="border-y border-white/[0.07] bg-white/[0.03]"
       >
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-4 lg:px-18 lg:py-16">
           <div className="grid gap-3 md:grid-cols-3">
             <div className="rounded-3xl border border-white/[0.08] bg-slate-900/70 p-6">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-xl">

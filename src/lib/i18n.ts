@@ -14,6 +14,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.me": "Me",
 
     "menu.myAccount": "My Account",
+    "menu.aiAssistant": "AI Assistant",
     "menu.orderHistory": "Order History",
     "menu.myHistory": "My History",
     "menu.wishlist": "Wishlist",
@@ -335,6 +336,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.me": "আমি",
 
     "menu.myAccount": "আমার অ্যাকাউন্ট",
+    "menu.aiAssistant": "AI অ্যাসিস্ট্যান্ট",
     "menu.orderHistory": "অর্ডার হিস্টরি",
     "menu.myHistory": "আমার ইতিহাস",
     "menu.wishlist": "উইশলিস্ট",

@@ -340,7 +340,7 @@ export default function HistoryPage() {
                             <img
                               src={item.product.image}
                               alt={item.product.name}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain"
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-4xl">

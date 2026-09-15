@@ -309,13 +309,13 @@ export default function ProductDetailPage({
               🔍
             </button>
 
-            <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl bg-white">
+            <div className="mx-auto flex aspect-square w-full max-w-[180px] items-center justify-center overflow-hidden rounded-2xl bg-white sm:max-w-[220px]">
               {product.image ? (
                 <img
                   src={product.image}
                   alt={product.name}
                   onClick={() => setLightboxOpen(true)}
-                  className="h-full w-full cursor-zoom-in object-contain"
+                  className="h-4/5 w-4/5 cursor-zoom-in object-contain"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-6xl text-slate-200">
@@ -490,7 +490,7 @@ export default function ProductDetailPage({
                         {item.name}
                       </h3>
 
-                      <div className="mb-3 flex h-36 items-center justify-center sm:h-40">
+                      <div className="mb-3 flex h-24 items-center justify-center overflow-hidden sm:h-28">
                         {item.image ? (
                           <img
                             src={item.image}
@@ -498,7 +498,9 @@ export default function ProductDetailPage({
                             className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
                           />
                         ) : (
-                          <div className="text-5xl">⚡</div>
+                          <div className="flex h-full w-full items-center justify-center text-5xl">
+                            ⚡
+                          </div>
                         )}
                       </div>
 

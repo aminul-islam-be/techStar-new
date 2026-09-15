@@ -337,7 +337,7 @@ export default function CartPage() {
                         <img
                           src={item.image}
                           alt={item.name}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         />
                       ) : (
                         <span className="text-3xl">
