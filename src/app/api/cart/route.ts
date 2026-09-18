@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -66,10 +67,7 @@ export async function POST(request: NextRequest) {
     const productId = body.productId;
     const quantity = Number(body.quantity || 1);
 
-    if (
-      !productId ||
-      !mongoose.Types.ObjectId.isValid(productId)
-    ) {
+    if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
       return NextResponse.json(
         {
           success: false,
@@ -123,21 +121,12 @@ export async function POST(request: NextRequest) {
 
     let cart = await Cart.findOne({ userId });
 
-    if (!cart) {
-      cart = new Cart({
-        userId,
-        items: [],
-      });
-    }
-
-    const existingItem = cart.items.find(
-      (item) =>
-        item.productId.toString() === productId
+    const existingItem = cart?.items.find(
+      (item: any) => item.productId.toString() === productId
     );
 
     if (existingItem) {
-      const newQuantity =
-        existingItem.quantity + quantity;
+      const newQuantity = existingItem.quantity + quantity;
 
       if (newQuantity > product.stock) {
         return NextResponse.json(
@@ -149,21 +138,69 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      existingItem.quantity = newQuantity;
-      existingItem.price = product.price;
-      existingItem.name = product.name;
-      existingItem.image = product.image;
+      // Fixed: Mongoose deprecation warning by replacing { new: true } with { returnDocument: 'after' }
+      cart = await Cart.findOneAndUpdate(
+        { userId, "items.productId": productId },
+        {
+          $set: {
+            "items.$.quantity": newQuantity,
+            "items.$.price": product.price,
+            "items.$.name": product.name,
+            "items.$.image": product.image,
+          },
+        },
+        { returnDocument: 'after' }
+      );
     } else {
-      cart.items.push({
-        productId: new mongoose.Types.ObjectId(productId),
-        name: product.name,
-        price: product.price,
-        quantity,
-        image: product.image,
-      });
+      try {
+        // Fixed: Mongoose deprecation warning
+        cart = await Cart.findOneAndUpdate(
+          { userId },
+          {
+            $setOnInsert: { userId },$push: {
+              items: {
+                productId: new mongoose.Types.ObjectId(productId),
+                name: product.name,
+                price: product.price,
+                quantity,
+                image: product.image,
+              },
+            },
+          },
+          { returnDocument: 'after', upsert: true }
+        );
+      } catch (raceError: any) {
+        if (raceError?.code === 11000) {
+          cart = await Cart.findOneAndUpdate(
+            { userId },
+            {
+              $push: {
+                items: {
+                  productId: new mongoose.Types.ObjectId(productId),
+                  name: product.name,
+                  price: product.price,
+                  quantity,
+                  image: product.image,
+                },
+              },
+            },
+            { returnDocument: 'after' }
+          );
+        } else {
+          throw raceError;
+        }
+      }
     }
 
-    await cart.save();
+    if (!cart) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unable to add product to cart.",
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -177,11 +214,13 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         message: "Unable to add product to cart.",
+        debug: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
   }
 }
+
 export async function PATCH(request: NextRequest) {
   try {
     await connectDB();
@@ -203,10 +242,7 @@ export async function PATCH(request: NextRequest) {
     const productId = body.productId;
     const quantity = Number(body.quantity);
 
-    if (
-      !productId ||
-      !mongoose.Types.ObjectId.isValid(productId)
-    ) {
+    if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
       return NextResponse.json(
         {
           success: false,
@@ -261,8 +297,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const item = cart.items.find(
-      (cartItem) =>
-        cartItem.productId.toString() === productId
+      (cartItem: any) => cartItem.productId.toString() === productId
     );
 
     if (!item) {
@@ -299,6 +334,7 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
 export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
@@ -316,8 +352,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const productId =
-      searchParams.get("productId")?.trim() || "";
+    const productId = searchParams.get("productId")?.trim() || "";
 
     if (productId) {
       if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -344,8 +379,7 @@ export async function DELETE(request: NextRequest) {
       }
 
       cart.items = cart.items.filter(
-        (item) =>
-          item.productId.toString() !== productId
+        (item: any) => item.productId.toString() !== productId
       );
 
       await cart.save();
@@ -379,4 +413,3 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
-
