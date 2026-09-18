@@ -59,6 +59,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const ingredients = Array.isArray(body.ingredients)
+      ? body.ingredients
+          .map((ing: any) => ({
+            name: String(ing?.name || "").trim(),
+            function: String(ing?.function || "").trim(),
+            amount: String(ing?.amount || "").trim(),
+          }))
+          .filter((ing: { name: string }) => ing.name.length > 0)
+      : [];
+
     const detail = await generateProductDetails({
       _id: body._id,
       name: body.name,
@@ -66,6 +76,7 @@ export async function POST(request: NextRequest) {
       description: body.description,
       price: body.price,
       stock: body.stock,
+      ingredients,
     });
 
     return NextResponse.json({

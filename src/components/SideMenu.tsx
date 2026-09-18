@@ -28,6 +28,7 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
     { icon: "🕘", label: t("menu.myHistory"), href: "/history" },
     { icon: "❤️", label: t("menu.wishlist"), href: "/wishlist" },
     { icon: "⊞", label: t("menu.categories"), href: "/categories" },
+    { icon: "🧪", label: t("menu.productDetails"), href: "/product-details" },
     { icon: "🛒", label: t("menu.cart"), href: "/cart" },
     { icon: "🔔", label: t("menu.notifications"), href: "/notifications" },
     { icon: "📍", label: t("menu.addresses"), href: "/addresses" },

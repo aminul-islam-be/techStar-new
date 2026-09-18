@@ -8,6 +8,11 @@ type ProductInput = {
   description?: string;
   price?: number;
   stock?: number;
+  // Optional: a real formula/ingredient list typed in by the admin.
+  // When present (with at least one named ingredient), this is used
+  // as-is for the "ingredients" field instead of asking the AI to
+  // guess -- the AI is only used for the descriptive text.
+  ingredients?: Ingredient[];
 };
 
 type Ingredient = {
@@ -65,6 +70,20 @@ function fallbackDetails(product: ProductInput): GeneratedDetails {
   };
 }
 
+function sanitizeManualIngredients(
+  ingredients: Ingredient[] | undefined
+): Ingredient[] {
+  if (!Array.isArray(ingredients)) return [];
+
+  return ingredients
+    .map((ing) => ({
+      name: (ing?.name || "").trim(),
+      function: (ing?.function || "").trim() || "Not provided",
+      amount: (ing?.amount || "").trim() || "Not provided",
+    }))
+    .filter((ing) => ing.name.length > 0);
+}
+
 function cleanJsonText(text: string): string {
   return text
     .replace(/^```json\s*/i, "")
@@ -74,7 +93,8 @@ function cleanJsonText(text: string): string {
 }
 
 async function generateWithAI(
-  product: ProductInput
+  product: ProductInput,
+  knownIngredientNames: string[]
 ): Promise<GeneratedDetails | null> {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -86,6 +106,11 @@ async function generateWithAI(
     process.env.OPENROUTER_MODEL ||
     "nvidia/nemotron-3-ultra-550b-a55b:free";
 
+  const knownIngredientsLine =
+    knownIngredientNames.length > 0
+      ? `Known ingredients (admin-provided, names only -- you may mention these in the description, but do NOT invent amounts/percentages for them): ${knownIngredientNames.join(", ")}`
+      : "Ingredients: Not provided by admin.";
+
   const prompt = `
 You are TechStar's product-details assistant.
 
@@ -95,6 +120,7 @@ PRODUCT:
 Name: ${product.name}
 Category: ${product.category || "Other"}
 Description: ${product.description || "Not provided"}
+${knownIngredientsLine}
 
 IMPORTANT RULES:
 1. Do NOT invent chemical ingredients or percentages.
@@ -104,6 +130,7 @@ IMPORTANT RULES:
 5. Benefits must be reasonable cosmetic/product descriptions.
 6. Return ONLY valid JSON.
 7. Keep the same structure every time.
+8. Leave the "ingredients" array EMPTY ([]) in your JSON response -- ingredient data is handled separately and will be ignored either way.
 
 JSON structure:
 {
@@ -113,13 +140,7 @@ JSON structure:
   "benefits": ["string"],
   "howToUse": "string",
   "suitableFor": "string",
-  "ingredients": [
-    {
-      "name": "string",
-      "function": "string",
-      "amount": "string"
-    }
-  ],
+  "ingredients": [],
   "safety": "string",
   "storage": "string"
 }
@@ -213,10 +234,54 @@ JSON structure:
 export async function generateProductDetails(product: ProductInput) {
   await dbConnect();
 
-  const aiDetails = await generateWithAI(product);
+  const manualIngredients = sanitizeManualIngredients(product.ingredients);
+  let hasManualFormula = manualIngredients.length > 0;
+
+  // Safety net: if this call didn't include a formula, but the product
+  // already has an admin-entered ("manual") formula saved, keep it --
+  // never let a routine regenerate silently wipe out real formula data.
+  let ingredientsToSave = manualIngredients;
+  let preservedSource: "pdf" | "manual" | null = null;
+
+  if (!hasManualFormula) {
+    const existing = await ProductDetail.findOne(
+      product._id
+        ? { productId: product._id }
+        : { productName: product.name }
+    ).lean();
+
+    if (
+      existing &&
+      ["manual", "pdf"].includes((existing as any).source) &&
+      Array.isArray((existing as any).ingredients) &&
+      (existing as any).ingredients.length > 0
+    ) {
+      ingredientsToSave = (existing as any).ingredients;
+      hasManualFormula = true;
+      preservedSource = (existing as any).source;
+    }
+  }
+
+  const aiDetails = await generateWithAI(
+    product,
+    hasManualFormula ? ingredientsToSave.map((ing) => ing.name) : []
+  );
   const details = aiDetails || fallbackDetails(product);
 
-  const source: "ai" | "fallback" = aiDetails ? "ai" : "fallback";
+  // If the admin typed in a real formula (new or previously saved),
+  // that always wins for the "ingredients" field -- never let the
+  // AI/fallback text override it.
+  const ingredients = hasManualFormula
+    ? ingredientsToSave
+    : details.ingredients;
+
+  const source: "ai" | "fallback" | "manual" | "pdf" = preservedSource
+    ? preservedSource
+    : hasManualFormula
+    ? "manual"
+    : aiDetails
+    ? "ai"
+    : "fallback";
 
   const saved = await ProductDetail.findOneAndUpdate(
     product._id
@@ -232,7 +297,7 @@ export async function generateProductDetails(product: ProductInput) {
         benefits: details.benefits,
         howToUse: details.howToUse,
         suitableFor: details.suitableFor,
-        ingredients: details.ingredients,
+        ingredients,
         safety: details.safety,
         storage: details.storage,
         source,

@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 type Ingredient = {
   name: string;
@@ -20,33 +22,173 @@ type ProductDetail = {
   ingredients: Ingredient[];
   safety: string;
   storage: string;
-  source: "pdf" | "ai" | "fallback";
+  source: "pdf" | "ai" | "fallback" | "manual";
   generatedAt?: string;
 };
 
 export default function ProductDetailsPage() {
+  return (
+    <Suspense fallback={<ProductDetailsLoadingFallback />}>
+      <ProductDetailsContent />
+    </Suspense>
+  );
+}
+
+function ProductDetailsLoadingFallback() {
+  return (
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600" />
+          <p className="text-sm text-slate-500">
+            Loading product details...
+          </p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function ProductDetailsContent() {
+  const searchParams = useSearchParams();
+  const productId = searchParams.get("productId");
+
   const [details, setDetails] = useState<ProductDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [openId, setOpenId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadDetails();
-  }, []);
+  // Editing a product's formula (admin action)
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editRows, setEditRows] = useState<Ingredient[]>([]);
+  const [savingFormula, setSavingFormula] = useState(false);
+  const [formulaError, setFormulaError] = useState("");
 
-  async function loadDetails() {
+  function startEditFormula(item: ProductDetail) {
+    const hasRealIngredients =
+      item.source === "manual" ||
+      item.source === "pdf" ||
+      (item.ingredients.length > 0 &&
+        item.ingredients[0].name !== "Ingredient information");
+
+    setEditRows(
+      hasRealIngredients && item.ingredients.length > 0
+        ? item.ingredients.map((ing) => ({ ...ing }))
+        : [{ name: "", function: "", amount: "" }]
+    );
+    setFormulaError("");
+    setEditingId(item._id);
+  }
+
+  function cancelEditFormula() {
+    setEditingId(null);
+    setEditRows([]);
+    setFormulaError("");
+  }
+
+  function updateEditRow(
+    index: number,
+    field: keyof Ingredient,
+    value: string
+  ) {
+    setEditRows((current) =>
+      current.map((row, i) =>
+        i === index ? { ...row, [field]: value } : row
+      )
+    );
+  }
+
+  function addEditRow() {
+    setEditRows((current) => [
+      ...current,
+      { name: "", function: "", amount: "" },
+    ]);
+  }
+
+  function removeEditRow(index: number) {
+    setEditRows((current) =>
+      current.length === 1
+        ? current
+        : current.filter((_, i) => i !== index)
+    );
+  }
+
+  async function saveFormula(item: ProductDetail) {
+    try {
+      setSavingFormula(true);
+      setFormulaError("");
+
+      const cleanRows = editRows.filter(
+        (row) => row.name.trim().length > 0
+      );
+
+      const response = await fetch("/api/product-details", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          _id: item.productId || undefined,
+          name: item.productName,
+          category: item.category,
+          description: item.purpose,
+          ingredients: cleanRows,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Unable to save the formula."
+        );
+      }
+
+      setDetails((current) =>
+        current.map((d) => (d._id === item._id ? data.detail : d))
+      );
+      setEditingId(null);
+      setEditRows([]);
+    } catch (error) {
+      setFormulaError(
+        error instanceof Error
+          ? error.message
+          : "Unable to save the formula."
+      );
+    } finally {
+      setSavingFormula(false);
+    }
+  }
+
+  useEffect(() => {
+    loadDetails(productId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
+
+  async function loadDetails(forProductId: string | null) {
     try {
       setLoading(true);
 
-      const response = await fetch("/api/product-details", {
+      const url = forProductId
+        ? `/api/product-details?productId=${encodeURIComponent(
+            forProductId
+          )}`
+        : "/api/product-details";
+
+      const response = await fetch(url, {
         cache: "no-store",
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setDetails(data.details || []);
+        const list: ProductDetail[] = data.details || [];
+        setDetails(list);
+
+        // Deep-linked from a product page: jump straight to that
+        // product's details instead of leaving every card collapsed.
+        if (forProductId && list.length > 0) {
+          setOpenId(list[0]._id);
+        }
       }
     } catch (error) {
       console.error("Failed to load product details:", error);
@@ -116,6 +258,19 @@ export default function ProductDetailsPage() {
             </p>
           </div>
         </section>
+
+        {/* Deep link banner */}
+        {productId && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+            <span>Showing details for this product only.</span>
+            <Link
+              href="/product-details"
+              className="font-semibold text-indigo-700 underline hover:text-indigo-900"
+            >
+              View all Product Details →
+            </Link>
+          </div>
+        )}
 
         {/* Search + Filter */}
         <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -209,6 +364,12 @@ export default function ProductDetailsPage() {
                           </span>
                         )}
 
+                        {item.source === "manual" && (
+                          <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
+                            ✍️ Admin Formula
+                          </span>
+                        )}
+
                         {item.source === "pdf" && (
                           <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
                             📄 PDF Formula
@@ -287,68 +448,184 @@ export default function ProductDetailsPage() {
 
                       {/* Ingredient Table */}
                       <section className="mb-6">
-                        <div className="mb-3 flex items-center justify-between gap-3">
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                           <h3 className="text-lg font-bold">
                             Ingredients / Formula
                           </h3>
 
-                          <span className="text-xs text-slate-500">
-                            {item.ingredients.length} item
-                            {item.ingredients.length !== 1 ? "s" : ""}
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-slate-500">
+                              {item.ingredients.length} item
+                              {item.ingredients.length !== 1 ? "s" : ""}
+                            </span>
+
+                            {editingId !== item._id && (
+                              <button
+                                type="button"
+                                onClick={() => startEditFormula(item)}
+                                className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                              >
+                                ✏️ Edit Formula
+                              </button>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="overflow-x-auto rounded-xl border border-slate-200">
-                          <table className="w-full min-w-[650px] border-collapse text-sm">
-                            <thead>
-                              <tr className="bg-slate-900 text-white">
-                                <th className="px-4 py-3 text-left font-semibold">
-                                  #
-                                </th>
-                                <th className="px-4 py-3 text-left font-semibold">
-                                  Ingredient
-                                </th>
-                                <th className="px-4 py-3 text-left font-semibold">
-                                  Function
-                                </th>
-                                <th className="px-4 py-3 text-right font-semibold">
-                                  Amount
-                                </th>
-                              </tr>
-                            </thead>
+                        {editingId === item._id ? (
+                          <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4">
+                            <p className="mb-3 text-xs leading-5 text-slate-600">
+                              Enter the real formula here. This is saved
+                              exactly as typed — nothing is generated or
+                              guessed. Leave a row blank and it will be
+                              dropped when you save.
+                            </p>
 
-                            <tbody>
-                              {item.ingredients.map(
-                                (ingredient, index) => (
-                                  <tr
-                                    key={`${ingredient.name}-${index}`}
-                                    className={
-                                      index % 2 === 0
-                                        ? "bg-white"
-                                        : "bg-slate-50"
+                            <div className="space-y-2">
+                              {editRows.map((row, index) => (
+                                <div
+                                  key={index}
+                                  className="grid grid-cols-1 gap-2 sm:grid-cols-[1.4fr_1.4fr_1fr_auto]"
+                                >
+                                  <input
+                                    value={row.name}
+                                    onChange={(e) =>
+                                      updateEditRow(
+                                        index,
+                                        "name",
+                                        e.target.value
+                                      )
                                     }
+                                    placeholder="Ingredient name"
+                                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                                  />
+
+                                  <input
+                                    value={row.function}
+                                    onChange={(e) =>
+                                      updateEditRow(
+                                        index,
+                                        "function",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Function"
+                                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                                  />
+
+                                  <input
+                                    value={row.amount}
+                                    onChange={(e) =>
+                                      updateEditRow(
+                                        index,
+                                        "amount",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Amount"
+                                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                                  />
+
+                                  <button
+                                    type="button"
+                                    onClick={() => removeEditRow(index)}
+                                    disabled={editRows.length === 1}
+                                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-red-600 disabled:opacity-40"
                                   >
-                                    <td className="border-t border-slate-200 px-4 py-3 text-slate-500">
-                                      {index + 1}
-                                    </td>
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
 
-                                    <td className="border-t border-slate-200 px-4 py-3 font-medium text-slate-900">
-                                      {ingredient.name}
-                                    </td>
+                            <button
+                              type="button"
+                              onClick={addEditRow}
+                              className="mt-3 rounded-lg border border-dashed border-slate-400 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white"
+                            >
+                              ➕ Add Row
+                            </button>
 
-                                    <td className="border-t border-slate-200 px-4 py-3 text-slate-600">
-                                      {ingredient.function}
-                                    </td>
+                            {formulaError && (
+                              <p className="mt-3 text-xs font-semibold text-red-600">
+                                {formulaError}
+                              </p>
+                            )}
 
-                                    <td className="border-t border-slate-200 px-4 py-3 text-right font-semibold text-indigo-700">
-                                      {ingredient.amount}
-                                    </td>
-                                  </tr>
-                                )
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => saveFormula(item)}
+                                disabled={savingFormula}
+                                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                              >
+                                {savingFormula
+                                  ? "Saving..."
+                                  : "💾 Save Formula"}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={cancelEditFormula}
+                                disabled={savingFormula}
+                                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto rounded-xl border border-slate-200">
+                            <table className="w-full min-w-[650px] border-collapse text-sm">
+                              <thead>
+                                <tr className="bg-slate-900 text-white">
+                                  <th className="px-4 py-3 text-left font-semibold">
+                                    #
+                                  </th>
+                                  <th className="px-4 py-3 text-left font-semibold">
+                                    Ingredient
+                                  </th>
+                                  <th className="px-4 py-3 text-left font-semibold">
+                                    Function
+                                  </th>
+                                  <th className="px-4 py-3 text-right font-semibold">
+                                    Amount
+                                  </th>
+                                </tr>
+                              </thead>
+
+                              <tbody>
+                                {item.ingredients.map(
+                                  (ingredient, index) => (
+                                    <tr
+                                      key={`${ingredient.name}-${index}`}
+                                      className={
+                                        index % 2 === 0
+                                          ? "bg-white"
+                                          : "bg-slate-50"
+                                      }
+                                    >
+                                      <td className="border-t border-slate-200 px-4 py-3 text-slate-500">
+                                        {index + 1}
+                                      </td>
+
+                                      <td className="border-t border-slate-200 px-4 py-3 font-medium text-slate-900">
+                                        {ingredient.name}
+                                      </td>
+
+                                      <td className="border-t border-slate-200 px-4 py-3 text-slate-600">
+                                        {ingredient.function}
+                                      </td>
+
+                                      <td className="border-t border-slate-200 px-4 py-3 text-right font-semibold text-indigo-700">
+                                        {ingredient.amount}
+                                      </td>
+                                    </tr>
+                                  )
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
                       </section>
 
                       {/* Safety */}

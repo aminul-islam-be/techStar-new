@@ -17,7 +17,7 @@ export interface IProductDetail extends Document {
   ingredients: IProductIngredient[];
   safety: string;
   storage: string;
-  source: "pdf" | "ai" | "fallback";
+  source: "pdf" | "ai" | "fallback" | "manual";
   generatedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -108,7 +108,7 @@ const ProductDetailSchema = new Schema<IProductDetail>(
 
     source: {
       type: String,
-      enum: ["pdf", "ai", "fallback"],
+      enum: ["pdf", "ai", "fallback", "manual"],
       default: "fallback",
     },
 

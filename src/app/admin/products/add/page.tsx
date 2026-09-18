@@ -22,6 +22,40 @@ export default function AddProductPage() {
     active: true,
   });
 
+  // Optional real formula/ingredient rows. Left blank by default --
+  // if nothing is typed here, Product Details will show
+  // "Not provided" instead of the AI guessing a formula.
+  const [ingredients, setIngredients] = useState([
+    { name: "", function: "", amount: "" },
+  ]);
+
+  function updateIngredient(
+    index: number,
+    field: "name" | "function" | "amount",
+    value: string
+  ) {
+    setIngredients((current) =>
+      current.map((row, i) =>
+        i === index ? { ...row, [field]: value } : row
+      )
+    );
+  }
+
+  function addIngredientRow() {
+    setIngredients((current) => [
+      ...current,
+      { name: "", function: "", amount: "" },
+    ]);
+  }
+
+  function removeIngredientRow(index: number) {
+    setIngredients((current) =>
+      current.length === 1
+        ? current
+        : current.filter((_, i) => i !== index)
+    );
+  }
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -274,6 +308,9 @@ export default function AddProductPage() {
           stock: Number(form.stock),
           featured: form.featured,
           active: form.active,
+          ingredients: ingredients.filter(
+            (row) => row.name.trim().length > 0
+          ),
         }),
       });
 
@@ -285,12 +322,16 @@ export default function AddProductPage() {
         );
       }
 
-      setMessage("Product added successfully.");
+      setMessage(
+        data.productDetailsStatus === "created"
+          ? "Product added successfully. Product Details generated automatically."
+          : "Product added successfully. (Product Details could not be auto-generated — you can regenerate it from the Product Details page.)"
+      );
 
       setTimeout(() => {
         router.push("/admin/products");
         router.refresh();
-      }, 800);
+      }, 1000);
     } catch (err) {
       console.error(err);
 
@@ -587,6 +628,141 @@ export default function AddProductPage() {
             required
             style={inputStyle}
           />
+
+          {/* Formula / Ingredients (optional, real data only) */}
+
+          <label style={labelStyle}>
+            🧪 Formula / Ingredients (optional)
+          </label>
+
+          <p
+            style={{
+              margin: "0 0 10px",
+              fontSize: "12px",
+              color: "#94a3b8",
+            }}
+          >
+            If you know the real formula, type it below and it will be
+            saved exactly as entered on the Product Details page. Leave
+            this blank to show &quot;Not provided&quot; instead of a
+            guessed formula.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gap: "10px",
+              padding: "14px",
+              borderRadius: "12px",
+              border: "1px solid #334155",
+              background: "#0f172a",
+            }}
+          >
+            {ingredients.map((row, index) => (
+              <div
+                key={index}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "minmax(0, 1.4fr) minmax(0, 1.4fr) minmax(0, 1fr) auto",
+                  gap: "8px",
+                  alignItems: "center",
+                }}
+              >
+                <input
+                  value={row.name}
+                  onChange={(event) =>
+                    updateIngredient(
+                      index,
+                      "name",
+                      event.target.value
+                    )
+                  }
+                  placeholder="Ingredient name"
+                  style={{
+                    ...inputStyle,
+                    padding: "10px 12px",
+                    fontSize: "13px",
+                  }}
+                />
+
+                <input
+                  value={row.function}
+                  onChange={(event) =>
+                    updateIngredient(
+                      index,
+                      "function",
+                      event.target.value
+                    )
+                  }
+                  placeholder="Function (e.g. Moisturizer)"
+                  style={{
+                    ...inputStyle,
+                    padding: "10px 12px",
+                    fontSize: "13px",
+                  }}
+                />
+
+                <input
+                  value={row.amount}
+                  onChange={(event) =>
+                    updateIngredient(
+                      index,
+                      "amount",
+                      event.target.value
+                    )
+                  }
+                  placeholder="Amount (e.g. 2%)"
+                  style={{
+                    ...inputStyle,
+                    padding: "10px 12px",
+                    fontSize: "13px",
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => removeIngredientRow(index)}
+                  disabled={ingredients.length === 1}
+                  title="Remove row"
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "8px",
+                    border: "1px solid #334155",
+                    background: "transparent",
+                    color: "#f87171",
+                    cursor:
+                      ingredients.length === 1
+                        ? "not-allowed"
+                        : "pointer",
+                    opacity: ingredients.length === 1 ? 0.4 : 1,
+                    fontSize: "15px",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addIngredientRow}
+              style={{
+                justifySelf: "start",
+                padding: "8px 14px",
+                borderRadius: "8px",
+                border: "1px dashed #475569",
+                background: "transparent",
+                color: "#93c5fd",
+                fontWeight: 700,
+                fontSize: "13px",
+                cursor: "pointer",
+              }}
+            >
+              ➕ Add Ingredient Row
+            </button>
+          </div>
 
           {/* Image */}
 

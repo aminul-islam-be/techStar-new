@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Product from "@/models/Product";
+import { generateProductDetails } from "@/lib/productDetailsAI";
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,6 +33,19 @@ export async function POST(request: NextRequest) {
     const featured = Boolean(body.featured);
     const active =
       typeof body.active === "boolean" ? body.active : true;
+
+    // Optional: admin-entered formula/ingredient rows. Only rows with
+    // a non-empty name are kept -- everything else is discarded here,
+    // not "guessed" by the AI.
+    const ingredients = Array.isArray(body.ingredients)
+      ? body.ingredients
+          .map((ing: any) => ({
+            name: String(ing?.name || "").trim(),
+            function: String(ing?.function || "").trim(),
+            amount: String(ing?.amount || "").trim(),
+          }))
+          .filter((ing: { name: string }) => ing.name.length > 0)
+      : [];
 
     if (!name || !slug || !category) {
       return NextResponse.json(
@@ -107,11 +121,36 @@ export async function POST(request: NextRequest) {
       active,
     });
 
+    // Automatically create the matching "Product Details" entry
+    // (AI generated, or fallback if AI is unavailable). This must
+    // never block or fail the product creation itself.
+    let productDetailsStatus: "created" | "failed" = "failed";
+
+    try {
+      const detail = await generateProductDetails({
+        _id: String(product._id),
+        name: product.name,
+        category: product.category,
+        description: product.description,
+        price: product.price,
+        stock: product.stock,
+        ingredients,
+      });
+
+      productDetailsStatus = detail ? "created" : "failed";
+    } catch (detailError) {
+      console.error(
+        "Auto product-details generation failed:",
+        detailError
+      );
+    }
+
     return NextResponse.json(
       {
         success: true,
         message: "Product added successfully.",
         product,
+        productDetailsStatus,
       },
       { status: 201 }
     );

@@ -443,6 +443,15 @@ export default function ProductDetailPage({
               </p>
             )}
 
+            <div className="mt-4">
+              <Link
+                href={`/product-details?productId=${product._id}`}
+                className="inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-bold text-orange-700 hover:bg-orange-100"
+              >
+                🧪 View Full Product Details (Ingredients & Formula)
+              </Link>
+            </div>
+
             <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4 text-sm">
               <span className="font-bold text-slate-700">
                 SKU:

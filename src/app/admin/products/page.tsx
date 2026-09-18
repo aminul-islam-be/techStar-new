@@ -630,6 +630,19 @@ export default function AdminProductsPage() {
                         ? "★ Unfeature"
                         : "☆ Feature"}
                     </button>
+
+                    <Link
+                      href={`/product-details?productId=${product._id}`}
+                      style={{
+                        ...buttonStyle,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        textDecoration: "none",
+                      }}
+                    >
+                      🧪 Details
+                    </Link>
                   </div>
                 </div>
               </div>
