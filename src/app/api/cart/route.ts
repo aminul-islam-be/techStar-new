@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -66,10 +67,7 @@ export async function POST(request: NextRequest) {
     const productId = body.productId;
     const quantity = Number(body.quantity || 1);
 
-    if (
-      !productId ||
-      !mongoose.Types.ObjectId.isValid(productId)
-    ) {
+    if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
       return NextResponse.json(
         {
           success: false,
@@ -124,7 +122,7 @@ export async function POST(request: NextRequest) {
     let cart = await Cart.findOne({ userId });
 
     const existingItem = cart?.items.find(
-      (item) => item.productId.toString() === productId
+      (item: any) => item.productId.toString() === productId
     );
 
     if (existingItem) {
@@ -140,6 +138,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Fixed: Mongoose deprecation warning by replacing { new: true } with { returnDocument: 'after' }
       cart = await Cart.findOneAndUpdate(
         { userId, "items.productId": productId },
         {
@@ -150,19 +149,15 @@ export async function POST(request: NextRequest) {
             "items.$.image": product.image,
           },
         },
-        { new: true }
+        { returnDocument: 'after' }
       );
     } else {
-      // Atomic upsert: avoids a race where two rapid requests (e.g. a
-      // double-tap) both see "no cart yet" and both try to create one,
-      // which previously could throw a duplicate-key error on the
-      // unique userId index and surface as a generic 500 error.
       try {
+        // Fixed: Mongoose deprecation warning
         cart = await Cart.findOneAndUpdate(
           { userId },
           {
-            $setOnInsert: { userId },
-            $push: {
+            $setOnInsert: { userId },$push: {
               items: {
                 productId: new mongoose.Types.ObjectId(productId),
                 name: product.name,
@@ -172,11 +167,9 @@ export async function POST(request: NextRequest) {
               },
             },
           },
-          { new: true, upsert: true }
+          { returnDocument: 'after', upsert: true }
         );
       } catch (raceError: any) {
-        // Duplicate-key error from the rare upsert race -- retry once
-        // as a normal update now that the cart definitely exists.
         if (raceError?.code === 11000) {
           cart = await Cart.findOneAndUpdate(
             { userId },
@@ -191,7 +184,7 @@ export async function POST(request: NextRequest) {
                 },
               },
             },
-            { new: true }
+            { returnDocument: 'after' }
           );
         } else {
           throw raceError;
@@ -204,7 +197,6 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           message: "Unable to add product to cart.",
-          debug: "Cart update returned no document.",
         },
         { status: 500 }
       );
@@ -222,13 +214,13 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         message: "Unable to add product to cart.",
-        debug:
-          error instanceof Error ? error.message : String(error),
+        debug: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
   }
 }
+
 export async function PATCH(request: NextRequest) {
   try {
     await connectDB();
@@ -250,10 +242,7 @@ export async function PATCH(request: NextRequest) {
     const productId = body.productId;
     const quantity = Number(body.quantity);
 
-    if (
-      !productId ||
-      !mongoose.Types.ObjectId.isValid(productId)
-    ) {
+    if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
       return NextResponse.json(
         {
           success: false,
@@ -308,8 +297,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const item = cart.items.find(
-      (cartItem) =>
-        cartItem.productId.toString() === productId
+      (cartItem: any) => cartItem.productId.toString() === productId
     );
 
     if (!item) {
@@ -346,6 +334,7 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
 export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
@@ -363,8 +352,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const productId =
-      searchParams.get("productId")?.trim() || "";
+    const productId = searchParams.get("productId")?.trim() || "";
 
     if (productId) {
       if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -391,8 +379,7 @@ export async function DELETE(request: NextRequest) {
       }
 
       cart.items = cart.items.filter(
-        (item) =>
-          item.productId.toString() !== productId
+        (item: any) => item.productId.toString() !== productId
       );
 
       await cart.save();
@@ -426,4 +413,3 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
-
