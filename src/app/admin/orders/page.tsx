@@ -625,6 +625,26 @@ export default function AdminOrdersPage() {
                         </option>
                       ))}
                     </select>
+
+                    <Link
+                      href={`/admin/orders/${order._id}/invoice`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "9px 12px",
+                        borderRadius: "8px",
+                        background: "#059669",
+                        color: "#fff",
+                        fontWeight: 700,
+                        fontSize: "13px",
+                        textDecoration: "none",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      🧾 Invoice
+                    </Link>
                   </div>
                 </div>
 

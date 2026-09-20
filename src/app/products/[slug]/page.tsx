@@ -38,6 +38,7 @@ export default function ProductDetailPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [messageIsError, setMessageIsError] = useState(false);
   const [adding, setAdding] = useState(false);
   const [buying, setBuying] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -160,6 +161,7 @@ export default function ProductDetailPage({
     }
 
     if (product.stock <= 0) {
+      setMessageIsError(true);
       setMessage("This product is out of stock.");
       return false;
     }
@@ -181,13 +183,15 @@ export default function ProductDetailPage({
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message ||
-            "Unable to add product to cart."
+          data.debug
+            ? `${data.message || "Unable to add product to cart."} (${data.debug})`
+            : data.message || "Unable to add product to cart."
         );
       }
 
       return true;
     } catch (err) {
+      setMessageIsError(true);
       setMessage(
         err instanceof Error
           ? err.message
@@ -201,10 +205,12 @@ export default function ProductDetailPage({
     try {
       setAdding(true);
       setMessage("");
+      setMessageIsError(false);
 
       const success = await addToCart();
 
       if (success) {
+        setMessageIsError(false);
         setMessage(`${product?.name} added to cart.`);
       }
     } finally {
@@ -216,6 +222,7 @@ export default function ProductDetailPage({
     try {
       setBuying(true);
       setMessage("");
+      setMessageIsError(false);
 
       const success = await addToCart();
 
@@ -292,8 +299,14 @@ export default function ProductDetailPage({
 
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
         {message && (
-          <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            ✓ {message}
+          <div
+            className={
+              messageIsError
+                ? "mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                : "mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+            }
+          >
+            {messageIsError ? "✗" : "✓"} {message}
           </div>
         )}
 

@@ -123,21 +123,12 @@ export async function POST(request: NextRequest) {
 
     let cart = await Cart.findOne({ userId });
 
-    if (!cart) {
-      cart = new Cart({
-        userId,
-        items: [],
-      });
-    }
-
-    const existingItem = cart.items.find(
-      (item) =>
-        item.productId.toString() === productId
+    const existingItem = cart?.items.find(
+      (item) => item.productId.toString() === productId
     );
 
     if (existingItem) {
-      const newQuantity =
-        existingItem.quantity + quantity;
+      const newQuantity = existingItem.quantity + quantity;
 
       if (newQuantity > product.stock) {
         return NextResponse.json(
@@ -149,21 +140,75 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      existingItem.quantity = newQuantity;
-      existingItem.price = product.price;
-      existingItem.name = product.name;
-      existingItem.image = product.image;
+      cart = await Cart.findOneAndUpdate(
+        { userId, "items.productId": productId },
+        {
+          $set: {
+            "items.$.quantity": newQuantity,
+            "items.$.price": product.price,
+            "items.$.name": product.name,
+            "items.$.image": product.image,
+          },
+        },
+        { new: true }
+      );
     } else {
-      cart.items.push({
-        productId: new mongoose.Types.ObjectId(productId),
-        name: product.name,
-        price: product.price,
-        quantity,
-        image: product.image,
-      });
+      // Atomic upsert: avoids a race where two rapid requests (e.g. a
+      // double-tap) both see "no cart yet" and both try to create one,
+      // which previously could throw a duplicate-key error on the
+      // unique userId index and surface as a generic 500 error.
+      try {
+        cart = await Cart.findOneAndUpdate(
+          { userId },
+          {
+            $setOnInsert: { userId },
+            $push: {
+              items: {
+                productId: new mongoose.Types.ObjectId(productId),
+                name: product.name,
+                price: product.price,
+                quantity,
+                image: product.image,
+              },
+            },
+          },
+          { new: true, upsert: true }
+        );
+      } catch (raceError: any) {
+        // Duplicate-key error from the rare upsert race -- retry once
+        // as a normal update now that the cart definitely exists.
+        if (raceError?.code === 11000) {
+          cart = await Cart.findOneAndUpdate(
+            { userId },
+            {
+              $push: {
+                items: {
+                  productId: new mongoose.Types.ObjectId(productId),
+                  name: product.name,
+                  price: product.price,
+                  quantity,
+                  image: product.image,
+                },
+              },
+            },
+            { new: true }
+          );
+        } else {
+          throw raceError;
+        }
+      }
     }
 
-    await cart.save();
+    if (!cart) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unable to add product to cart.",
+          debug: "Cart update returned no document.",
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -177,6 +222,8 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         message: "Unable to add product to cart.",
+        debug:
+          error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
