@@ -273,7 +273,7 @@ export default function ProductDetailPage({
 
   const sku = product._id.slice(-8).toUpperCase();
 
-  return (
+  return (    
     <main className="min-h-screen bg-white pb-24 text-slate-900">
       {/* Breadcrumb */}
       <div className="border-b border-slate-100 bg-white px-4 py-3 sm:px-6 lg:px-8">
@@ -337,7 +337,6 @@ export default function ProductDetailPage({
               )}
             </div>
           </div>
-
           {/* Info */}
           <div>
             <div className="text-sm text-slate-400">
@@ -414,7 +413,7 @@ export default function ProductDetailPage({
           </div>
         </div>
 
-        {/* Description / Reviews */}
+        {/* Description / Reviews */}        
         <div className="mt-14">
           <div className="flex gap-8 border-b border-slate-100 text-base">
             <button
@@ -538,7 +537,7 @@ export default function ProductDetailPage({
         )}
       </div>
 
-      {/* Fixed bottom action bar (stays put while scrolling) */}
+      {/* Fixed bottom action bar (stays put while scrolling) */}      
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-5xl items-center gap-2.5">
           <button
