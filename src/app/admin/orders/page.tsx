@@ -243,7 +243,7 @@ export default function AdminOrdersPage() {
                 loadOrders();
               }
             }}
-            placeholder="Search customer, phone or email..."
+            placeholder="Search order no, customer, phone or email..."
             style={{
               flex: "1 1 280px",
               minWidth: "0",
