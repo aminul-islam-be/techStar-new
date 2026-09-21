@@ -99,6 +99,23 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <button
+                onClick={() => setSeason("none" as any)}
+                className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition ${
+                  season === "none" as any
+                    ? "border-slate-500 bg-slate-800 text-white"
+                    : "border-white/10 bg-transparent text-slate-400 hover:bg-white/[0.05]"
+                }`}
+                style={
+                  season === "none" as any
+                    ? { boxShadow: `0 0 0 1.5px #64748b` }
+                    : undefined
+                }
+              >
+                <span>⚫</span>
+                {language === "bn" ? "কোনো থিম নয়" : "None"}
+              </button>
+
+              <button
                 onClick={() => setSeason("auto")}
                 className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold transition ${
                   isAuto
