@@ -1,50 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Order from "@/models/Order";
-import mongoose from "mongoose";
+
+export async function GET(request: NextRequest) {
+  try {
+    await connectDB();
+    
+    // Header থেকে ইউজার আইডি বের করা
+    const userId = request.headers.get("x-user-id");
+
+    if (!userId) {
+      return NextResponse.json({ success: false, message: "Please login to view your orders." }, { status: 401 });
+    }
+
+    // ইউজারের সব অর্ডার ডাটাবেজ থেকে খুঁজে বের করা (নতুন অর্ডার আগে দেখানোর জন্য createdAt: -1)
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+    
+    return NextResponse.json({ success: true, orders });
+  } catch (error) {
+    console.error("GET orders error:", error);
+    return NextResponse.json({ success: false, message: "Failed to fetch orders" }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
+    const userId = request.headers.get("x-user-id");
     const body = await request.json();
-    const { userId, customerName, customerPhone, customerEmail, items, totalAmount, deliveryAddress } = body;
 
-    if (!userId || !customerName || !customerPhone || !items || items.length === 0 || !totalAmount || !deliveryAddress) {
-      return NextResponse.json({ success: false, message: "Missing required order fields." }, { status: 400 });
+    const orderUserId = userId || body.userId;
+    
+    if (!orderUserId) {
+      return NextResponse.json({ success: false, message: "Unauthorized", redirectToLogin: true }, { status: 401 });
     }
 
-    const orderItems = items.map((item: any) => ({
-      productId: new mongoose.Types.ObjectId(item.productId),
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      image: item.image || "",
-    }));
-
-    // প্রথমে অর্ডারটি pending পেমেন্ট স্ট্যাটাসে ডাটাবেজে সেভ হবে
     const newOrder = await Order.create({
-      userId: new mongoose.Types.ObjectId(userId),
-      customerName,
-      customerPhone,
-      customerEmail: customerEmail || "",
-      items: orderItems,
-      totalAmount,
-      currency: "BDT",
-      paymentMethod: "sslcommerz",
-      paymentStatus: "pending",
-      status: "pending",
-      deliveryAddress,
+      ...body,
+      userId: orderUserId,
+      status: "Pending",
+      paymentStatus: body.paymentMethod === "sslcommerz" ? "Unpaid" : "Pending"
     });
 
-    const orderId = newOrder._id.toString();
-
-    return NextResponse.json({
-      success: true,
-      message: "Order created successfully. Proceed to payment.",
-      orderId: orderId,
+    return NextResponse.json({ 
+      success: true, 
+      message: "Order placed successfully",
+      orderId: newOrder._id
     });
   } catch (error) {
-    console.error("Create order error:", error);
-    return NextResponse.json({ success: false, message: "Server error while creating order." }, { status: 500 });
+    console.error("POST orders error:", error);
+    return NextResponse.json({ success: false, message: "Failed to place order" }, { status: 500 });
   }
 }

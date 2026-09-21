@@ -5,7 +5,7 @@ import Link from "next/link";
 import { getCustomerUser } from "@/lib/customerAuth";
 import { useCurrency } from "@/lib/useCurrency";
 import { useLanguage } from "@/lib/language";
-import { useRouter } from "next/navigation"; // <-- নতুন ইম্পোর্ট
+import { useRouter } from "next/navigation";
 
 type CartItem = {
   productId: string;
@@ -24,13 +24,12 @@ type FormData = {
   address: string;
   city: string;
   area: string;
-  paymentMethod: string;
 };
 
 export default function CheckoutPage() {
   const { format } = useCurrency();
   const { t } = useLanguage();
-  const router = useRouter(); // <-- রাউটার যোগ করা হলো
+  const router = useRouter();
 
   const [cart, setCart] = useState<CartData>({ items: [] });
   const [form, setForm] = useState<FormData>({
@@ -40,7 +39,6 @@ export default function CheckoutPage() {
     address: "",
     city: "",
     area: "",
-    paymentMethod: "cod",
   });
 
   const [loading, setLoading] = useState(true);
@@ -59,8 +57,6 @@ export default function CheckoutPage() {
       }));
       loadCart(user.id);
     } else {
-      // গেস্ট ইউজার হলে লোকাল স্টোরেজ (বা Guest ID) থেকে কার্ট লোড করার ব্যবস্থা থাকতে পারে।
-      // আপাতত Guest-দের কার্ট লোড করার জন্য কোনো ID না থাকলে শুধু Error দেখাবে না।
       loadCart(""); 
     }
   }, []);
@@ -120,7 +116,6 @@ export default function CheckoutPage() {
       setError("");
       setMessage("");
 
-      // Guest ইউজার হলে getCustomerUser() null রিটার্ন করবে, তাই id ফাঁকা পাঠাচ্ছি
       const user = getCustomerUser();
       const userId = user ? user.id : "";
 
@@ -131,9 +126,12 @@ export default function CheckoutPage() {
           "x-user-id": userId,
         },
         body: JSON.stringify({
+          userId: userId,
           customerName: form.fullName.trim(),
           customerPhone: form.phone.trim(),
           customerEmail: form.email.trim(),
+          items: cart.items,
+          totalAmount: subtotal,
           deliveryAddress: {
             fullName: form.fullName.trim(),
             phone: form.phone.trim(),
@@ -141,14 +139,12 @@ export default function CheckoutPage() {
             city: form.city.trim(),
             area: form.area.trim(),
           },
-          paymentMethod: form.paymentMethod,
+          paymentMethod: "sslcommerz",
         }),
       });
 
       const data = await response.json();
 
-      // <--- MAGIC IS HERE --->
-      // ব্যাকএন্ড যদি বলে ইউজার লগিন করা নেই, তবে সরাসরি লগিন পেজে নিয়ে যাবে
       if (data.redirectToLogin) {
         router.push("/login?redirect=/checkout");
         return;
@@ -162,8 +158,8 @@ export default function CheckoutPage() {
       setCart({ items: [] });
 
       setTimeout(() => {
-        router.push("/orders");
-      }, 900);
+        router.push(`/payment/${data.orderId}`);
+      }, 500);
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : t("checkout.unableToPlaceOrder"));
@@ -254,68 +250,8 @@ export default function CheckoutPage() {
                 <input value={form.city} onChange={(e) => updateField("city", e.target.value)} placeholder={t("checkout.cityPlaceholder")} className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500" />
               </div>
             </div>
-            <div className="mt-8 border-t border-white/[0.08] pt-7">
-              <h2 className="text-xl font-bold">{t("checkout.paymentMethod")}</h2>
-              <p className="mt-1 text-xs text-slate-500">{t("checkout.paymentMethodHint")}</p>
-
-              <div className="mt-4 space-y-3">
-                {/* bKash */}
-                <label className={`block cursor-pointer rounded-2xl border p-4 transition ${form.paymentMethod === "bkash" ? "border-pink-500/50 bg-pink-500/[0.08]" : "border-white/[0.08] bg-slate-950 hover:border-white/20"}`}>
-                  <div className="flex items-center gap-3">
-                    <input type="radio" name="paymentMethod" checked={form.paymentMethod === "bkash"} onChange={() => updateField("paymentMethod", "bkash")} />
-                    <span className="font-bold">{t("checkout.bkash")}</span>
-                  </div>
-                  {form.paymentMethod === "bkash" && (
-                    <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3">
-                      <p className="text-xs text-slate-500">{t("checkout.sendPaymentTo")}</p>
-                      <p className="mt-1 text-lg font-extrabold tracking-wide text-pink-300">01922964696</p>
-                    </div>
-                  )}
-                </label>
-
-                {/* Nagad */}
-                <label className={`block cursor-pointer rounded-2xl border p-4 transition ${form.paymentMethod === "nagad" ? "border-orange-500/50 bg-orange-500/[0.08]" : "border-white/[0.08] bg-slate-950 hover:border-white/20"}`}>
-                  <div className="flex items-center gap-3">
-                    <input type="radio" name="paymentMethod" checked={form.paymentMethod === "nagad"} onChange={() => updateField("paymentMethod", "nagad")} />
-                    <span className="font-bold">{t("checkout.nagad")}</span>
-                  </div>
-                  {form.paymentMethod === "nagad" && (
-                    <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3">
-                      <p className="text-xs text-slate-500">{t("checkout.sendPaymentTo")}</p>
-                      <p className="mt-1 text-lg font-extrabold tracking-wide text-orange-300">01922964696</p>
-                    </div>
-                  )}
-                </label>
-
-                {/* Rocket */}
-                <label className={`block cursor-pointer rounded-2xl border p-4 transition ${form.paymentMethod === "rocket" ? "border-purple-500/50 bg-purple-500/[0.08]" : "border-white/[0.08] bg-slate-950 hover:border-white/20"}`}>
-                  <div className="flex items-center gap-3">
-                    <input type="radio" name="paymentMethod" checked={form.paymentMethod === "rocket"} onChange={() => updateField("paymentMethod", "rocket")} />
-                    <span className="font-bold">{t("checkout.rocket")}</span>
-                  </div>
-                  {form.paymentMethod === "rocket" && (
-                    <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3">
-                      <p className="text-xs text-slate-500">{t("checkout.sendPaymentTo")}</p>
-                      <p className="mt-1 text-lg font-extrabold tracking-wide text-purple-300">01922964696</p>
-                    </div>
-                  )}
-                </label>
-
-                {/* COD */}
-                <label className={`block cursor-pointer rounded-2xl border p-4 transition ${form.paymentMethod === "cod" ? "border-emerald-500/50 bg-emerald-500/[0.08]" : "border-white/[0.08] bg-slate-950 hover:border-white/20"}`}>
-                  <div className="flex items-center gap-3">
-                    <input type="radio" name="paymentMethod" checked={form.paymentMethod === "cod"} onChange={() => updateField("paymentMethod", "cod")} />
-                    <span className="font-bold">{t("checkout.cashOnDelivery")}</span>
-                  </div>
-                  {form.paymentMethod === "cod" && (
-                    <div className="mt-3 rounded-xl bg-slate-950 px-4 py-3 text-xs leading-5 text-slate-400">
-                      {t("checkout.codDescription")}
-                    </div>
-                  )}
-                </label>
-              </div>
-            </div>
           </section>
+
           <aside className="h-fit rounded-3xl border border-white/[0.08] bg-slate-900/70 p-5 lg:sticky lg:top-6">
             <h2 className="text-lg font-bold">{t("cart.orderSummary")}</h2>
             
@@ -358,7 +294,7 @@ export default function CheckoutPage() {
             </div>
 
             <button type="submit" disabled={placing || !cart.items.length} className="mt-6 w-full rounded-2xl bg-orange-600 py-4 text-sm font-bold text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-500 hover:shadow-orange-500/30 disabled:cursor-not-allowed disabled:opacity-50">
-              {placing ? t("checkout.processing") : t("checkout.placeOrder")}
+              {placing ? t("checkout.processing") : "Proceed to Payment"}
             </button>
           </aside>
         </form>

@@ -20,10 +20,10 @@ export async function POST(request: NextRequest) {
 
     const sslPayload = new URLSearchParams({
       store_id: "techs6ab0bf2610602",
-      store_passwd: "z70d6RKYVQmW", // আপনার জেনারেট করা পাসওয়ার্ড
+      store_passwd: "VgdQZYMhYW9o", // আপনার দেওয়া নতুন পাসওয়ার্ড এখানে বসানো হলো
       total_amount: order.totalAmount.toString(),
       currency: "BDT",
-      tran_id: order._id.toString(),
+      tran_id: order._id.toString() + "_" + Date.now(),
       success_url: `${baseUrl}/api/payment/success`,
       fail_url: `${baseUrl}/api/payment/fail`,
       cancel_url: `${baseUrl}/api/payment/cancel`,
@@ -52,7 +52,10 @@ export async function POST(request: NextRequest) {
         gatewayUrl: sslData.GatewayPageURL,
       });
     } else {
-      return NextResponse.json({ success: false, message: "Failed to connect with payment gateway." }, { status: 400 });
+      return NextResponse.json({ 
+        success: false, 
+        message: sslData.failedreason || "Store Credential Error Or Store is De-active" 
+      }, { status: 400 });
     }
   } catch (error) {
     console.error("Payment init error:", error);
