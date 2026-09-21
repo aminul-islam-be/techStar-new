@@ -18,10 +18,7 @@ export async function POST(request: NextRequest) {
 
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Please login first.",
-        },
+        { success: false, message: "Please login first.", redirectToLogin: true },
         { status: 401 }
       );
     }
@@ -30,20 +27,14 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "User not found.",
-        },
-        { status: 404 }
+        { success: false, message: "Please sign up or login to place an order.", redirectToLogin: true },
+        { status: 401 }
       );
     }
 
     if (!user.active) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Your account is inactive.",
-        },
+        { success: false, message: "Your account is inactive." },
         { status: 403 }
       );
     }
@@ -52,121 +43,50 @@ export async function POST(request: NextRequest) {
 
     if (!cart || !cart.items || cart.items.length === 0) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Your cart is empty.",
-        },
+        { success: false, message: "Your cart is empty." },
         { status: 400 }
       );
     }
-
     const body = await request.json();
 
-    const customerName =
-      String(body.customerName || "").trim();
-
-    const customerPhone =
-      String(body.customerPhone || "").trim();
-
-    const customerEmail =
-      String(body.customerEmail || "").trim();
-
-    const paymentMethod =
-      String(body.paymentMethod || "manual").trim();
+    const customerName = String(body.customerName || "").trim();
+    const customerPhone = String(body.customerPhone || "").trim();
+    const customerEmail = String(body.customerEmail || "").trim();
+    const paymentMethod = String(body.paymentMethod || "manual").trim();
 
     const addressData = body.deliveryAddress || {};
-
-    const fullName =
-      String(addressData.fullName || customerName).trim();
-
-    const phone =
-      String(addressData.phone || customerPhone).trim();
-
-    const address =
-      String(addressData.address || "").trim();
-
-    const city =
-      String(addressData.city || "").trim();
-
-    const area =
-      String(addressData.area || "").trim();
+    const fullName = String(addressData.fullName || customerName).trim();
+    const phone = String(addressData.phone || customerPhone).trim();
+    const address = String(addressData.address || "").trim();
+    const city = String(addressData.city || "").trim();
+    const area = String(addressData.area || "").trim();
 
     if (!customerName) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Full name is required.",
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Full name is required." }, { status: 400 });
     }
-
     if (!customerPhone) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Phone number is required.",
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Phone number is required." }, { status: 400 });
     }
-
     if (!address) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Delivery address is required.",
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Delivery address is required." }, { status: 400 });
     }
-
     if (!fullName || !phone) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Delivery name and phone are required.",
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Delivery name and phone are required." }, { status: 400 });
     }
-
     const orderItems = [];
     let totalAmount = 0;
 
     for (const item of cart.items) {
-      const product = await Product.findById(
-        item.productId
-      ).lean();
+      const product = await Product.findById(item.productId).lean();
 
       if (!product) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: `${item.name} is no longer available.`,
-          },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: `${item.name} is no longer available.` }, { status: 400 });
       }
-
       if (!product.active) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: `${product.name} is currently inactive.`,
-          },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: `${product.name} is currently inactive.` }, { status: 400 });
       }
-
       if (product.stock < item.quantity) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: `${product.name}: only ${product.stock} item(s) available.`,
-          },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: `${product.name}: only ${product.stock} item(s) available.` }, { status: 400 });
       }
 
       const price = Number(product.price);
@@ -182,29 +102,17 @@ export async function POST(request: NextRequest) {
 
       totalAmount += price * quantity;
     }
-
     const order = await Order.create({
       userId: new mongoose.Types.ObjectId(userId),
-
       customerName,
       customerPhone,
-
-      customerEmail:
-        customerEmail || user.email || "",
-
+      customerEmail: customerEmail || user.email || "",
       items: orderItems,
-
       totalAmount,
-
       currency: "BDT",
-
-      paymentMethod:
-        paymentMethod || "manual",
-
+      paymentMethod: paymentMethod || "manual",
       paymentStatus: "pending",
-
       status: "pending",
-
       deliveryAddress: {
         fullName,
         phone,
@@ -215,14 +123,9 @@ export async function POST(request: NextRequest) {
     });
 
     for (const item of orderItems) {
-      await Product.findByIdAndUpdate(
-        item.productId,
-        {
-          $inc: {
-            stock: -item.quantity,
-          },
-        }
-      );
+      await Product.findByIdAndUpdate(item.productId, {
+        $inc: { stock: -item.quantity },
+      });
     }
 
     cart.items = [];
@@ -241,19 +144,14 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("POST /api/orders error:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "Unable to place order.",
-      },
+      { success: false, message: "Unable to place order.", debug: error.message },
       { status: 500 }
     );
   }
 }
-
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
@@ -262,34 +160,20 @@ export async function GET(request: NextRequest) {
 
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Please login first.",
-        },
+        { success: false, message: "Please login first." },
         { status: 401 }
       );
     }
 
-    const orders = await Order.find({
-      userId,
-    })
-      .sort({
-        createdAt: -1,
-      })
+    const orders = await Order.find({ userId })
+      .sort({ createdAt: -1 })
       .lean();
 
-    return NextResponse.json({
-      success: true,
-      orders,
-    });
+    return NextResponse.json({ success: true, orders });
   } catch (error) {
     console.error("GET /api/orders error:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "Unable to load orders.",
-      },
+      { success: false, message: "Unable to load orders." },
       { status: 500 }
     );
   }
