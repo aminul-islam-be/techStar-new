@@ -9,6 +9,7 @@ export interface IProduct {
   compareAtPrice?: number;
   currency: string;
   image?: string;
+  images?: string[];
   stock: number;
   featured: boolean;
   active: boolean;
@@ -58,6 +59,10 @@ const ProductSchema = new Schema<IProduct>(
     image: {
       type: String,
       default: "",
+    },
+    images: {
+      type: [String],
+      default: [],
     },
     stock: {
       type: Number,

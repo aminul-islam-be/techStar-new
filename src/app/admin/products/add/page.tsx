@@ -60,6 +60,9 @@ export default function AddProductPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [uploadingGalleryImage, setUploadingGalleryImage] = useState(false);
+  const MAX_GALLERY_IMAGES = 5;
 
   function updateField(
     field: string,
@@ -272,6 +275,101 @@ export default function AddProductPage() {
     }
   }
 
+  async function handleGalleryImageUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image must be smaller than 10 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    if (galleryImages.length >= MAX_GALLERY_IMAGES) {
+      setError(`You can add up to ${MAX_GALLERY_IMAGES} gallery images.`);
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      setUploadingGalleryImage(true);
+      setError("");
+      setMessage("Preparing gallery image...");
+
+      const compressedFile = await compressProductImage(file);
+
+      const cloudName =
+        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+      const uploadPreset =
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ||
+        "techstar_profiles";
+
+      if (!cloudName) {
+        throw new Error("Cloudinary cloud name is missing.");
+      }
+
+      const formData = new FormData();
+
+      formData.append("file", compressedFile);
+      formData.append("upload_preset", uploadPreset);
+
+      setMessage("Uploading gallery image...");
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const uploadData = await uploadResponse.json();
+
+      if (!uploadResponse.ok) {
+        throw new Error(
+          uploadData.error?.message || "Cloudinary upload failed."
+        );
+      }
+
+      const uploadedUrl = uploadData.secure_url;
+
+      const backgroundRemovedUrl = uploadedUrl.replace(
+        "/upload/",
+        "/upload/e_background_removal/"
+      );
+
+      setGalleryImages((current) => [...current, backgroundRemovedUrl]);
+      setMessage("Gallery image added.");
+    } catch (err) {
+      setMessage("");
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to upload gallery image."
+      );
+    } finally {
+      setUploadingGalleryImage(false);
+      event.target.value = "";
+    }
+  }
+
+  function removeGalleryImage(index: number) {
+    setGalleryImages((current) =>
+      current.filter((_, i) => i !== index)
+    );
+  }
+
   function makeSlug(value: string) {
     return value
       .toLowerCase()
@@ -305,6 +403,7 @@ export default function AddProductPage() {
               : Number(form.compareAtPrice),
           currency: form.currency,
           image: form.image,
+          images: galleryImages,
           stock: Number(form.stock),
           featured: form.featured,
           active: form.active,
@@ -859,6 +958,102 @@ export default function AddProductPage() {
               />
             </div>
           )}
+
+          {/* Gallery Images */}
+
+          <label style={{ ...labelStyle, marginTop: "22px" }}>
+            Gallery Images (optional, up to {MAX_GALLERY_IMAGES})
+          </label>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            {galleryImages.map((url, index) => (
+              <div
+                key={url + index}
+                style={{
+                  position: "relative",
+                  width: "90px",
+                  height: "90px",
+                  borderRadius: "10px",
+                  overflow: "hidden",
+                  border: "1px solid #334155",
+                  background: "#000000",
+                }}
+              >
+                <img
+                  src={url}
+                  alt={`Gallery ${index + 1}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeGalleryImage(index)}
+                  aria-label="Remove gallery image"
+                  style={{
+                    position: "absolute",
+                    top: "4px",
+                    right: "4px",
+                    width: "22px",
+                    height: "22px",
+                    borderRadius: "999px",
+                    border: "none",
+                    background: "rgba(15,23,42,0.85)",
+                    color: "#fecaca",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    lineHeight: 1,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+
+            {galleryImages.length < MAX_GALLERY_IMAGES && (
+              <label
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "90px",
+                  height: "90px",
+                  borderRadius: "10px",
+                  border: "1px dashed #475569",
+                  color: "#93c5fd",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  cursor: uploadingGalleryImage
+                    ? "not-allowed"
+                    : "pointer",
+                  opacity: uploadingGalleryImage ? 0.6 : 1,
+                  textAlign: "center",
+                }}
+              >
+                {uploadingGalleryImage ? "Uploading..." : "➕ Add"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleGalleryImageUpload}
+                  disabled={uploadingGalleryImage}
+                  style={{ display: "none" }}
+                />
+              </label>
+            )}
+          </div>
+
+          <p
+            style={{
+              marginTop: "6px",
+              fontSize: "12px",
+              color: "#94a3b8",
+            }}
+          >
+            Extra photos shown as a thumbnail gallery on the product page.
+          </p>
 
           {/* Options */}
 

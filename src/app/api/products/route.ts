@@ -72,6 +72,7 @@ export async function PATCH(request: NextRequest) {
       "compareAtPrice",
       "currency",
       "image",
+      "images",
       "stock",
       "featured",
       "active",

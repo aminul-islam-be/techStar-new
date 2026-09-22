@@ -16,6 +16,7 @@ type Product = {
   compareAtPrice?: number;
   currency?: string;
   image?: string;
+  images?: string[];
   stock: number;
   featured?: boolean;
   active?: boolean;
@@ -46,9 +47,16 @@ export default function ProductDetailPage({
     "description"
   );
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string>("");
 
   const [related, setRelated] = useState<Product[]>([]);
   const [relatedLoading, setRelatedLoading] = useState(true);
+
+  const [notifyOpen, setNotifyOpen] = useState(false);
+  const [notifyContact, setNotifyContact] = useState("");
+  const [notifySubmitting, setNotifySubmitting] = useState(false);
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [notifyError, setNotifyError] = useState("");
 
   useEffect(() => {
     loadProduct();
@@ -77,6 +85,11 @@ export default function ProductDetailPage({
       }
 
       setProduct(data.product);
+      setSelectedImage(data.product?.image || "");
+      setNotifyOpen(false);
+      setNotifyMessage("");
+      setNotifyError("");
+      setNotifyContact("");
       loadRelated(data.product);
 
       const viewerId = getCustomerUserId();
@@ -234,6 +247,51 @@ export default function ProductDetailPage({
     }
   }
 
+  async function handleNotifySubmit() {
+    if (!product) return;
+
+    const contact = notifyContact.trim();
+
+    if (contact.length < 5) {
+      setNotifyError("Please enter a valid email or phone number.");
+      return;
+    }
+
+    try {
+      setNotifySubmitting(true);
+      setNotifyError("");
+
+      const userId = getCustomerUserId();
+
+      const response = await fetch("/api/stock-alert", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(userId ? { "x-user-id": userId } : {}),
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          contact,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to save your request.");
+      }
+
+      setNotifyMessage(data.message || "We'll notify you when it's back in stock.");
+      setNotifyContact("");
+    } catch (err) {
+      setNotifyError(
+        err instanceof Error ? err.message : "Unable to save your request."
+      );
+    } finally {
+      setNotifySubmitting(false);
+    }
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-white px-4 py-20 text-slate-900">
@@ -323,9 +381,9 @@ export default function ProductDetailPage({
             </button>
 
             <div className="mx-auto flex aspect-square w-full max-w-[180px] items-center justify-center overflow-hidden rounded-2xl bg-white sm:max-w-[220px]">
-              {product.image ? (
+              {selectedImage ? (
                 <img
-                  src={product.image}
+                  src={selectedImage}
                   alt={product.name}
                   onClick={() => setLightboxOpen(true)}
                   className="h-4/5 w-4/5 cursor-zoom-in object-contain"
@@ -336,6 +394,41 @@ export default function ProductDetailPage({
                 </div>
               )}
             </div>
+
+            {(() => {
+              const gallery = [
+                product.image,
+                ...(product.images || []),
+              ].filter(
+                (url, index, arr): url is string =>
+                  Boolean(url) && arr.indexOf(url) === index
+              );
+
+              if (gallery.length <= 1) return null;
+
+              return (
+                <div className="mx-auto mt-3 flex max-w-[280px] flex-wrap justify-center gap-2">
+                  {gallery.map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setSelectedImage(url)}
+                      className={`flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border bg-white transition ${
+                        selectedImage === url
+                          ? "border-orange-500 ring-2 ring-orange-200"
+                          : "border-slate-200 hover:border-orange-300"
+                      }`}
+                    >
+                      <img
+                        src={url}
+                        alt={product.name}
+                        className="h-full w-full object-contain"
+                      />
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
           {/* Info */}
           <div>
@@ -361,6 +454,53 @@ export default function ProductDetailPage({
                   : "Out of stock"}
               </span>
             </p>
+
+            {product.stock <= 0 && (
+              <div className="mt-3">
+                {notifyMessage ? (
+                  <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
+                    ✓ {notifyMessage}
+                  </p>
+                ) : notifyOpen ? (
+                  <div className="rounded-xl border border-slate-200 p-3">
+                    <p className="mb-2 text-xs text-slate-500">
+                      Enter your email or phone — we&apos;ll let you know
+                      when this product is back in stock.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        type="text"
+                        value={notifyContact}
+                        onChange={(event) =>
+                          setNotifyContact(event.target.value)
+                        }
+                        placeholder="Email or phone number"
+                        className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-orange-400"
+                      />
+                      <button
+                        onClick={handleNotifySubmit}
+                        disabled={notifySubmitting}
+                        className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-400 disabled:opacity-50"
+                      >
+                        {notifySubmitting ? "Saving..." : "Notify Me"}
+                      </button>
+                    </div>
+                    {notifyError && (
+                      <p className="mt-2 text-xs font-semibold text-red-500">
+                        {notifyError}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setNotifyOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-bold text-orange-700 hover:bg-orange-100"
+                  >
+                    🔔 Notify me when back in stock
+                  </button>
+                )}
+              </div>
+            )}
 
             <hr className="my-5 border-slate-100" />
 
@@ -564,13 +704,13 @@ export default function ProductDetailPage({
       </div>
 
       {/* Lightbox */}
-      {lightboxOpen && product.image && (
+      {lightboxOpen && selectedImage && (
         <div
           onClick={() => setLightboxOpen(false)}
           className="fixed inset-0 z-[100] flex cursor-zoom-out items-center justify-center bg-black/90 p-6"
         >
           <img
-            src={product.image}
+            src={selectedImage}
             alt={product.name}
             className="max-h-full max-w-full object-contain"
           />

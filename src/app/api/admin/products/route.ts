@@ -30,6 +30,13 @@ export async function POST(request: NextRequest) {
 
     const image = String(body.image || "").trim();
 
+    const images = Array.isArray(body.images)
+      ? body.images
+          .map((url: unknown) => String(url || "").trim())
+          .filter((url: string) => url.length > 0)
+          .slice(0, 6)
+      : [];
+
     const featured = Boolean(body.featured);
     const active =
       typeof body.active === "boolean" ? body.active : true;
@@ -116,6 +123,7 @@ export async function POST(request: NextRequest) {
           : undefined,
       currency,
       image,
+      images,
       stock,
       featured,
       active,

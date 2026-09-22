@@ -87,6 +87,13 @@ export default function AdminDashboard() {
               Homepage banner management
             </p>
           </Link>
+
+          <Link href="/admin/analytics" style={cardStyle}>
+            <h2>📊 Analytics</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Revenue, sales trend & best sellers
+            </p>
+          </Link>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </div>
 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <div style={{ marginTop: "30px" }}>
