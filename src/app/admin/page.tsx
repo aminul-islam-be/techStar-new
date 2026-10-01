@@ -101,6 +101,13 @@ export default function AdminDashboard() {
               Vendors, commission & payouts
             </p>
           </Link>
+
+          <Link href="/admin/chats" style={cardStyle}>
+            <h2>💬 Chat monitor</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Customer-vendor chats & blocked messages
+            </p>
+          </Link>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </div>
 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <div style={{ marginTop: "30px" }}>

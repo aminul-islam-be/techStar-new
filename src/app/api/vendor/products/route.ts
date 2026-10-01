@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb";
 import Product from "@/models/Product";
 import { getCurrentVendor, unauthorized } from "@/lib/vendorAuth";
 import { getSettings } from "@/lib/marketplace";
+import { findContactInfo, CONTACT_BLOCK_MESSAGE } from "@/lib/chatFilter";
 
 export async function GET() {
   const vendor = await getCurrentVendor();
@@ -52,6 +53,10 @@ export async function POST(request: Request) {
     }
     if (!Number.isFinite(stock) || stock < 0) {
       return NextResponse.json({ success: false, message: "Please enter a valid stock quantity." }, { status: 400 });
+    }
+
+    if (findContactInfo(`${name} ${description}`, "listing")) {
+      return NextResponse.json({ success: false, message: CONTACT_BLOCK_MESSAGE }, { status: 400 });
     }
 
     const settings = await getSettings();

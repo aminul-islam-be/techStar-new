@@ -148,7 +148,10 @@ export default function AdminMarketplacePage() {
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white">
       <div className="mx-auto max-w-5xl">
         <Link href="/admin" className="text-xs text-slate-400">← Admin dashboard</Link>
-        <h1 className="mt-2 text-2xl font-extrabold">Marketplace</h1>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-extrabold">Marketplace</h1>
+          <Link href="/admin/chats" className="rounded-lg border border-white/10 px-3 py-2 text-xs">💬 Chat monitor</Link>
+        </div>
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
           {tabs.map((t) => (

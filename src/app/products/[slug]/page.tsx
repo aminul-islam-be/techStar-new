@@ -20,6 +20,8 @@ type Product = {
   stock: number;
   featured?: boolean;
   active?: boolean;
+  vendorId?: string;
+  vendorName?: string;
 };
 
 const RELATED_COUNT = 6;
@@ -552,6 +554,21 @@ export default function ProductDetailPage({
               </div>
           </div>
         </div>
+
+        {product.vendorId && (
+          <div className="mt-8 flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+            <div className="min-w-0">
+              <p className="text-xs text-slate-500">Sold by</p>
+              <p className="truncate text-sm font-bold text-slate-900">{product.vendorName || "Seller"}</p>
+            </div>
+            <Link
+              href={`/messages/new/${product.slug}`}
+              className="shrink-0 rounded-full bg-slate-800 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-700"
+            >
+              💬 Chat with seller
+            </Link>
+          </div>
+        )}
 
         {/* Description / Reviews */}        
         <div className="mt-14">

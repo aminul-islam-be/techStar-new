@@ -9,6 +9,7 @@ const NAV = [
   { href: "/vendor", label: "Dashboard", icon: "📊" },
   { href: "/vendor/products", label: "Products", icon: "📦" },
   { href: "/vendor/orders", label: "Orders", icon: "🛒" },
+  { href: "/vendor/messages", label: "Messages", icon: "💬" },
   { href: "/vendor/wallet", label: "Wallet", icon: "💰" },
   { href: "/vendor/profile", label: "Profile", icon: "🏪" },
 ];

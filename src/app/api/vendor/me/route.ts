@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentVendor, unauthorized } from "@/lib/vendorAuth";
 import { getSettings } from "@/lib/marketplace";
+import { findContactInfo, CONTACT_BLOCK_MESSAGE } from "@/lib/chatFilter";
 
 function publicVendor(v: Awaited<ReturnType<typeof getCurrentVendor>>, defaultRate: number) {
   if (!v) return null;
@@ -25,6 +26,10 @@ export async function PATCH(request: Request) {
   if (!vendor) return unauthorized();
 
   const body = await request.json();
+
+  if (findContactInfo(`${body.shopName || ""} ${body.description || ""}`, "listing")) {
+    return NextResponse.json({ success: false, message: CONTACT_BLOCK_MESSAGE }, { status: 400 });
+  }
 
   if (typeof body.shopName === "string" && body.shopName.trim()) vendor.shopName = body.shopName.trim();
   if (typeof body.ownerName === "string" && body.ownerName.trim()) vendor.ownerName = body.ownerName.trim();

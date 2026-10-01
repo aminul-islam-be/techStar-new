@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/mongodb";
 import Vendor from "@/models/Vendor";
 import { getSettings } from "@/lib/marketplace";
+import { findContactInfo, CONTACT_BLOCK_MESSAGE } from "@/lib/chatFilter";
 import { signVendorToken, setVendorCookie } from "@/lib/vendorAuth";
 
 function slugify(text: string) {
@@ -24,6 +25,10 @@ export async function POST(request: Request) {
     const password = String(body.password || "");
     const email = String(body.email || "").trim().toLowerCase();
     const address = String(body.address || "").trim();
+
+    if (findContactInfo(shopName, "listing")) {
+      return NextResponse.json({ success: false, message: CONTACT_BLOCK_MESSAGE }, { status: 400 });
+    }
 
     if (!shopName || !ownerName || !phone || !password) {
       return NextResponse.json(

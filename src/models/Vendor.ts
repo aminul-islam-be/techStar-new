@@ -24,6 +24,7 @@ export interface IVendor {
   totalCommission: number; // platform commission taken
   totalEarned: number; // vendor share earned
   totalWithdrawn: number; // already paid out
+  chatViolations: number; // blocked chat messages (contact details etc.)
 
   payoutMethod?: {
     type: "bkash" | "nagad" | "rocket" | "bank";
@@ -73,6 +74,7 @@ const VendorSchema = new Schema<IVendor>(
     totalCommission: { type: Number, default: 0 },
     totalEarned: { type: Number, default: 0 },
     totalWithdrawn: { type: Number, default: 0 },
+    chatViolations: { type: Number, default: 0 },
 
     payoutMethod: { type: PayoutMethodSchema, default: undefined },
   },

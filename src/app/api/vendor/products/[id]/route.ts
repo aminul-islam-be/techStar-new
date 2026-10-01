@@ -4,6 +4,7 @@ import connectDB from "@/lib/mongodb";
 import Product from "@/models/Product";
 import { getCurrentVendor, unauthorized } from "@/lib/vendorAuth";
 import { getSettings } from "@/lib/marketplace";
+import { findContactInfo, CONTACT_BLOCK_MESSAGE } from "@/lib/chatFilter";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -24,6 +25,10 @@ export async function PATCH(request: Request, { params }: Ctx) {
   }
 
   const body = await request.json();
+  if (findContactInfo(`${body.name || ""} ${body.description || ""}`, "listing")) {
+    return NextResponse.json({ success: false, message: CONTACT_BLOCK_MESSAGE }, { status: 400 });
+  }
+
   let needsReview = false;
 
   if (typeof body.name === "string" && body.name.trim() && body.name.trim() !== product.name) {
