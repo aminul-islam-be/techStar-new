@@ -24,7 +24,7 @@ export async function GET() {
       totalEarned: vendor.totalEarned,
       totalCommission: vendor.totalCommission,
       totalWithdrawn: vendor.totalWithdrawn,
-      payoutMethod: vendor.payoutMethod || null,
+      payoutMethod: vendor.payoutMethod?.accountNumber ? vendor.payoutMethod : null,
     },
     minWithdrawal: settings.minWithdrawal,
     transactions,

@@ -11,16 +11,21 @@ export interface IPayout {
   createdAt?: Date;
 }
 
+const PayoutMethodSchema = new Schema(
+  {
+    type: { type: String, required: true },
+    accountName: { type: String, required: true },
+    accountNumber: { type: String, required: true },
+    bankName: { type: String },
+  },
+  { _id: false }
+);
+
 const PayoutSchema = new Schema<IPayout>(
   {
     vendorId: { type: Schema.Types.ObjectId, ref: "Vendor", required: true, index: true },
     amount: { type: Number, required: true, min: 1 },
-    method: {
-      type: { type: String, required: true },
-      accountName: { type: String, required: true },
-      accountNumber: { type: String, required: true },
-      bankName: { type: String },
-    },
+    method: { type: PayoutMethodSchema, required: true },
     status: { type: String, enum: ["pending", "paid", "rejected"], default: "pending", index: true },
     transactionRef: { type: String, default: "" },
     adminNote: { type: String, default: "" },

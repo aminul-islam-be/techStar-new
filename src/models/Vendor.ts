@@ -35,6 +35,18 @@ export interface IVendor {
   updatedAt?: Date;
 }
 
+// A field literally named "type" must live in its own sub-schema, otherwise
+// Mongoose mistakes it for the schema type declaration.
+const PayoutMethodSchema = new Schema(
+  {
+    type: { type: String, enum: ["bkash", "nagad", "rocket", "bank"] },
+    accountName: { type: String, trim: true },
+    accountNumber: { type: String, trim: true },
+    bankName: { type: String, trim: true },
+  },
+  { _id: false }
+);
+
 const VendorSchema = new Schema<IVendor>(
   {
     shopName: { type: String, required: true, trim: true },
@@ -62,15 +74,7 @@ const VendorSchema = new Schema<IVendor>(
     totalEarned: { type: Number, default: 0 },
     totalWithdrawn: { type: Number, default: 0 },
 
-    payoutMethod: {
-      type: {
-        type: String,
-        enum: ["bkash", "nagad", "rocket", "bank"],
-      },
-      accountName: { type: String, trim: true },
-      accountNumber: { type: String, trim: true },
-      bankName: { type: String, trim: true },
-    },
+    payoutMethod: { type: PayoutMethodSchema, default: undefined },
   },
   { timestamps: true }
 );

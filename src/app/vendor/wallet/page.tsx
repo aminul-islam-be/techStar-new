@@ -96,7 +96,7 @@ export default function VendorWalletPage() {
         ) : (
           <>
             <p className="mt-1 text-xs text-slate-400">
-              Goes to {wallet.payoutMethod.type.toUpperCase()} · {wallet.payoutMethod.accountNumber} (
+              Goes to {(wallet.payoutMethod.type || "account").toUpperCase()} · {wallet.payoutMethod.accountNumber} (
               {wallet.payoutMethod.accountName}). Minimum {money(min)}.
             </p>
             <div className="mt-3 flex gap-2">
