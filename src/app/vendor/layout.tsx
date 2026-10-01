@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { VendorProvider, useVendor } from "@/lib/vendorContext";
+import { VendorProvider, useVendor, money } from "@/lib/vendorContext";
+import VendorLockedOverlay from "@/components/VendorLockedOverlay";
+import { nextLockDateLabel } from "@/lib/commissionMath";
 
 const NAV = [
   { href: "/vendor", label: "Dashboard", icon: "📊" },
@@ -11,11 +13,12 @@ const NAV = [
   { href: "/vendor/orders", label: "Orders", icon: "🛒" },
   { href: "/vendor/messages", label: "Messages", icon: "💬" },
   { href: "/vendor/wallet", label: "Wallet", icon: "💰" },
+  { href: "/vendor/billing", label: "Billing", icon: "🧾" },
   { href: "/vendor/profile", label: "Profile", icon: "🏪" },
 ];
 
 function Shell({ children }: { children: ReactNode }) {
-  const { vendor, loading, logout } = useVendor();
+  const { vendor, loading, logout, graceDays } = useVendor();
   const pathname = usePathname();
   const router = useRouter();
   const isAuthPage = pathname === "/vendor/login" || pathname === "/vendor/register";
@@ -31,6 +34,23 @@ function Shell({ children }: { children: ReactNode }) {
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">Loading...</main>
     );
   }
+
+  // Unpaid commission: nothing of the panel is shown, only the payment screen.
+  if (vendor.billingLocked) {
+    return (
+      <main className="min-h-screen bg-slate-950">
+        <VendorLockedOverlay
+          due={vendor.dueCommission ?? 0}
+          onLogout={async () => {
+            await logout();
+            router.replace("/vendor/login");
+          }}
+        />
+      </main>
+    );
+  }
+
+  const due = vendor.dueCommission ?? 0;
 
   return (
     <div className="min-h-screen bg-slate-950 pb-24 text-white">
@@ -78,6 +98,20 @@ function Shell({ children }: { children: ReactNode }) {
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
             ⏳ Your shop is waiting for admin approval. You can set up your profile now; adding products and
             withdrawals unlock after approval.
+          </div>
+        </div>
+      )}
+
+      {due > 0 && (
+        <div className="mx-auto mt-4 max-w-5xl px-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+            <span>
+              🧾 COD commission due: <b>{money(due)}</b>. Pay before <b>{nextLockDateLabel(graceDays)}</b>, otherwise your shop
+              will be locked.
+            </span>
+            <Link href="/vendor/billing" className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white">
+              Pay now
+            </Link>
           </div>
         </div>
       )}

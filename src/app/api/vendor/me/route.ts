@@ -11,13 +11,14 @@ function publicVendor(v: Awaited<ReturnType<typeof getCurrentVendor>>, defaultRa
 }
 
 export async function GET() {
-  const vendor = await getCurrentVendor();
+  const vendor = await getCurrentVendor({ allowLocked: true });
   if (!vendor) return unauthorized();
   const settings = await getSettings();
   return NextResponse.json({
     success: true,
     vendor: publicVendor(vendor, settings.defaultCommissionRate),
     minWithdrawal: settings.minWithdrawal,
+    commissionGraceDays: settings.commissionGraceDays ?? 0,
   });
 }
 

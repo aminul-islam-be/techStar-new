@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Order from "@/models/Order";
 import { getAdminSession } from "@/lib/adminAuth";
-import { settleOrder, reverseOrder } from "@/lib/marketplace";
+import { settleAnyOrder, reverseAnyOrder } from "@/lib/commissionBilling";
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,8 +68,8 @@ export async function PATCH(request: NextRequest) {
 
     // Vendor payouts: credit when delivered + paid, take back if cancelled later.
     try {
-      if (order.status === "delivered" && order.paymentStatus === "paid") { await settleOrder(String(id)); }
-      if (order.status === "cancelled") { await reverseOrder(String(id)); }
+      if (order.status === "delivered") { await settleAnyOrder(String(id)); }
+      if (order.status === "cancelled") { await reverseAnyOrder(String(id)); }
     } catch (settleError) {
       console.error("Vendor settlement error:", settleError);
     }

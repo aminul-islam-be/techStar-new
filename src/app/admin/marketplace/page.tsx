@@ -150,7 +150,7 @@ export default function AdminMarketplacePage() {
         <Link href="/admin" className="text-xs text-slate-400">← Admin dashboard</Link>
         <div className="mt-2 flex items-center justify-between gap-3">
           <h1 className="text-2xl font-extrabold">Marketplace</h1>
-          <Link href="/admin/chats" className="rounded-lg border border-white/10 px-3 py-2 text-xs">💬 Chat monitor</Link>
+          <div className="flex gap-2"><Link href="/admin/commission" className="rounded-lg border border-white/10 px-3 py-2 text-xs">🧾 COD commission</Link><Link href="/admin/chats" className="rounded-lg border border-white/10 px-3 py-2 text-xs">💬 Chat monitor</Link></div>
         </div>
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-2">

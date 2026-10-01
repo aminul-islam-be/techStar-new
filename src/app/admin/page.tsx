@@ -102,6 +102,13 @@ export default function AdminDashboard() {
             </p>
           </Link>
 
+          <Link href="/admin/commission" style={cardStyle}>
+            <h2>🧾 COD commission</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Vendor dues, monthly lock & payments
+            </p>
+          </Link>
+
           <Link href="/admin/chats" style={cardStyle}>
             <h2>💬 Chat monitor</h2>
             <p style={{ color: "#94a3b8" }}>

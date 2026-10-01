@@ -39,7 +39,7 @@ export function clearVendorCookie(res: NextResponse) {
  * immediately). Returns null if not logged in / blocked.
  * With `requireApproved`, pending vendors are also rejected.
  */
-export async function getCurrentVendor(opts: { requireApproved?: boolean } = {}) {
+export async function getCurrentVendor(opts: { requireApproved?: boolean; allowLocked?: boolean } = {}) {
   const token = (await cookies()).get(VENDOR_COOKIE)?.value;
   if (!token) return null;
 
@@ -52,6 +52,8 @@ export async function getCurrentVendor(opts: { requireApproved?: boolean } = {})
     if (!vendor) return null;
     if (vendor.status === "rejected" || vendor.status === "suspended") return null;
     if (opts.requireApproved && vendor.status !== "approved") return null;
+    // unpaid COD commission: every vendor action is refused, except the ones that say allowLocked
+    if (vendor.billingLocked && !opts.allowLocked) return null;
     return vendor;
   } catch {
     return null;

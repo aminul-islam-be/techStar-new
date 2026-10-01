@@ -48,6 +48,8 @@ export interface IOrder extends Document {
 
   vendorSettledAt?: Date;
   vendorReversedAt?: Date;
+  codCommissionAccruedAt?: Date;
+  codCommissionReversedAt?: Date;
 
   createdAt: Date;
   updatedAt: Date;
@@ -204,6 +206,14 @@ const OrderSchema = new Schema<IOrder>(
     },
 
     vendorReversedAt: {
+      type: Date,
+    },
+
+    codCommissionAccruedAt: {
+      type: Date,
+    },
+
+    codCommissionReversedAt: {
       type: Date,
     },
   },

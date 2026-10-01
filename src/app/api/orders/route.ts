@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       items,
       totalAmount: body.totalAmount,
       currency: body.currency,
-      paymentMethod: body.paymentMethod,
+      paymentMethod: body.paymentMethod === "cod" ? "cod" : "sslcommerz",
       deliveryAddress: body.deliveryAddress,
       // Must match the lowercase values allowed by the Order schema.
       status: "pending",

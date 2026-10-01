@@ -86,7 +86,7 @@ type SplitItem = {
   vendorEarning?: number;
 };
 
-function groupByVendor(items: SplitItem[]) {
+export function groupByVendor(items: SplitItem[]) {
   const map = new Map<string, { gross: number; commission: number; net: number }>();
   for (const item of items) {
     if (!item.vendorId) continue;

@@ -6,6 +6,9 @@ export interface IMarketplaceSettings {
   minWithdrawal: number; // BDT
   autoApproveVendors: boolean;
   autoApproveProducts: boolean;
+  commissionGraceDays: number; // days after the 1st before unpaid vendors are locked
+  lastLockRunMonth?: string; // "YYYY-MM" of the last automatic lock run
+  lastLockRunAt?: Date;
 }
 
 const MarketplaceSettingsSchema = new Schema<IMarketplaceSettings>(
@@ -15,6 +18,9 @@ const MarketplaceSettingsSchema = new Schema<IMarketplaceSettings>(
     minWithdrawal: { type: Number, default: 500, min: 0 },
     autoApproveVendors: { type: Boolean, default: false },
     autoApproveProducts: { type: Boolean, default: false },
+    commissionGraceDays: { type: Number, default: 0, min: 0, max: 10 },
+    lastLockRunMonth: { type: String, default: "" },
+    lastLockRunAt: { type: Date },
   },
   { timestamps: true }
 );

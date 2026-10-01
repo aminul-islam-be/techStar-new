@@ -45,6 +45,7 @@ export default function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"sslcommerz" | "cod">("sslcommerz");
 
   useEffect(() => {
     const user = getCustomerUser();
@@ -139,7 +140,7 @@ export default function CheckoutPage() {
             city: form.city.trim(),
             area: form.area.trim(),
           },
-          paymentMethod: "sslcommerz",
+          paymentMethod: paymentMethod,
         }),
       });
 
@@ -158,7 +159,7 @@ export default function CheckoutPage() {
       setCart({ items: [] });
 
       setTimeout(() => {
-        router.push(`/payment/${data.orderId}`);
+        router.push(paymentMethod === "cod" ? "/orders?placed=cod" : `/payment/${data.orderId}`);
       }, 500);
     } catch (err) {
       console.error(err);
@@ -293,8 +294,28 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            <div className="mt-6 space-y-2">
+              <p className="text-sm font-semibold text-white">Payment method</p>
+              <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm ${paymentMethod === "sslcommerz" ? "border-orange-500 bg-orange-500/10" : "border-white/10"}`}>
+                <input type="radio" name="paymentMethod" className="mt-1" checked={paymentMethod === "sslcommerz"} onChange={() => setPaymentMethod("sslcommerz")} />
+                <span>
+                  <b>Pay online</b>
+                  <br />
+                  <span className="text-xs text-slate-400">bKash, Nagad, cards</span>
+                </span>
+              </label>
+              <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm ${paymentMethod === "cod" ? "border-orange-500 bg-orange-500/10" : "border-white/10"}`}>
+                <input type="radio" name="paymentMethod" className="mt-1" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} />
+                <span>
+                  <b>{t("checkout.cashOnDelivery")}</b>
+                  <br />
+                  <span className="text-xs text-slate-400">Pay in cash when your order arrives</span>
+                </span>
+              </label>
+            </div>
+
             <button type="submit" disabled={placing || !cart.items.length} className="mt-6 w-full rounded-2xl bg-orange-600 py-4 text-sm font-bold text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-500 hover:shadow-orange-500/30 disabled:cursor-not-allowed disabled:opacity-50">
-              {placing ? t("checkout.processing") : "Proceed to Payment"}
+              {placing ? t("checkout.processing") : paymentMethod === "cod" ? "Place Order (Cash on Delivery)" : "Proceed to Payment"}
             </button>
           </aside>
         </form>

@@ -14,11 +14,15 @@ export type VendorProfile = {
   status: "pending" | "approved" | "suspended" | "rejected";
   effectiveCommissionRate: number;
   payoutMethod?: { type: "bkash" | "nagad" | "rocket" | "bank"; accountName: string; accountNumber: string; bankName?: string };
+  dueCommission?: number;
+  creditBalance?: number;
+  billingLocked?: boolean;
 };
 
 type VendorCtx = {
   vendor: VendorProfile | null;
   minWithdrawal: number;
+  graceDays: number;
   loading: boolean;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
@@ -27,6 +31,7 @@ type VendorCtx = {
 const Ctx = createContext<VendorCtx>({
   vendor: null,
   minWithdrawal: 0,
+  graceDays: 0,
   loading: true,
   refresh: async () => {},
   logout: async () => {},
@@ -40,6 +45,7 @@ export const money = (n: number | undefined | null) =>
 export function VendorProvider({ children }: { children: ReactNode }) {
   const [vendor, setVendor] = useState<VendorProfile | null>(null);
   const [minWithdrawal, setMin] = useState(0);
+  const [graceDays, setGraceDays] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -49,6 +55,7 @@ export function VendorProvider({ children }: { children: ReactNode }) {
       if (res.ok && data.success) {
         setVendor(data.vendor);
         setMin(data.minWithdrawal || 0);
+        setGraceDays(data.commissionGraceDays || 0);
       } else {
         setVendor(null);
       }
@@ -68,5 +75,5 @@ export function VendorProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh]);
 
-  return <Ctx.Provider value={{ vendor, minWithdrawal, loading, refresh, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ vendor, minWithdrawal, graceDays, loading, refresh, logout }}>{children}</Ctx.Provider>;
 }

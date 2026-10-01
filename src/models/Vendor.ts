@@ -24,6 +24,12 @@ export interface IVendor {
   totalCommission: number; // platform commission taken
   totalEarned: number; // vendor share earned
   totalWithdrawn: number; // already paid out
+
+  // COD commission billing
+  dueCommission: number; // commission the vendor owes TechStar for delivered COD orders
+  creditBalance: number; // advance money paid, used against future commission
+  billingLocked: boolean; // true = panel is locked until the due is paid
+  billingLockedAt?: Date;
   chatViolations: number; // blocked chat messages (contact details etc.)
 
   payoutMethod?: {
@@ -74,6 +80,11 @@ const VendorSchema = new Schema<IVendor>(
     totalCommission: { type: Number, default: 0 },
     totalEarned: { type: Number, default: 0 },
     totalWithdrawn: { type: Number, default: 0 },
+
+    dueCommission: { type: Number, default: 0 },
+    creditBalance: { type: Number, default: 0 },
+    billingLocked: { type: Boolean, default: false, index: true },
+    billingLockedAt: { type: Date },
     chatViolations: { type: Number, default: 0 },
 
     payoutMethod: { type: PayoutMethodSchema, default: undefined },
