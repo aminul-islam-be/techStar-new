@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import Address from '../../../models/Address';
-import Coupon from '../../../models/Coupon';
-import Notification from '../../../models/Notification';
+import Address from '@/models/Address';
+import Coupon from '@/models/Coupon';
+import Notification from '@/models/Notification';
 
 export async function GET() {
   try {

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import Address from './models/Address';
-import Coupon from './models/Coupon';
-import Notification from './models/Notification';
+import Address from './src/models/Address';
+import Coupon from './src/models/Coupon';
+import Notification from './src/models/Notification';
 
 async function testModels() {
   try {
