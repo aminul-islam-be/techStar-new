@@ -94,6 +94,13 @@ export default function AdminDashboard() {
               Revenue, sales trend & best sellers
             </p>
           </Link>
+
+          <Link href="/admin/marketplace" style={cardStyle}>
+            <h2>🏪 Marketplace</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Vendors, commission & payouts
+            </p>
+          </Link>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </div>
 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <div style={{ marginTop: "30px" }}>

@@ -6,6 +6,11 @@ export interface IOrderItem {
   price: number;
   quantity: number;
   image?: string;
+  // Marketplace split (snapshotted when the order is placed)
+  vendorId?: mongoose.Types.ObjectId;
+  commissionRate?: number;
+  commissionAmount?: number;
+  vendorEarning?: number;
 }
 
 export interface IOrder extends Document {
@@ -41,6 +46,9 @@ export interface IOrder extends Document {
   cancelledAt?: Date;
   deliveredAt?: Date;
 
+  vendorSettledAt?: Date;
+  vendorReversedAt?: Date;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,6 +78,14 @@ const OrderItemSchema = new Schema<IOrderItem>(
       type: String,
       trim: true,
     },
+    vendorId: {
+      type: Schema.Types.ObjectId,
+      ref: "Vendor",
+      index: true,
+    },
+    commissionRate: { type: Number, min: 0, max: 100 },
+    commissionAmount: { type: Number, min: 0 },
+    vendorEarning: { type: Number, min: 0 },
   },
   { _id: false }
 );
@@ -180,6 +196,14 @@ const OrderSchema = new Schema<IOrder>(
     },
 
     deliveredAt: {
+      type: Date,
+    },
+
+    vendorSettledAt: {
+      type: Date,
+    },
+
+    vendorReversedAt: {
       type: Date,
     },
   },

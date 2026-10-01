@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
 
     const filter: Record<string, unknown> = {
       active: true,
+      // hide vendor products that are pending / rejected / suspended
+      // (admin products and old products have no value, which counts as approved)
+      approvalStatus: { $in: ["approved", null] },
     };
 
     if (category) {

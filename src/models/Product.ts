@@ -13,6 +13,10 @@ export interface IProduct {
   stock: number;
   featured: boolean;
   active: boolean;
+  vendorId?: mongoose.Types.ObjectId;
+  vendorName?: string;
+  approvalStatus?: "approved" | "pending" | "rejected" | "suspended";
+  rejectionReason?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -77,6 +81,22 @@ const ProductSchema = new Schema<IProduct>(
       type: Boolean,
       default: true,
     },
+    // Marketplace fields. Products added by the admin have no vendorId and
+    // are always "approved", so existing products keep working unchanged.
+    vendorId: {
+      type: Schema.Types.ObjectId,
+      ref: "Vendor",
+      index: true,
+      default: undefined,
+    },
+    vendorName: { type: String, default: undefined },
+    approvalStatus: {
+      type: String,
+      enum: ["approved", "pending", "rejected", "suspended"],
+      default: "approved",
+      index: true,
+    },
+    rejectionReason: { type: String, default: undefined },
   },
   {
     timestamps: true,

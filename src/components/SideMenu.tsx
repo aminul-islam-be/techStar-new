@@ -32,6 +32,7 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
     { icon: "📍", label: t("menu.addresses"), href: "/addresses" },
     { icon: "🎧", label: t("menu.support"), href: "/support" },
     { icon: "⚙️", label: t("menu.settings"), href: "/settings" },
+    { icon: "🏪", label: "Sell on TechStar", href: "/vendor/register" },
   ];
 
   useEffect(() => {

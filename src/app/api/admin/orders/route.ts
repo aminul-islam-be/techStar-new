@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Order from "@/models/Order";
+import { getAdminSession } from "@/lib/adminAuth";
+import { settleOrder, reverseOrder } from "@/lib/marketplace";
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,6 +35,10 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    // Changing an order can move vendor money, so only admins may do it.
+    if (!(await getAdminSession())) {
+      return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
+    }
     await connectDB();
     const body = await request.json();
     const { id, status, paymentStatus } = body;
@@ -59,6 +65,14 @@ export async function PATCH(request: NextRequest) {
     const order = await Order.findByIdAndUpdate(id, { $set: updates }, { new: true, runValidators: true }).populate("userId", "fullName phone email").lean();
 
     if (!order) { return NextResponse.json({ success: false, message: "Order not found." }, { status: 404 }); }
+
+    // Vendor payouts: credit when delivered + paid, take back if cancelled later.
+    try {
+      if (order.status === "delivered" && order.paymentStatus === "paid") { await settleOrder(String(id)); }
+      if (order.status === "cancelled") { await reverseOrder(String(id)); }
+    } catch (settleError) {
+      console.error("Vendor settlement error:", settleError);
+    }
 
     return NextResponse.json({ success: true, message: "Order updated successfully.", order });
   } catch (error) {

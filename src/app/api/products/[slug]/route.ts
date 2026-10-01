@@ -14,6 +14,7 @@ export async function GET(
     const product = await Product.findOne({
       slug,
       active: true,
+      approvalStatus: { $in: ["approved", null] },
     }).lean();
 
     if (!product) {
