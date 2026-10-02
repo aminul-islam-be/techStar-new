@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Order from "@/models/Order";
-import { buildOrderItems } from "@/lib/marketplace";
+import { buildPricedOrder } from "@/lib/orderPricing";
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,11 +36,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Unauthorized", redirectToLogin: true }, { status: 401 });
     }
 
-    // Rebuild items on the server: strips any forged fields and attaches the
-    // vendor + commission split for marketplace products.
-    const items = await buildOrderItems(Array.isArray(body.items) ? body.items : []);
+    // The server prices the order: product totals, courier charge for every
+    // parcel (80 / 120 by default) and the vendor commission snapshot.
+    const priced = await buildPricedOrder(Array.isArray(body.items) ? body.items : [], body.deliveryAddress);
 
-    if (!items.length) {
+    if (!priced.items.length) {
       return NextResponse.json({ success: false, message: "Your cart has no valid items." }, { status: 400 });
     }
 
@@ -49,8 +49,11 @@ export async function POST(request: NextRequest) {
       customerName: body.customerName,
       customerPhone: body.customerPhone,
       customerEmail: body.customerEmail,
-      items,
-      totalAmount: body.totalAmount,
+      items: priced.items,
+      totalAmount: priced.totalAmount,
+      itemsTotal: priced.itemsTotal,
+      courierTotal: priced.courierTotal,
+      shippingZone: priced.zone,
       currency: body.currency,
       paymentMethod: body.paymentMethod === "cod" ? "cod" : "sslcommerz",
       deliveryAddress: body.deliveryAddress,

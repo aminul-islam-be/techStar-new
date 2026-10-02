@@ -11,6 +11,7 @@ export interface IOrderItem {
   commissionRate?: number;
   commissionAmount?: number;
   vendorEarning?: number;
+  courierCharge?: number;
 }
 
 export interface IOrder extends Document {
@@ -48,6 +49,9 @@ export interface IOrder extends Document {
 
   vendorSettledAt?: Date;
   vendorReversedAt?: Date;
+  itemsTotal?: number;
+  courierTotal?: number;
+  shippingZone?: "dhaka" | "outside";
   codCommissionAccruedAt?: Date;
   codCommissionReversedAt?: Date;
 
@@ -88,6 +92,7 @@ const OrderItemSchema = new Schema<IOrderItem>(
     commissionRate: { type: Number, min: 0, max: 100 },
     commissionAmount: { type: Number, min: 0 },
     vendorEarning: { type: Number, min: 0 },
+    courierCharge: { type: Number, min: 0 },
   },
   { _id: false }
 );
@@ -208,6 +213,10 @@ const OrderSchema = new Schema<IOrder>(
     vendorReversedAt: {
       type: Date,
     },
+
+    itemsTotal: { type: Number, min: 0 },
+    courierTotal: { type: Number, min: 0 },
+    shippingZone: { type: String, enum: ["dhaka", "outside"] },
 
     codCommissionAccruedAt: {
       type: Date,

@@ -6,6 +6,7 @@ import { getCustomerUser } from "@/lib/customerAuth";
 import { useCurrency } from "@/lib/useCurrency";
 import { useLanguage } from "@/lib/language";
 import { useRouter } from "next/navigation";
+import { DISTRICTS, DIVISIONS, isDhakaDivision } from "@/lib/bdDistricts";
 
 type CartItem = {
   productId: string;
@@ -46,6 +47,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"sslcommerz" | "cod">("sslcommerz");
+  const [rates, setRates] = useState({ insideDhaka: 80, outsideDhaka: 120 });
 
   useEffect(() => {
     const user = getCustomerUser();
@@ -95,6 +97,19 @@ export default function CheckoutPage() {
   const totalItems = useMemo(() => cart.items.reduce((total, item) => total + item.quantity, 0), [cart.items]);
   const subtotal = useMemo(() => cart.items.reduce((total, item) => total + item.price * item.quantity, 0), [cart.items]);
 
+  useEffect(() => {
+    fetch("/api/shipping/rates", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setRates({ insideDhaka: d.insideDhaka, outsideDhaka: d.outsideDhaka });
+      })
+      .catch(() => {});
+  }, []);
+
+  // every product is its own parcel and gets its own courier charge
+  const courierPerProduct = form.city ? (isDhakaDivision(form.city) ? rates.insideDhaka : rates.outsideDhaka) : 0;
+  const courierTotal = cart.items.length * courierPerProduct;
+
   function updateField(field: keyof FormData, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
   }
@@ -107,7 +122,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!form.fullName.trim() || !form.phone.trim() || !form.address.trim()) {
+    if (!form.fullName.trim() || !form.phone.trim() || !form.address.trim() || !form.city.trim()) {
       setError(t("checkout.requiredFieldsError"));
       return;
     }
@@ -132,7 +147,7 @@ export default function CheckoutPage() {
           customerPhone: form.phone.trim(),
           customerEmail: form.email.trim(),
           items: cart.items,
-          totalAmount: subtotal,
+          totalAmount: subtotal + courierTotal,
           deliveryAddress: {
             fullName: form.fullName.trim(),
             phone: form.phone.trim(),
@@ -248,7 +263,16 @@ export default function CheckoutPage() {
               </div>
               <div>
                 <label className="mb-2 block text-sm font-semibold">{t("checkout.cityLabel")}</label>
-                <input value={form.city} onChange={(e) => updateField("city", e.target.value)} placeholder={t("checkout.cityPlaceholder")} className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500" />
+                <select value={form.city} onChange={(e) => updateField("city", e.target.value)} className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500">
+                  <option value="">Select district</option>
+                  {DIVISIONS.map((division) => (
+                    <optgroup key={division} label={`${division} Division`}>
+                      {DISTRICTS.filter((d) => d.division === division).map((d) => (
+                        <option key={d.name} value={d.name}>{d.name}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
               </div>
             </div>
           </section>
@@ -269,6 +293,7 @@ export default function CheckoutPage() {
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-2 text-sm font-semibold">{item.name}</p>
                     <p className="mt-1 text-xs text-slate-500">{item.quantity} × {format(item.price)}</p>
+                    <p className="mt-0.5 text-xs text-sky-400">+ Courier {form.city ? format(courierPerProduct) : "(select district)"}</p>
                   </div>
                   <div className="text-sm font-bold">{format(item.price * item.quantity)}</div>
                 </div>
@@ -286,11 +311,11 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>{t("cart.delivery")}</span>
-                <span>{t("checkout.deliveryCalculatedLater")}</span>
+                <span>{form.city ? format(courierTotal) : "Select district"}</span>
               </div>
               <div className="flex justify-between border-t border-white/[0.08] pt-4 font-bold text-white">
                 <span>{t("checkout.total")}</span>
-                <span className="text-lg text-emerald-400">{format(subtotal)}</span>
+                <span className="text-lg text-emerald-400">{format(subtotal + courierTotal)}</span>
               </div>
             </div>
 

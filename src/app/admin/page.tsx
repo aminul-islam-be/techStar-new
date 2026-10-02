@@ -109,6 +109,13 @@ export default function AdminDashboard() {
             </p>
           </Link>
 
+          <Link href="/admin/pricing" style={cardStyle}>
+            <h2>🚚 Commission & courier</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Commission limits and courier charges
+            </p>
+          </Link>
+
           <Link href="/admin/chats" style={cardStyle}>
             <h2>💬 Chat monitor</h2>
             <p style={{ color: "#94a3b8" }}>

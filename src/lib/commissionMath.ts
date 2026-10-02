@@ -78,3 +78,31 @@ export function nextLockDateLabel(graceDays: number, now: Date = new Date()) {
   const names = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   return `${lockDay} ${names[m - 1]} ${y}`;
 }
+
+/**
+ * Commission TechStar keeps on ONE parcel (= one product line of an order):
+ * `ratePct` of the product value, but never below `min` or above `max`
+ * (and never more than the sale itself). A vendor with 0% pays nothing.
+ */
+export function computeCommission(gross: number, ratePct: number, min: number, max: number) {
+  if (gross <= 0 || ratePct <= 0) return 0;
+  const lo = Math.max(0, Math.min(min, max));
+  const hi = Math.max(lo, max);
+  const raw = (gross * ratePct) / 100;
+  const clamped = Math.min(Math.max(raw, lo), hi);
+  return round2(Math.min(clamped, gross));
+}
+
+/** Money of one parcel. `ratePct = null` means TechStar's own product (no vendor). */
+export function priceParcel(p: { price: number; quantity: number; ratePct: number | null; min: number; max: number; courier: number }) {
+  const gross = round2(p.price * p.quantity);
+  const courier = round2(p.courier);
+  const commission = p.ratePct === null ? 0 : computeCommission(gross, p.ratePct, p.min, p.max);
+  return {
+    gross,
+    courier,
+    commission,
+    vendorEarning: round2(gross - commission + courier), // the vendor pays the courier, so the courier charge is theirs
+    customerPays: round2(gross + courier),
+  };
+}
