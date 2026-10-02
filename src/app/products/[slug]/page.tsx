@@ -564,7 +564,8 @@ export default function ProductDetailPage({
             </div>
             <Link
               href={`/messages/new/${product.slug}`}
-              className="shrink-0 rounded-full bg-slate-800 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-700"
+              className="shrink-0 rounded-full bg-slate-800 px-4 py-2.5 text-xs font-bold text-white! no-underline hover:bg-slate-700"
+              style={{ color: "#ffffff" }}
             >
               {product.vendorId ? "💬 Chat with seller" : "💬 Chat with " + PLATFORM_NAME}
             </Link>
