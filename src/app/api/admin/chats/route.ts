@@ -10,9 +10,11 @@ export async function GET(request: NextRequest) {
   }
   await connectDB();
 
-  const filter = new URL(request.url).searchParams.get("filter") || "flagged";
+  const filter = new URL(request.url).searchParams.get("filter") || "support";
   const query: Record<string, unknown> =
-    filter === "flagged"
+    filter === "support"
+      ? { isPlatform: true }
+      : filter === "flagged"
       ? { $or: [{ violationsVendor: { $gt: 0 } }, { violationsCustomer: { $gt: 0 } }] }
       : filter === "reported"
       ? { reported: true }
@@ -21,22 +23,32 @@ export async function GET(request: NextRequest) {
       : {};
 
   const convs = await ChatConversation.find(query).sort({ lastMessageAt: -1 }).limit(100).lean();
-  const vendors = await Vendor.find({ _id: { $in: convs.map((c) => c.vendorId) } })
+  const vendors = await Vendor.find({ _id: { $in: convs.map((c) => c.vendorId).filter(Boolean) } })
     .select("chatViolations status")
     .lean();
   const vmap = new Map(vendors.map((v) => [String(v._id), v]));
 
+  // customer questions that nobody answered yet, for the badge
+  const unreadSupport = await ChatConversation.aggregate([
+    { $match: { isPlatform: true, unreadVendor: { $gt: 0 } } },
+    { $group: { _id: null, chats: { $sum: 1 } } },
+  ]);
+
   return NextResponse.json({
     success: true,
+    unreadSupportChats: unreadSupport[0]?.chats || 0,
     conversations: convs.map((c) => ({
       _id: String(c._id),
+      isPlatform: Boolean(c.isPlatform),
       customerName: c.customerName,
-      vendorId: String(c.vendorId),
+      vendorId: c.vendorId ? String(c.vendorId) : "",
       vendorName: c.vendorName,
-      vendorStatus: vmap.get(String(c.vendorId))?.status || "",
-      vendorTotalViolations: vmap.get(String(c.vendorId))?.chatViolations || 0,
+      vendorStatus: c.vendorId ? vmap.get(String(c.vendorId))?.status || "" : "",
+      vendorTotalViolations: c.vendorId ? vmap.get(String(c.vendorId))?.chatViolations || 0 : 0,
       productName: c.productName || "",
       lastMessageAt: c.lastMessageAt,
+      lastMessageText: c.lastMessageText || "",
+      unread: c.isPlatform ? c.unreadVendor : 0,
       violationsCustomer: c.violationsCustomer,
       violationsVendor: c.violationsVendor,
       locked: c.locked,

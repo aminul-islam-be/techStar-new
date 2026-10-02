@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getCustomerUserId } from "@/lib/customerAuth";
+import { PLATFORM_NAME } from "@/lib/platform";
 
 type P = { _id: string; name: string; image?: string; vendorName?: string; vendorId?: string };
 
@@ -46,18 +47,20 @@ export default function NewChatPage() {
     }
   }
 
+  // products without a vendor are TechStar's own: the chat goes to the owner
+  const isPlatform = Boolean(product) && !product?.vendorId;
+  const sellerName = product?.vendorName || PLATFORM_NAME;
+
   return (
     <main className="min-h-screen bg-slate-950 pb-24 text-white">
       <div className="mx-auto max-w-2xl px-4 py-5">
         <Link href="/messages" className="text-xs text-slate-400">
           ← Messages
         </Link>
-        <h1 className="mt-2 text-xl font-extrabold">Ask the seller</h1>
+        <h1 className="mt-2 text-xl font-extrabold">Ask {product ? sellerName : "the seller"}</h1>
 
         {!product ? (
           <p className="mt-4 text-sm text-slate-400">Loading...</p>
-        ) : !product.vendorId ? (
-          <p className="mt-4 text-sm text-slate-400">This product is sold by TechStar. Use Support for questions.</p>
         ) : (
           <>
             <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900 p-3">
@@ -69,13 +72,14 @@ export default function NewChatPage() {
               )}
               <div className="min-w-0">
                 <p className="truncate font-semibold">{product.name}</p>
-                <p className="text-xs text-slate-400">Sold by {product.vendorName}</p>
+                <p className="text-xs text-slate-400">Sold by {sellerName}</p>
               </div>
             </div>
 
             <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] leading-relaxed text-amber-200">
-              🔒 Ask about the product, stock or delivery. For your safety, phone numbers, links and chat apps are blocked,
-              and every order and payment must stay on TechStar.
+              {isPlatform
+                ? "💬 Ask anything about this product, stock, delivery or your order. TechStar will reply here in your Messages."
+                : "🔒 Ask about the product, stock or delivery. For your safety, phone numbers, links and chat apps are blocked, and every order and payment must stay on TechStar."}
             </div>
 
             <textarea

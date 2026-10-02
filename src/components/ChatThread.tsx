@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type Msg = { _id: string; sender: "customer" | "vendor"; text: string; createdAt: string };
-type Conv = { _id: string; title: string; subtitle: string; locked: boolean; reported: boolean };
+type Msg = { _id: string; sender: "customer" | "vendor" | "admin"; text: string; createdAt: string };
+type Conv = { _id: string; title: string; subtitle: string; locked: boolean; reported: boolean; platform?: boolean };
 
 export default function ChatThread({
   endpoint,
@@ -109,20 +109,26 @@ export default function ChatThread({
             {conv?.subtitle && <p className="truncate text-[11px] text-slate-500">About: {conv.subtitle}</p>}
           </div>
         </div>
-        {role === "customer" && reportEndpoint && (
+        {role === "customer" && reportEndpoint && !conv?.platform && (
           <button onClick={report} className="shrink-0 rounded-lg border border-red-500/30 px-2.5 py-1.5 text-[11px] text-red-300">
             Report
           </button>
         )}
       </div>
 
-      <div className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] leading-relaxed text-amber-200">
-        🔒 Keep every order and payment on TechStar. Phone numbers, e-mails, links and chat apps are blocked, and chats are
-        monitored.{" "}
-        {role === "customer"
-          ? "If a seller asks you to order outside TechStar, tap Report."
-          : "Orders can only be placed by the customer on the website."}
-      </div>
+      {conv?.platform ? (
+        <div className="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-[11px] leading-relaxed text-emerald-200">
+          💬 You are chatting with TechStar. TechStar support will reply here, check back soon.
+        </div>
+      ) : (
+        <div className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] leading-relaxed text-amber-200">
+          🔒 Keep every order and payment on TechStar. Phone numbers, e-mails, links and chat apps are blocked, and chats are
+          monitored.{" "}
+          {role === "customer"
+            ? "If a seller asks you to order outside TechStar, tap Report."
+            : "Orders can only be placed by the customer on the website."}
+        </div>
+      )}
 
       <div className="max-h-[55dvh] min-h-[40dvh] space-y-2 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900 p-3">
         {messages.length === 0 && <p className="text-center text-sm text-slate-500">No messages yet.</p>}

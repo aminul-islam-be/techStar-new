@@ -5,6 +5,7 @@ import { useCurrency } from "@/lib/useCurrency";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCustomerUserId } from "@/lib/customerAuth";
+import { PLATFORM_NAME } from "@/lib/platform";
 
 type Product = {
   _id: string;
@@ -555,17 +556,17 @@ export default function ProductDetailPage({
           </div>
         </div>
 
-        {product.vendorId && (
+        {(
           <div className="mt-8 flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
             <div className="min-w-0">
               <p className="text-xs text-slate-500">Sold by</p>
-              <p className="truncate text-sm font-bold text-slate-900">{product.vendorName || "Seller"}</p>
+              <p className="truncate text-sm font-bold text-slate-900">{product.vendorName || PLATFORM_NAME}</p>
             </div>
             <Link
               href={`/messages/new/${product.slug}`}
               className="shrink-0 rounded-full bg-slate-800 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-700"
             >
-              💬 Chat with seller
+              {product.vendorId ? "💬 Chat with seller" : "💬 Chat with " + PLATFORM_NAME}
             </Link>
           </div>
         )}

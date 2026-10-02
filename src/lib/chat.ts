@@ -7,7 +7,7 @@ export const MAX_CHAT_LENGTH = 500;
 const MAX_MESSAGES_PER_MINUTE = 12;
 const LOCK_AFTER_VENDOR_VIOLATIONS = 3;
 
-type Sender = "customer" | "vendor";
+type Sender = "customer" | "vendor" | "admin";
 
 // One flat shape (instead of a union) so every caller can read the same fields.
 type SendResult = {
@@ -21,7 +21,11 @@ type SendResult = {
 
 /**
  * The ONLY way a chat message is stored. Every check lives here, so the
- * customer, vendor and any future entry point behave the same.
+ * customer, vendor, admin and any future entry point behave the same.
+ *
+ * Two kinds of chat:
+ *  - vendor chat  (customer <-> vendor): contact details are blocked, 3 strikes lock it
+ *  - TechStar chat (customer <-> admin): no vendor to protect against, so no contact filter
  */
 export async function postChatMessage(conversationId: string, sender: Sender, rawText: string): Promise<SendResult> {
   const text = String(rawText || "").replace(/\n{3,}/g, "\n\n").trim();
@@ -34,6 +38,15 @@ export async function postChatMessage(conversationId: string, sender: Sender, ra
   const conv = await ChatConversation.findById(conversationId);
   if (!conv) return { ok: false, status: 404, error: "Conversation not found." };
 
+  const platform = Boolean(conv.isPlatform);
+
+  // who may speak in which chat
+  if (sender === "admin" && !platform) {
+    return { ok: false, status: 403, error: "The admin can only reply in TechStar support chats." };
+  }
+  if (sender === "vendor" && platform) {
+    return { ok: false, status: 403, error: "Not allowed." };
+  }
   if (sender === "vendor" && conv.locked) {
     return { ok: false, status: 403, error: "This chat is locked by TechStar support.", locked: true };
   }
@@ -45,48 +58,50 @@ export async function postChatMessage(conversationId: string, sender: Sender, ra
     return { ok: false, status: 429, error: "You are sending messages too fast. Please wait a moment." };
   }
 
-  // the sender's last messages: a phone number can't be smuggled out in pieces
-  const previous = await ChatMessage.find({
-    conversationId: conv._id,
-    sender,
-    blocked: { $ne: true },
-    createdAt: { $gte: new Date(Date.now() - 10 * 60 * 1000) },
-  })
-    .sort({ createdAt: -1 })
-    .limit(2)
-    .lean();
+  if (!platform) {
+    // the sender's last messages: a phone number can't be smuggled out in pieces
+    const previous = await ChatMessage.find({
+      conversationId: conv._id,
+      sender,
+      blocked: { $ne: true },
+      createdAt: { $gte: new Date(Date.now() - 10 * 60 * 1000) },
+    })
+      .sort({ createdAt: -1 })
+      .limit(2)
+      .lean();
 
-  const reason = findContactInfo(text, "chat", previous.reverse().map((m) => m.text));
+    const reason = findContactInfo(text, "chat", previous.reverse().map((m) => m.text));
 
-  if (reason) {
-    // keep the attempt for the admin, never show it to the other person
-    await ChatMessage.create({ conversationId: conv._id, sender, text, blocked: true, blockReason: reason });
+    if (reason) {
+      // keep the attempt for the admin, never show it to the other person
+      await ChatMessage.create({ conversationId: conv._id, sender, text, blocked: true, blockReason: reason });
 
-    const field = sender === "vendor" ? "violationsVendor" : "violationsCustomer";
-    const updated = await ChatConversation.findByIdAndUpdate(
-      conv._id,
-      { $inc: { [field]: 1 } },
-      { returnDocument: "after" }
-    );
+      const field = sender === "vendor" ? "violationsVendor" : "violationsCustomer";
+      const updated = await ChatConversation.findByIdAndUpdate(
+        conv._id,
+        { $inc: { [field]: 1 } },
+        { returnDocument: "after" }
+      );
 
-    let locked = false;
-    if (sender === "vendor") {
-      await Vendor.updateOne({ _id: conv.vendorId }, { $inc: { chatViolations: 1 } });
-      if (updated && updated.violationsVendor >= LOCK_AFTER_VENDOR_VIOLATIONS && !updated.locked) {
-        await ChatConversation.updateOne({ _id: conv._id }, { $set: { locked: true } });
-        locked = true;
+      let locked = false;
+      if (sender === "vendor") {
+        await Vendor.updateOne({ _id: conv.vendorId }, { $inc: { chatViolations: 1 } });
+        if (updated && updated.violationsVendor >= LOCK_AFTER_VENDOR_VIOLATIONS && !updated.locked) {
+          await ChatConversation.updateOne({ _id: conv._id }, { $set: { locked: true } });
+          locked = true;
+        }
       }
-    }
 
-    return {
-      ok: false,
-      status: 422,
-      blocked: true,
-      locked,
-      error: locked
-        ? "This chat has been locked because contact details were shared repeatedly. TechStar support will review it."
-        : CONTACT_BLOCK_MESSAGE,
-    };
+      return {
+        ok: false,
+        status: 422,
+        blocked: true,
+        locked,
+        error: locked
+          ? "This chat has been locked because contact details were shared repeatedly. TechStar support will review it."
+          : CONTACT_BLOCK_MESSAGE,
+      };
+    }
   }
 
   const message = await ChatMessage.create({ conversationId: conv._id, sender, text });
@@ -95,6 +110,7 @@ export async function postChatMessage(conversationId: string, sender: Sender, ra
     { _id: conv._id },
     {
       $set: { lastMessageAt: message.createdAt, lastMessageText: text.slice(0, 80) },
+      // customer writes -> vendor (or admin) has something unread; vendor/admin writes -> customer does
       $inc: sender === "customer" ? { unreadVendor: 1 } : { unreadCustomer: 1 },
     }
   );

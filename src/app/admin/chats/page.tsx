@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Conv = {
   _id: string;
+  isPlatform: boolean;
   customerName: string;
   vendorId: string;
   vendorName: string;
@@ -12,19 +13,22 @@ type Conv = {
   vendorTotalViolations: number;
   productName: string;
   lastMessageAt: string;
+  lastMessageText: string;
+  unread: number;
   violationsCustomer: number;
   violationsVendor: number;
   locked: boolean;
   reported: boolean;
   reportReason: string;
 };
-type Msg = { _id: string; sender: "customer" | "vendor"; text: string; blocked: boolean; blockReason?: string; createdAt: string };
+type Msg = { _id: string; sender: "customer" | "vendor" | "admin"; text: string; blocked: boolean; blockReason?: string; createdAt: string };
 
 async function call(url: string, method = "GET", body?: unknown) {
   const res = await fetch(url, {
     method,
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
   });
   const d = await res.json().catch(() => ({}));
   if (res.status === 401) throw new Error("Please login as admin first (/admin/login).");
@@ -33,11 +37,15 @@ async function call(url: string, method = "GET", body?: unknown) {
 }
 
 export default function AdminChatsPage() {
-  const [filter, setFilter] = useState("flagged");
+  const [filter, setFilter] = useState("support");
   const [list, setList] = useState<Conv[]>([]);
+  const [unreadSupport, setUnreadSupport] = useState(0);
   const [open, setOpen] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const openRef = useRef<string | null>(null);
 
   const run = useCallback(async (fn: () => Promise<void>) => {
     setError("");
@@ -53,20 +61,46 @@ export default function AdminChatsPage() {
       run(async () => {
         const d = await call(`/api/admin/chats?filter=${filter}`);
         setList(d.conversations);
+        setUnreadSupport(d.unreadSupportChats || 0);
       }),
     [run, filter]
   );
 
+  const loadThread = useCallback(async (id: string) => {
+    try {
+      const d = await call(`/api/admin/chats/${id}`);
+      if (openRef.current === id) setMessages(d.messages);
+    } catch {
+      /* the next refresh will retry */
+    }
+  }, []);
+
   useEffect(() => {
     loadList();
+    const t = setInterval(loadList, 8000);
+    return () => clearInterval(t);
   }, [loadList]);
+
+  // keep the open chat fresh
+  useEffect(() => {
+    if (!open) return;
+    const t = setInterval(() => loadThread(open), 5000);
+    return () => clearInterval(t);
+  }, [open, loadThread]);
 
   const openChat = (id: string) =>
     run(async () => {
-      if (open === id) return setOpen(null);
+      if (open === id) {
+        openRef.current = null;
+        setOpen(null);
+        return;
+      }
+      openRef.current = id;
+      setReply("");
       const d = await call(`/api/admin/chats/${id}`);
       setMessages(d.messages);
       setOpen(id);
+      loadList(); // the unread badge goes away
     });
 
   const patch = (id: string, body: Record<string, unknown>) =>
@@ -82,25 +116,52 @@ export default function AdminChatsPage() {
       await loadList();
     });
 
+  async function sendReply(id: string) {
+    if (!reply.trim() || sending) return;
+    setSending(true);
+    setError("");
+    try {
+      await call(`/api/admin/chats/${id}`, "POST", { text: reply });
+      setReply("");
+      await loadThread(id);
+      loadList();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Message not sent.");
+    } finally {
+      setSending(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-6 text-white">
       <div className="mx-auto max-w-4xl">
         <Link href="/admin" className="text-xs text-slate-400">
           ← Admin dashboard
         </Link>
-        <h1 className="mt-2 text-2xl font-extrabold">Chat monitor</h1>
+        <h1 className="mt-2 text-2xl font-extrabold">
+          Chats{" "}
+          {unreadSupport > 0 && (
+            <span className="ml-2 rounded-full bg-red-500 px-2 py-0.5 align-middle text-xs font-bold">{unreadSupport} new</span>
+          )}
+        </h1>
         <p className="mt-1 text-xs text-slate-400">
-          Blocked messages (phone numbers, links, “order outside”) are saved here and never reach the other person.
+          Customer questions about TechStar&apos;s own products arrive in <b>Support inbox</b>, and you reply here. The other filters
+          monitor vendor chats: blocked messages (phone numbers, links, “order outside”) are saved and never reach the other person.
         </p>
 
         <select
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          onChange={(e) => {
+            setFilter(e.target.value);
+            setOpen(null);
+            openRef.current = null;
+          }}
           className="mt-4 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
         >
-          <option value="flagged">Flagged (blocked messages)</option>
-          <option value="reported">Reported by customers</option>
-          <option value="locked">Locked</option>
+          <option value="support">Support inbox (TechStar products)</option>
+          <option value="flagged">Vendor chats: flagged (blocked messages)</option>
+          <option value="reported">Vendor chats: reported by customers</option>
+          <option value="locked">Vendor chats: locked</option>
           <option value="all">All chats</option>
         </select>
 
@@ -109,15 +170,26 @@ export default function AdminChatsPage() {
 
         <div className="mt-4 space-y-3">
           {list.map((c) => (
-            <div key={c._id} className="rounded-2xl border border-white/10 bg-slate-900 p-4">
+            <div key={c._id} className={`rounded-2xl border bg-slate-900 p-4 ${c.unread > 0 ? "border-blue-500/50" : "border-white/10"}`}>
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
+                <div className="min-w-0">
                   <p className="font-bold">
-                    {c.vendorName} <span className="font-normal text-slate-400">↔ {c.customerName}</span>
+                    {c.isPlatform ? (
+                      <>
+                        {c.customerName} <span className="font-normal text-slate-400">→ TechStar support</span>
+                      </>
+                    ) : (
+                      <>
+                        {c.vendorName} <span className="font-normal text-slate-400">↔ {c.customerName}</span>
+                      </>
+                    )}
                   </p>
                   {c.productName && <p className="text-xs text-slate-500">About: {c.productName}</p>}
+                  {c.isPlatform && c.lastMessageText && <p className="mt-1 truncate text-sm text-slate-300">{c.lastMessageText}</p>}
                 </div>
                 <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
+                  {c.unread > 0 && <span className="rounded-full bg-blue-600 px-2.5 py-1">{c.unread} unread</span>}
+                  {c.isPlatform && <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-emerald-300">TechStar chat</span>}
                   {c.violationsVendor > 0 && (
                     <span className="rounded-full bg-red-500/20 px-2.5 py-1 text-red-300">Vendor blocked × {c.violationsVendor}</span>
                   )}
@@ -130,17 +202,21 @@ export default function AdminChatsPage() {
               </div>
 
               {c.reported && c.reportReason && <p className="mt-2 text-xs text-purple-200">Customer says: {c.reportReason}</p>}
-              <p className="mt-1 text-[11px] text-slate-500">
-                Vendor total blocked attempts: {c.vendorTotalViolations} · vendor status: {c.vendorStatus}
-              </p>
+              {!c.isPlatform && (
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Vendor total blocked attempts: {c.vendorTotalViolations} · vendor status: {c.vendorStatus}
+                </p>
+              )}
 
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 <button onClick={() => openChat(c._id)} className="rounded-lg bg-blue-600 px-3 py-2 font-bold">
-                  {open === c._id ? "Hide chat" : "Read chat"}
+                  {open === c._id ? "Hide chat" : c.isPlatform ? "Open & reply" : "Read chat"}
                 </button>
-                <button onClick={() => patch(c._id, { locked: !c.locked })} className="rounded-lg border border-white/10 px-3 py-2">
-                  {c.locked ? "Unlock" : "Lock chat"}
-                </button>
+                {!c.isPlatform && (
+                  <button onClick={() => patch(c._id, { locked: !c.locked })} className="rounded-lg border border-white/10 px-3 py-2">
+                    {c.locked ? "Unlock" : "Lock chat"}
+                  </button>
+                )}
                 {c.reported && (
                   <button onClick={() => patch(c._id, { clearReport: true })} className="rounded-lg border border-white/10 px-3 py-2">
                     Clear report
@@ -151,7 +227,7 @@ export default function AdminChatsPage() {
                     Reset warnings
                   </button>
                 )}
-                {c.vendorStatus === "approved" && (
+                {!c.isPlatform && c.vendorStatus === "approved" && (
                   <button onClick={() => suspendVendor(c.vendorId, c.vendorName)} className="rounded-lg bg-amber-600 px-3 py-2 font-bold">
                     Suspend vendor
                   </button>
@@ -159,26 +235,48 @@ export default function AdminChatsPage() {
               </div>
 
               {open === c._id && (
-                <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl bg-slate-950 p-3">
-                  {messages.map((m) => (
-                    <div
-                      key={m._id}
-                      className={`rounded-xl px-3 py-2 text-sm ${
-                        m.blocked
-                          ? "border border-red-500/40 bg-red-500/10"
-                          : m.sender === "vendor"
-                          ? "bg-blue-600/30"
-                          : "bg-slate-800"
-                      }`}
-                    >
-                      <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                        {m.sender} · {new Date(m.createdAt).toLocaleString()}
-                        {m.blocked && <span className="ml-2 font-bold text-red-300">BLOCKED ({m.blockReason})</span>}
-                      </p>
-                      <p className="mt-0.5 whitespace-pre-wrap break-words">{m.text}</p>
+                <>
+                  <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl bg-slate-950 p-3">
+                    {messages.map((m) => (
+                      <div
+                        key={m._id}
+                        className={`rounded-xl px-3 py-2 text-sm ${
+                          m.blocked
+                            ? "border border-red-500/40 bg-red-500/10"
+                            : m.sender === "customer"
+                            ? "bg-slate-800"
+                            : "bg-blue-600/30"
+                        }`}
+                      >
+                        <p className="text-[10px] uppercase tracking-wide text-slate-400">
+                          {m.sender === "admin" ? "you (TechStar)" : m.sender} · {new Date(m.createdAt).toLocaleString()}
+                          {m.blocked && <span className="ml-2 font-bold text-red-300">BLOCKED ({m.blockReason})</span>}
+                        </p>
+                        <p className="mt-0.5 whitespace-pre-wrap break-words">{m.text}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {c.isPlatform && (
+                    <div className="mt-3 flex gap-2">
+                      <textarea
+                        value={reply}
+                        onChange={(e) => setReply(e.target.value)}
+                        rows={2}
+                        maxLength={500}
+                        placeholder="Write your reply to the customer..."
+                        className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-white outline-none focus:border-blue-500"
+                      />
+                      <button
+                        onClick={() => sendReply(c._id)}
+                        disabled={sending || !reply.trim()}
+                        className="rounded-xl bg-blue-600 px-5 text-sm font-bold disabled:opacity-50"
+                      >
+                        {sending ? "..." : "Send"}
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           ))}

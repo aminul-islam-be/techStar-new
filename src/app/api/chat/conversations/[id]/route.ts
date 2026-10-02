@@ -40,6 +40,7 @@ export async function GET(request: Request, { params }: Ctx) {
       title: conv.vendorName,
       subtitle: conv.productName || "",
       locked: false, // customers can always write; only the seller side gets locked
+      platform: Boolean(conv.isPlatform),
       reported: conv.reported,
     },
     messages,

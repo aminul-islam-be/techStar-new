@@ -117,9 +117,9 @@ export default function AdminDashboard() {
           </Link>
 
           <Link href="/admin/chats" style={cardStyle}>
-            <h2>💬 Chat monitor</h2>
+            <h2>💬 Chats & support inbox</h2>
             <p style={{ color: "#94a3b8" }}>
-              Customer-vendor chats & blocked messages
+              Customer questions and vendor chat monitor
             </p>
           </Link>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     </div>
