@@ -1,5 +1,6 @@
 "use client";
 
+import { orderBreakdown } from "@/lib/refundPolicy";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getCustomerUser } from "@/lib/customerAuth";
@@ -12,6 +13,7 @@ type Order = {
   _id: string; customerName: string; customerPhone: string; customerEmail?: string;
   items: OrderItem[]; totalAmount: number; currency?: string; paymentMethod?: string;
   paymentStatus?: string; status?: string; deliveryAddress?: DeliveryAddress; createdAt?: string;
+  itemsTotal?: number; courierTotal?: number;
 };
 
 export default function OrdersPage() {
@@ -153,6 +155,12 @@ export default function OrdersPage() {
                         <span>{t("orders.paymentLabel")}</span>
                         <span className="capitalize">{paymentMethodLabel(order.paymentMethod)}</span>
                       </div>
+                      {orderBreakdown(order).courier > 0 && (
+                        <div className="mt-2 space-y-1 text-xs text-slate-500">
+                          <div className="flex justify-between"><span>Products</span><span>{format(orderBreakdown(order).productTotal)}</span></div>
+                          <div className="flex justify-between"><span>Courier charge (non-refundable)</span><span>{format(orderBreakdown(order).courier)}</span></div>
+                        </div>
+                      )}
                       <div className="mt-3 flex items-center justify-between">
                         <span className="font-bold">{t("cart.total")}</span>
                         <span className="text-xl font-extrabold">{format(Number(order.totalAmount))}</span>

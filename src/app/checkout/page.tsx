@@ -1,5 +1,6 @@
 "use client";
 
+import { COURIER_NOTE } from "@/lib/refundPolicy";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getCustomerUser } from "@/lib/customerAuth";
@@ -318,6 +319,8 @@ export default function CheckoutPage() {
                 <span className="text-lg text-emerald-400">{format(subtotal + courierTotal)}</span>
               </div>
             </div>
+
+            <p className="mt-3 rounded-lg bg-white/[0.04] p-2.5 text-[11px] leading-relaxed text-slate-400">ⓘ {COURIER_NOTE}</p>
 
             <div className="mt-6 space-y-2">
               <p className="text-sm font-semibold text-white">Payment method</p>

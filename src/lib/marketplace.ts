@@ -84,17 +84,19 @@ type SplitItem = {
   quantity: number;
   commissionAmount?: number;
   vendorEarning?: number;
+  courierCharge?: number;
 };
 
 export function groupByVendor(items: SplitItem[]) {
-  const map = new Map<string, { gross: number; commission: number; net: number }>();
+  const map = new Map<string, { gross: number; commission: number; net: number; courier: number }>();
   for (const item of items) {
     if (!item.vendorId) continue;
     const key = String(item.vendorId);
-    const row = map.get(key) || { gross: 0, commission: 0, net: 0 };
+    const row = map.get(key) || { gross: 0, commission: 0, net: 0, courier: 0 };
     row.gross += item.price * item.quantity;
     row.commission += item.commissionAmount || 0;
     row.net += item.vendorEarning || 0;
+    row.courier += item.courierCharge || 0;
     map.set(key, row);
   }
   return map;
@@ -170,15 +172,18 @@ export async function reverseOrder(orderId: string) {
     const gross = round2(t.gross);
     const commission = round2(t.commission);
     const net = round2(t.net);
+    // The customer is refunded the product price only, and the vendor already paid the
+    // courier, so the courier charge stays with the vendor: take back product price - commission.
+    const takeBack = round2(net - t.courier);
 
     const vendor = await Vendor.findByIdAndUpdate(
       vendorId,
       {
         $inc: {
-          balance: -net,
+          balance: -takeBack,
           totalSales: -gross,
           totalCommission: -commission,
-          totalEarned: -net,
+          totalEarned: -takeBack,
         },
       },
       { new: true }
@@ -188,7 +193,7 @@ export async function reverseOrder(orderId: string) {
     await VendorTransaction.create({
       vendorId,
       type: "reversal",
-      amount: -net,
+      amount: -takeBack,
       grossAmount: gross,
       commissionAmount: commission,
       orderId: order._id,

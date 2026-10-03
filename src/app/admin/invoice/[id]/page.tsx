@@ -1,5 +1,6 @@
 "use client";
 
+import { orderBreakdown, COURIER_NOTE } from "@/lib/refundPolicy";
 import { useSite } from "@/lib/siteContext";
 import { useEffect, useState, use as usePromise } from "react";
 import { useCurrency } from "@/lib/useCurrency";
@@ -99,17 +100,22 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
           </div>
           <div className="w-1/2 text-right space-y-2">
             <div className="flex justify-between text-sm font-medium">
-              <span className="text-gray-500">Subtotal:</span>
-              <span className="text-gray-800">{format(order.totalAmount)}</span>
+              <span className="text-gray-500">Products:</span>
+              <span className="text-gray-800">{format(orderBreakdown(order).productTotal)}</span>
             </div>
             <div className="flex justify-between text-sm font-medium">
-              <span className="text-gray-500">Delivery Fee:</span>
-              <span className="text-gray-800">Calculated Later</span>
+              <span className="text-gray-500">Courier charge:</span>
+              <span className="text-gray-800">{format(orderBreakdown(order).courier)}</span>
             </div>
             <div className="flex justify-between text-xl font-black border-t-2 border-gray-800 pt-3 mt-3 text-gray-900">
               <span>Grand Total:</span>
               <span>{format(order.totalAmount)}</span>
             </div>
+            {orderBreakdown(order).courier > 0 && (
+              <p className="pt-2 text-left text-[11px] leading-snug text-gray-500">
+                If cancelled or returned, you get back {format(orderBreakdown(order).refundable)}. {COURIER_NOTE}
+              </p>
+            )}
           </div>
         </div>
 

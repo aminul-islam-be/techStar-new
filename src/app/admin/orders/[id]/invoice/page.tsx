@@ -1,5 +1,6 @@
 "use client";
 
+import { orderBreakdown, COURIER_NOTE } from "@/lib/refundPolicy";
 import { useSite } from "@/lib/siteContext";
 import { useEffect, useState, use as usePromise } from "react";
 import Link from "next/link";
@@ -37,6 +38,9 @@ type Order = {
     area?: string;
   };
   createdAt?: string;
+  itemsTotal?: number;
+  courierTotal?: number;
+  shippingZone?: string;
 };
 
 export default function OrderInvoicePage({
@@ -514,33 +518,54 @@ export default function OrderInvoicePage({
               style={{
                 display: "flex",
                 justifyContent: "flex-end",
-                marginBottom: "28px",
+                marginBottom: "12px",
               }}
             >
-              <div
-                style={{
-                  minWidth: "240px",
-                  border: "2px solid #0f172a",
-                  borderRadius: "10px",
-                  padding: "14px 18px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span style={{ fontWeight: 700 }}>
-                  Total Amount
-                </span>
-                <span
+              <div style={{ minWidth: "240px" }}>
+                {orderBreakdown(order).courier > 0 && (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", fontSize: "14px", color: "#475569", padding: "4px 4px" }}>
+                      <span>Products</span>
+                      <span>{order.currency} {orderBreakdown(order).productTotal}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", fontSize: "14px", color: "#475569", padding: "4px 4px", marginBottom: "8px" }}>
+                      <span>
+                        Courier charge
+                        {order.shippingZone === "dhaka" ? " (Dhaka Division)" : order.shippingZone === "outside" ? " (Outside Dhaka)" : ""}
+                      </span>
+                      <span>{order.currency} {orderBreakdown(order).courier}</span>
+                    </div>
+                  </>
+                )}
+                <div
                   style={{
-                    fontSize: "22px",
-                    fontWeight: 900,
+                    border: "2px solid #0f172a",
+                    borderRadius: "10px",
+                    padding: "14px 18px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
-                  {order.currency} {order.totalAmount}
-                </span>
+                  <span style={{ fontWeight: 700 }}>
+                    Total Amount
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "22px",
+                      fontWeight: 900,
+                    }}
+                  >
+                    {order.currency} {order.totalAmount}
+                  </span>
+                </div>
               </div>
             </div>
+            {orderBreakdown(order).courier > 0 && (
+              <p style={{ fontSize: "12px", lineHeight: 1.5, color: "#64748b", textAlign: "right", margin: "0 0 28px" }}>
+                If cancelled or returned, you get back {order.currency} {orderBreakdown(order).refundable}. {COURIER_NOTE}
+              </p>
+            )}
 
             {/* Footer */}
             <div
