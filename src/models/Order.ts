@@ -1,3 +1,4 @@
+import "@/models/User"; // registers the User model, so .populate("userId") works in every route
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface IOrderItem {
