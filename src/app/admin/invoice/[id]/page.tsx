@@ -1,9 +1,11 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { useEffect, useState, use as usePromise } from "react";
 import { useCurrency } from "@/lib/useCurrency";
 
 export default function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
+  const site = useSite();
   const { format } = useCurrency();
   const { id } = usePromise(params);
   const [order, setOrder] = useState<any>(null);
@@ -39,8 +41,8 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
         {/* Header */}
         <div className="flex justify-between items-start border-b-2 border-gray-200 pb-6 mb-6">
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">⚡ TechStar</h1>
-            <p className="text-sm text-gray-500 mt-1 font-medium">TechStar Smart Marketplace</p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">⚡ {site.siteName}</h1>
+            <p className="text-sm text-gray-500 mt-1 font-medium">{site.siteName} {site.tagline}</p>
           </div>
           <div className="text-right">
             <h2 className="text-3xl font-black text-gray-300 uppercase tracking-widest">Invoice</h2>
@@ -53,9 +55,10 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
         <div className="flex justify-between mb-8">
           <div>
             <p className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider mb-1.5">From:</p>
-            <p className="font-bold text-base text-gray-800">TechStar Warehouse</p>
-            <p className="text-sm text-gray-600">Level 4, Block B, Tech Park</p>
-            <p className="text-sm text-gray-600">Dhaka, Bangladesh</p>
+            <p className="font-bold text-base text-gray-800">{site.siteName} Warehouse</p>
+            {site.address.split("\n").filter(Boolean).map((line: string, i: number) => (
+              <p key={i} className="text-sm text-gray-600">{line}</p>
+            ))}
           </div>
           <div className="text-right">
             <p className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider mb-1.5">Ship To (Customer):</p>
@@ -112,7 +115,7 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
 
         {/* Footer */}
         <div className="mt-16 text-center text-xs font-medium text-gray-400 border-t border-gray-200 pt-5 print:mt-24">
-          Thank you for shopping with TechStar! If you have any questions, please contact our support at <span className="text-gray-500">01922964696</span>.
+          Thank you for shopping with {site.siteName}! If you have any questions, please contact our support{site.supportPhone ? <> at <span className="text-gray-500">{site.supportPhone}</span></> : null}.
         </div>
 
       </div>

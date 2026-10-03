@@ -4,6 +4,8 @@ import "./globals.css";
 import { LanguageProvider } from "@/lib/language";
 import { ThemeProvider } from "@/lib/theme";
 import RouteProgressBar from "@/components/RouteProgressBar";
+import { SiteProvider } from "@/lib/siteContext";
+import { getSiteSettings } from "@/lib/siteSettings";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,21 +17,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "TechStar - Smart Marketplace",
-  description:
-    "Electrical, electronics, automation and technology marketplace.",
-  manifest: "/manifest.json",
-  icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "TechStar",
-  },
-};
+// Pages are rebuilt at most once a minute. Saving the website settings
+// clears them immediately (see /api/admin/site-settings).
+export const revalidate = 60;
+
+// The browser title, search-engine text, icon and app name all come from the admin settings.
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getSiteSettings();
+  const icon = site.faviconUrl || site.logoUrl || "/icon.svg";
+
+  return {
+    title: site.tagline ? `${site.siteName} - ${site.tagline}` : site.siteName,
+    description: site.description,
+    manifest: "/manifest.json",
+    icons: {
+      icon,
+      apple: site.logoUrl || icon,
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: site.siteName,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#020617",
@@ -37,7 +48,9 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const site = await getSiteSettings();
+
   return (
     <html
       lang="en"
@@ -45,9 +58,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <RouteProgressBar />
-        <LanguageProvider>
-          <ThemeProvider>{children}</ThemeProvider>
-        </LanguageProvider>
+        <SiteProvider initial={site}>
+          <LanguageProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </LanguageProvider>
+        </SiteProvider>
       </body>
     </html>
   );

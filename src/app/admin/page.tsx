@@ -1,6 +1,8 @@
+import { getSiteSettings } from "@/lib/siteSettings";
 import Link from "next/link";
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  const site = await getSiteSettings();
   const cardStyle = {
       textDecoration: "none",
           color: "white",
@@ -33,7 +35,7 @@ export default function AdminDashboard() {
                                                                                                                                                                                             marginBottom: "8px",
                                                                                                                                                                                                       }}
                                                                                                                                                                                                               >
-                                                                                                                                                                                                                        TechStar Admin Dashboard
+                                                                                                                                                                                                                        {site.siteName} Admin Dashboard
                                                                                                                                                                                                                                 </h1>
 
                                                                                                                                                                                                                                         <p
@@ -42,7 +44,7 @@ export default function AdminDashboard() {
                                                                                                                                                                                                                                                                           marginBottom: "30px",
                                                                                                                                                                                                                                                                                     }}
                                                                                                                                                                                                                                                                                             >
-                                                                                                                                                                                                                                                                                                      Welcome, TechStar Admin
+                                                                                                                                                                                                                                                                                                      Welcome, {site.siteName} Admin
                                                                                                                                                                                                                                                                                                               </p>
 
                                                                                                                                                                                                                                                                                                                       <div
@@ -56,7 +58,7 @@ export default function AdminDashboard() {
                                                                                                                                                                                                                                                                                                                                                                                                               <Link href="/" style={cardStyle}>
                                                                                                                                                                                                                                                                                                                                                                                                                           <h2>🏠 Home</h2>
                                                                                                                                                                                                                                                                                                                                                                                                                                       <p style={{ color: "#94a3b8" }}>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                    Visit TechStar website
+                                                                                                                                                                                                                                                                                                                                                                                                                                                    Visit {site.siteName} website
                                                                                                                                                                                                                                                                                                                                                                                                                                                                 </p>
                                                                                                                                                                                                                                                                                                                                                                                                                                                                           </Link>
 
@@ -113,6 +115,13 @@ export default function AdminDashboard() {
             <h2>🚚 Commission & courier</h2>
             <p style={{ color: "#94a3b8" }}>
               Commission limits and courier charges
+            </p>
+          </Link>
+
+          <Link href="/admin/site-settings" style={cardStyle}>
+            <h2>🌐 Website settings</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Name, logo and contact info
             </p>
           </Link>
 

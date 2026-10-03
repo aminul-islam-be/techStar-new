@@ -1,10 +1,12 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import Link from "next/link";
 import { useLanguage } from "@/lib/language";
 
 export default function SupportPage() {
   const { t } = useLanguage();
+  const site = useSite();
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 lg:px-8">
@@ -25,27 +27,31 @@ export default function SupportPage() {
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          {site.supportEmail && (
           <a
-            href="mailto:support@techstar.com"
+            href={`mailto:${site.supportEmail}`}
             className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:bg-white/[0.06]"
           >
             <div className="text-2xl">📧</div>
             <div className="text-sm font-bold text-white">
               {t("support.emailSupport")}
             </div>
-            <div className="text-xs text-slate-400">support@techstar.com</div>
+            <div className="text-xs text-slate-400">{site.supportEmail}</div>
           </a>
+        )}
 
+          {site.supportPhone && (
           <a
-            href="tel:+8801000000000"
+            href={`tel:${site.supportPhone.replace(/[^+\d]/g, "")}`}
             className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:bg-white/[0.06]"
           >
             <div className="text-2xl">📞</div>
             <div className="text-sm font-bold text-white">
               {t("support.callUs")}
             </div>
-            <div className="text-xs text-slate-400">+880 1000-000000</div>
+            <div className="text-xs text-slate-400">{site.supportPhone}</div>
           </a>
+        )}
         </div>
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">

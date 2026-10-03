@@ -1,3 +1,4 @@
+import { getSiteSettings } from "@/lib/siteSettings";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
       email: vendor.email,
       address: vendor.address,
       baseUrl: getBaseUrl(request),
+      siteName: (await getSiteSettings()).siteName,
     });
 
     if (!session.ok) {

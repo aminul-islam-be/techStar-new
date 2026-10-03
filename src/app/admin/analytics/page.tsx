@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -30,6 +31,7 @@ function formatMoney(n: number) {
 }
 
 export default function AdminAnalyticsPage() {
+  const { siteName } = useSite();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [totals, setTotals] = useState<Totals | null>(null);
@@ -80,7 +82,7 @@ export default function AdminAnalyticsPage() {
         >
           <div>
             <h1 style={{ margin: 0, fontSize: "32px", fontWeight: 800 }}>📊 Analytics</h1>
-            <p style={{ margin: "6px 0 0", color: "#94a3b8" }}>TechStar business overview</p>
+            <p style={{ margin: "6px 0 0", color: "#94a3b8" }}>{siteName} business overview</p>
           </div>
           <Link
             href="/admin"

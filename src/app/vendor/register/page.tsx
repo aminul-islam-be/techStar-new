@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
@@ -7,6 +8,7 @@ const field =
   "w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-white outline-none focus:border-blue-500";
 
 export default function VendorRegisterPage() {
+  const { siteName } = useSite();
   const [form, setForm] = useState({ shopName: "", ownerName: "", phone: "", email: "", address: "", password: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,9 +38,9 @@ export default function VendorRegisterPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-8 text-white">
       <form onSubmit={submit} className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900 p-6">
-        <h1 className="text-center text-2xl font-extrabold">Sell on TechStar</h1>
+        <h1 className="text-center text-2xl font-extrabold">Sell on {siteName}</h1>
         <p className="mt-1 text-center text-sm text-slate-400">
-          Open your shop, list products and get paid for every sale. TechStar keeps a small commission per sale.
+          Open your shop, list products and get paid for every sale. {siteName} keeps a small commission per sale.
         </p>
 
         <div className="mt-6 space-y-3">

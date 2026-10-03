@@ -1,3 +1,8 @@
+import { getSiteSettings } from "@/lib/siteSettings";
+import { DEFAULT_SITE_NAME } from "@/lib/siteDefaults";
+
+// set at the start of generateProductDetails() from the website settings
+let currentSiteName = DEFAULT_SITE_NAME;
 import ProductDetail from "@/models/ProductDetail";
 import dbConnect from "@/lib/mongodb";
 
@@ -40,7 +45,7 @@ function fallbackDetails(product: ProductInput): GeneratedDetails {
 
     purpose:
       product.description ||
-      `A ${product.category || "cosmetic"} product available from TechStar.`,
+      `A ${product.category || "cosmetic"} product available from ${currentSiteName}.`,
 
     benefits: [
       "Designed according to the product description.",
@@ -112,7 +117,7 @@ async function generateWithAI(
       : "Ingredients: Not provided by admin.";
 
   const prompt = `
-You are TechStar's product-details assistant.
+You are ${currentSiteName}'s product-details assistant.
 
 Create structured product details for this product.
 
@@ -157,7 +162,7 @@ JSON structure:
           "HTTP-Referer":
             process.env.NEXT_PUBLIC_SITE_URL ||
             "https://techstar-new.vercel.app",
-          "X-Title": "TechStar Product Details",
+          "X-Title": `${currentSiteName} Product Details`,
         },
         body: JSON.stringify({
           model,
@@ -232,6 +237,7 @@ JSON structure:
 }
 
 export async function generateProductDetails(product: ProductInput) {
+  currentSiteName = (await getSiteSettings()).siteName;
   await dbConnect();
 
   const manualIngredients = sanitizeManualIngredients(product.ingredients);

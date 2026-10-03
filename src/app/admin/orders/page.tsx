@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -18,6 +19,7 @@ const statusOptions = ["pending", "confirmed", "processing", "shipped", "deliver
 const paymentOptions = ["pending", "paid", "failed"];
 
 export default function AdminOrdersPage() {
+  const { siteName } = useSite();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -73,7 +75,7 @@ export default function AdminOrdersPage() {
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "15px", flexWrap: "wrap", marginBottom: "25px" }}>
           <div>
             <h1 style={{ margin: 0, fontSize: "32px", fontWeight: 800 }}>🛒 Orders</h1>
-            <p style={{ margin: "6px 0 0", color: "#94a3b8" }}>Manage TechStar customer orders</p>
+            <p style={{ margin: "6px 0 0", color: "#94a3b8" }}>Manage {siteName} customer orders</p>
           </div>
 
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>

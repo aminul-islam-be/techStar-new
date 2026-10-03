@@ -33,9 +33,10 @@ export async function createSslSession(p: {
   email?: string;
   address?: string;
   baseUrl: string;
+  siteName?: string;
 }) {
   const cfg = sslConfig();
-  if (!cfg) return { ok: false as const, message: "Payment gateway is not configured yet. Please contact TechStar support." };
+  if (!cfg) return { ok: false as const, message: "Payment gateway is not configured yet. Please contact support." };
 
   const body = new URLSearchParams({
     store_id: cfg.storeId,
@@ -54,7 +55,7 @@ export async function createSslSession(p: {
     cus_country: "Bangladesh",
     cus_phone: p.phone || "01700000000",
     shipping_method: "NO",
-    product_name: "TechStar COD commission",
+    product_name: `${p.siteName || "Marketplace"} COD commission`,
     product_category: "Service",
     product_profile: "non-physical-goods",
   });

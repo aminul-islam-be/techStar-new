@@ -42,13 +42,13 @@ export async function postChatMessage(conversationId: string, sender: Sender, ra
 
   // who may speak in which chat
   if (sender === "admin" && !platform) {
-    return { ok: false, status: 403, error: "The admin can only reply in TechStar support chats." };
+    return { ok: false, status: 403, error: "The admin can only reply in support chats." };
   }
   if (sender === "vendor" && platform) {
     return { ok: false, status: 403, error: "Not allowed." };
   }
   if (sender === "vendor" && conv.locked) {
-    return { ok: false, status: 403, error: "This chat is locked by TechStar support.", locked: true };
+    return { ok: false, status: 403, error: "This chat is locked by support.", locked: true };
   }
 
   // anti-spam
@@ -98,7 +98,7 @@ export async function postChatMessage(conversationId: string, sender: Sender, ra
         blocked: true,
         locked,
         error: locked
-          ? "This chat has been locked because contact details were shared repeatedly. TechStar support will review it."
+          ? "This chat has been locked because contact details were shared repeatedly. Our support team will review it."
           : CONTACT_BLOCK_MESSAGE,
       };
     }

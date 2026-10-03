@@ -5,7 +5,7 @@ import { useCurrency } from "@/lib/useCurrency";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCustomerUserId } from "@/lib/customerAuth";
-import { PLATFORM_NAME } from "@/lib/platform";
+import { useSite } from "@/lib/siteContext";
 
 type Product = {
   _id: string;
@@ -32,6 +32,7 @@ export default function ProductDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const { siteName } = useSite();
   const { format } = useCurrency();
   const { slug } = usePromise(params);
   const router = useRouter();
@@ -560,14 +561,14 @@ export default function ProductDetailPage({
           <div className="mt-8 flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
             <div className="min-w-0">
               <p className="text-xs text-slate-500">Sold by</p>
-              <p className="truncate text-sm font-bold text-slate-900">{product.vendorName || PLATFORM_NAME}</p>
+              <p className="truncate text-sm font-bold text-slate-900">{product.vendorName || siteName}</p>
             </div>
             <Link
               href={`/messages/new/${product.slug}`}
               className="shrink-0 rounded-full bg-slate-800 px-4 py-2.5 text-xs font-bold text-white! no-underline hover:bg-slate-700"
               style={{ color: "#ffffff" }}
             >
-              {product.vendorId ? "💬 Chat with seller" : "💬 Chat with " + PLATFORM_NAME}
+              {product.vendorId ? "💬 Chat with seller" : "💬 Chat with " + siteName}
             </Link>
           </div>
         )}

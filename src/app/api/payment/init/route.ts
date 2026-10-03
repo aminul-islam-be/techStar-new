@@ -1,3 +1,4 @@
+import { getSiteSettings } from "@/lib/siteSettings";
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Order from "@/models/Order";
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
       cus_city: order.deliveryAddress?.city || "Dhaka",
       cus_phone: order.customerPhone,
       shipping_method: "NO",
-      product_name: "TechStar Products",
+      product_name: `${(await getSiteSettings()).siteName} Products`,
       product_category: "General",
       product_profile: "general",
     });

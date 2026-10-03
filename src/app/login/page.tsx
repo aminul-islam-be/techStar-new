@@ -1,11 +1,13 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveCustomerUser, CustomerUser } from "@/lib/customerAuth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const site = useSite();
 
   // "forgot" নামে নতুন একটি মোড যুক্ত করা হলো
   const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
@@ -86,7 +88,7 @@ export default function LoginPage() {
       <div style={{ width: "100%", maxWidth: "430px", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "18px", padding: "25px" }}>
         <div style={{ textAlign: "center", marginBottom: "25px" }}>
           <div style={{ fontSize: "42px" }}>⚡</div>
-          <h1 style={{ margin: "8px 0 5px", fontSize: "28px" }}>TechStar</h1>
+          <h1 style={{ margin: "8px 0 5px", fontSize: "28px" }}>{site.siteName}</h1>
           <p style={{ margin: 0, color: "#94a3b8" }}>
             {mode === "login" ? "Welcome back" : mode === "register" ? "Create your account" : "Reset your password"}
           </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { useEffect, useState } from "react";
 import { money } from "@/lib/vendorContext";
 
@@ -51,6 +52,7 @@ function Copy({ text }: { text: string }) {
 }
 
 export default function VendorOrdersPage() {
+  const { siteName } = useSite();
   const [orders, setOrders] = useState<Row[] | null>(null);
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function VendorOrdersPage() {
     <div className="space-y-4">
       <h1 className="text-xl font-extrabold">Orders with your products</h1>
       <p className="text-xs text-slate-400">
-        You send every parcel by courier. The customer&apos;s phone and address appear here after TechStar confirms the order.
+        You send every parcel by courier. The customer&apos;s phone and address appear here after {siteName} confirms the order.
         Use them only to deliver that parcel.
       </p>
 
@@ -127,7 +129,7 @@ export default function VendorOrdersPage() {
             <p className="mt-3 rounded-xl bg-white/5 p-3 text-xs text-slate-400">
               {o.status === "cancelled"
                 ? "This order was cancelled."
-                : "🔒 The customer's phone and address will appear here after TechStar confirms this order."}
+                : `🔒 The customer's phone and address will appear here after ${siteName} confirms this order.`}
             </p>
           )}
 
@@ -141,7 +143,7 @@ export default function VendorOrdersPage() {
               <p className="font-bold text-sky-300">{money(o.courier)}</p>
             </div>
             <div>
-              <p className="text-slate-500">TechStar commission</p>
+              <p className="text-slate-500">{siteName} commission</p>
               <p className="font-bold text-amber-300">-{money(o.commission)}</p>
             </div>
             <div>

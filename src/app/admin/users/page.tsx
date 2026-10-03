@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -14,6 +15,7 @@ type User = {
 };
 
 export default function AdminUsersPage() {
+  const { siteName } = useSite();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -149,7 +151,7 @@ export default function AdminUsersPage() {
                 marginTop: "6px",
               }}
             >
-              Manage TechStar users
+              Manage {siteName} users
             </p>
           </div>
 

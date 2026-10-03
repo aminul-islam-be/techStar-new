@@ -1,5 +1,8 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
+import { SiteLogo, SiteContactLine } from "@/components/SiteBrand";
+import { DEFAULT_SITE } from "@/lib/siteDefaults";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCurrency } from "@/lib/useCurrency";
 import Link from "next/link";
@@ -44,6 +47,7 @@ export default function Home() {
   const { format } = useCurrency();
   const router = useRouter();
   const { t, language, toggleLanguage } = useLanguage();
+  const site = useSite();
   const { seasonInfo } = useSeasonTheme();
 
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
@@ -516,17 +520,13 @@ export default function Home() {
             href="/"
             className="flex shrink-0 items-center gap-2.5"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-[13px] bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-black shadow-lg shadow-blue-600/20">
-              T
-            </div>
+            <SiteLogo fallbackClassName="flex h-10 w-10 items-center justify-center rounded-[13px] bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-black shadow-lg shadow-blue-600/20" imgClassName="h-10 w-10 rounded-[13px] object-contain" />
 
             <div>
-              <div className="text-[18px] font-extrabold tracking-tight">
-                TechStar
-              </div>
+              <div className="text-[18px] font-extrabold tracking-tight">{site.siteName}</div>
 
               <div className="hidden text-[10px] font-medium tracking-[0.18em] text-slate-500 sm:block">
-                {t("home.tagline")}
+                {site.tagline !== DEFAULT_SITE.tagline ? site.tagline : t("home.tagline")}
               </div>
             </div>
           </Link>
@@ -1106,18 +1106,12 @@ export default function Home() {
       <footer className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-8 sm:flex-row">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-black">
-              T
-            </div>
+            <SiteLogo fallbackClassName="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-black" imgClassName="h-8 w-8 rounded-lg object-contain" />
 
-            <span className="font-bold">
-              TechStar
-            </span>
+            <span className="font-bold">{site.siteName}</span>
           </div>
 
-          <p className="text-xs text-slate-600">
-            © {new Date().getFullYear()} TechStar. {t("home.footerRights")}
-          </p>
+          <div className="text-center sm:text-right"><p className="text-xs text-slate-600">© {new Date().getFullYear()} {site.siteName}. {t("home.footerRights")}</p><SiteContactLine /></div>
         </div>
       </footer>
 

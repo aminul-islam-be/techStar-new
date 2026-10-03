@@ -1,9 +1,11 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 export default function VendorLoginPage() {
+  const { siteName } = useSite();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -33,7 +35,7 @@ export default function VendorLoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
       <form onSubmit={submit} className="w-full max-w-sm rounded-3xl border border-white/10 bg-slate-900 p-6">
         <h1 className="text-center text-2xl font-extrabold">Vendor Login</h1>
-        <p className="mt-1 text-center text-sm text-slate-400">Manage your shop on TechStar</p>
+        <p className="mt-1 text-center text-sm text-slate-400">Manage your shop on {siteName}</p>
 
         <input
           value={phone}

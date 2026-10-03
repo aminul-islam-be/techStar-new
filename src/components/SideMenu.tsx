@@ -1,5 +1,7 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
+import { SiteLogo } from "@/components/SiteBrand";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,6 +18,7 @@ type SideMenuProps = { open: boolean; onClose: () => void; };
 export default function SideMenu({ open, onClose }: SideMenuProps) {
   const router = useRouter();
   const { t } = useLanguage();
+  const site = useSite();
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [isGlossy, setIsGlossy] = useState(false); useEffect(() => { setIsGlossy(localStorage.getItem("glossyTheme") === "true"); }, []); const toggleGlossy = () => { const val = !isGlossy; setIsGlossy(val); localStorage.setItem("glossyTheme", val.toString()); window.dispatchEvent(new Event("glossyChange")); }; // Glossy state added
 
@@ -33,7 +36,7 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
     { icon: "🎧", label: t("menu.support"), href: "/support" },
     { icon: "⚙️", label: t("menu.settings"), href: "/settings" },
     { icon: "💬", label: "Messages", href: "/messages" },
-    { icon: "🏪", label: "Sell on TechStar", href: "/vendor/register" },
+    { icon: "🏪", label: `Sell on ${site.siteName}`, href: "/vendor/register" },
   ];
 
   useEffect(() => {
@@ -72,8 +75,8 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
         <div className="border-b border-white/10 bg-gradient-to-br from-blue-600/20 to-indigo-600/10 px-5 pb-5 pt-6">
           <div className="mb-4 flex items-center justify-between">
             <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-gradient-to-br from-blue-500 to-indigo-600 text-base font-black shadow-lg shadow-blue-600/20">T</div>
-              <span className="text-[17px] font-extrabold tracking-tight text-white">TechStar</span>
+              <SiteLogo fallbackClassName="flex h-9 w-9 items-center justify-center rounded-[11px] bg-gradient-to-br from-blue-500 to-indigo-600 text-base font-black shadow-lg shadow-blue-600/20" imgClassName="h-9 w-9 rounded-[11px] object-contain" />
+              <span className="text-[17px] font-extrabold tracking-tight text-white">{site.siteName}</span>
             </Link>
             <button onClick={onClose} aria-label="Close menu" className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-white">✕</button>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -50,6 +51,7 @@ function ProductDetailsLoadingFallback() {
 }
 
 function ProductDetailsContent() {
+  const { siteName } = useSite();
   const searchParams = useSearchParams();
   const productId = searchParams.get("productId");
 
@@ -245,7 +247,7 @@ function ProductDetailsContent() {
         <section className="mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-xl sm:p-8">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm backdrop-blur">
-              🤖 TechStar Product Intelligence
+              🤖 {siteName} Product Intelligence
             </div>
 
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -650,7 +652,7 @@ function ProductDetailsContent() {
         {/* Footer note */}
         <div className="mt-8 rounded-xl bg-slate-100 p-4 text-center text-xs leading-5 text-slate-500">
           Formula quantities shown for PDF-based products are reproduced
-          from the supplied TechStar cosmetics formula document.
+          from the supplied {siteName} cosmetics formula document.
           They should be treated as illustrative formulation information,
           not as a guaranteed commercial manufacturing specification.
         </div>

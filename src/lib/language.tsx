@@ -1,5 +1,7 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
+import { DEFAULT_SITE_NAME } from "@/lib/siteDefaults";
 import {
   createContext,
   useContext,
@@ -16,6 +18,12 @@ import {
 } from "./i18n";
 
 export type { Language };
+
+// "TechStar" inside a translation is swapped for the website name set in Admin -> Website settings
+function withSiteName(text: string, name: string) {
+  if (name === DEFAULT_SITE_NAME) return text;
+  return text.split(DEFAULT_SITE_NAME).join(name).split("টেকস্টার").join(name);
+}
 
 type LanguageContextType = {
   language: Language;
@@ -35,6 +43,7 @@ export function LanguageProvider({
 }) {
   // English is ALWAYS the default for every country/user, until changed manually.
   const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
+  const site = useSite();
 
   useEffect(() => {
     const saved = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
@@ -54,7 +63,8 @@ export function LanguageProvider({
   };
 
   const t = (key: string): string => {
-    return translations[language][key] ?? translations[DEFAULT_LANGUAGE][key] ?? key;
+    const text = translations[language][key] ?? translations[DEFAULT_LANGUAGE][key] ?? key;
+    return withSiteName(text, site.siteName);
   };
 
   const value = useMemo(
@@ -64,7 +74,7 @@ export function LanguageProvider({
       toggleLanguage,
       t,
     }),
-    [language]
+    [language, site.siteName]
   );
 
   return (

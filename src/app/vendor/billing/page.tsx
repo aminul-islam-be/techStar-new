@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { useEffect, useState } from "react";
 import BillingPay from "@/components/BillingPay";
 import { money, useVendor } from "@/lib/vendorContext";
@@ -17,6 +18,7 @@ const label: Record<string, string> = {
 
 export default function VendorBillingPage() {
   const { refresh } = useVendor();
+  const { siteName } = useSite();
   const [billing, setBilling] = useState<Billing | null>(null);
   const [ledger, setLedger] = useState<Entry[]>([]);
   const [payments, setPayments] = useState<Pay[]>([]);
@@ -66,7 +68,7 @@ export default function VendorBillingPage() {
       <div className="rounded-2xl border border-white/10 bg-slate-900 p-4">
         <h2 className="mb-1 font-bold">{billing.due > 0 ? "Pay your commission" : "Add advance (optional)"}</h2>
         <p className="mb-3 text-xs text-slate-400">
-          For Cash on Delivery orders you collect the money, so TechStar&apos;s commission is paid by you, once a month.
+          For Cash on Delivery orders you collect the money, so {siteName}&apos;s commission is paid by you, once a month.
         </p>
         <BillingPay due={billing.due} />
       </div>

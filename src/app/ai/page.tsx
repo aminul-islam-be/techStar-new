@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { FormEvent, useState } from "react";
 
 type Message = {
@@ -8,11 +9,12 @@ type Message = {
 };
 
 export default function AIPage() {
+  const { siteName } = useSite();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
       content:
-        "Hello! I am TechStar AI Assistant. How can I help you today?",
+        `Hello! I am ${siteName} AI Assistant. How can I help you today?`,
     },
   ]);
 
@@ -82,7 +84,7 @@ export default function AIPage() {
       {
         role: "assistant",
         content:
-          "Hello! I am TechStar AI Assistant. How can I help you today?",
+          `Hello! I am ${siteName} AI Assistant. How can I help you today?`,
       },
     ]);
   }
@@ -93,7 +95,7 @@ export default function AIPage() {
         <header className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
           <div>
             <h1 className="text-xl font-bold sm:text-2xl">
-              TechStar AI
+              {siteName} AI
             </h1>
             <p className="text-sm text-slate-400">
               Powered by NVIDIA Nemotron 3 Ultra
@@ -148,7 +150,7 @@ export default function AIPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={loading}
-              placeholder="Ask TechStar AI anything..."
+              placeholder={`Ask ${siteName} AI anything...`}
               className="min-w-0 flex-1 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
             />
 

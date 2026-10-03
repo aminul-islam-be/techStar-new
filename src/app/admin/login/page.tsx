@@ -1,8 +1,11 @@
-export default function AdminLoginPage() {
+import { getSiteSettings } from "@/lib/siteSettings";
+
+export default async function AdminLoginPage() {
+  const site = await getSiteSettings();
   return (
     <main style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",background:"#020617",color:"white"}}>
       <div style={{width:"100%",maxWidth:"420px",padding:"32px",borderRadius:"24px",background:"#0f172a"}}>
-        <h1 style={{fontSize:"30px",fontWeight:800,textAlign:"center"}}>TechStar Admin</h1>
+        <h1 style={{fontSize:"30px",fontWeight:800,textAlign:"center"}}>{site.siteName} Admin</h1>
         <p style={{textAlign:"center",color:"#94a3b8",marginTop:"8px"}}>Admin login page</p>
         <form action="/api/admin/login" method="post" style={{marginTop:"28px"}}>
           <input name="phone" type="tel" placeholder="Phone Number" required style={{width:"100%",padding:"14px",marginBottom:"14px",borderRadius:"12px",border:"1px solid #334155",background:"#020617",color:"white"}} />

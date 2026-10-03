@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -37,6 +38,7 @@ async function call(url: string, method = "GET", body?: unknown) {
 }
 
 export default function AdminChatsPage() {
+  const { siteName } = useSite();
   const [filter, setFilter] = useState("support");
   const [list, setList] = useState<Conv[]>([]);
   const [unreadSupport, setUnreadSupport] = useState(0);
@@ -145,7 +147,7 @@ export default function AdminChatsPage() {
           )}
         </h1>
         <p className="mt-1 text-xs text-slate-400">
-          Customer questions about TechStar&apos;s own products arrive in <b>Support inbox</b>, and you reply here. The other filters
+          Customer questions about {siteName}&apos;s own products arrive in <b>Support inbox</b>, and you reply here. The other filters
           monitor vendor chats: blocked messages (phone numbers, links, “order outside”) are saved and never reach the other person.
         </p>
 
@@ -158,7 +160,7 @@ export default function AdminChatsPage() {
           }}
           className="mt-4 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
         >
-          <option value="support">Support inbox (TechStar products)</option>
+          <option value="support">Support inbox ({siteName} products)</option>
           <option value="flagged">Vendor chats: flagged (blocked messages)</option>
           <option value="reported">Vendor chats: reported by customers</option>
           <option value="locked">Vendor chats: locked</option>
@@ -176,7 +178,7 @@ export default function AdminChatsPage() {
                   <p className="font-bold">
                     {c.isPlatform ? (
                       <>
-                        {c.customerName} <span className="font-normal text-slate-400">→ TechStar support</span>
+                        {c.customerName} <span className="font-normal text-slate-400">→ {siteName} support</span>
                       </>
                     ) : (
                       <>
@@ -189,7 +191,7 @@ export default function AdminChatsPage() {
                 </div>
                 <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
                   {c.unread > 0 && <span className="rounded-full bg-blue-600 px-2.5 py-1">{c.unread} unread</span>}
-                  {c.isPlatform && <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-emerald-300">TechStar chat</span>}
+                  {c.isPlatform && <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-emerald-300">{siteName} chat</span>}
                   {c.violationsVendor > 0 && (
                     <span className="rounded-full bg-red-500/20 px-2.5 py-1 text-red-300">Vendor blocked × {c.violationsVendor}</span>
                   )}
@@ -249,7 +251,7 @@ export default function AdminChatsPage() {
                         }`}
                       >
                         <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                          {m.sender === "admin" ? "you (TechStar)" : m.sender} · {new Date(m.createdAt).toLocaleString()}
+                          {m.sender === "admin" ? `you (${siteName})` : m.sender} · {new Date(m.createdAt).toLocaleString()}
                           {m.blocked && <span className="ml-2 font-bold text-red-300">BLOCKED ({m.blockReason})</span>}
                         </p>
                         <p className="mt-0.5 whitespace-pre-wrap break-words">{m.text}</p>

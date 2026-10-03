@@ -1,4 +1,9 @@
+"use client";
+
+import { useSite } from "@/lib/siteContext";
+
 export default function Loading() {
+  const { siteName } = useSite();
   return (
     <main className="min-h-screen bg-[#020617] px-4 py-12 sm:px-6 lg:px-8 flex flex-col items-center overflow-hidden">
       
@@ -17,7 +22,7 @@ export default function Loading() {
         
         {/* Ultra-Bold TechStar Text with Multi-Color Glow */}
         <h2 className="mt-6 text-3xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-blue-400 uppercase drop-shadow-[0_0_25px_rgba(59,130,246,0.6)]">
-          TechStar
+          {siteName}
         </h2>
 
         {/* Futuristic Badge */}

@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getCustomerUserId } from "@/lib/customerAuth";
-import { PLATFORM_NAME } from "@/lib/platform";
+import { useSite } from "@/lib/siteContext";
 
 type P = { _id: string; name: string; image?: string; vendorName?: string; vendorId?: string };
 
 export default function NewChatPage() {
+  const site = useSite();
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const [product, setProduct] = useState<P | null>(null);
@@ -49,7 +50,7 @@ export default function NewChatPage() {
 
   // products without a vendor are TechStar's own: the chat goes to the owner
   const isPlatform = Boolean(product) && !product?.vendorId;
-  const sellerName = product?.vendorName || PLATFORM_NAME;
+  const sellerName = product?.vendorName || site.siteName;
 
   return (
     <main className="min-h-screen bg-slate-950 pb-24 text-white">
@@ -78,8 +79,8 @@ export default function NewChatPage() {
 
             <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] leading-relaxed text-amber-200">
               {isPlatform
-                ? "💬 Ask anything about this product, stock, delivery or your order. TechStar will reply here in your Messages."
-                : "🔒 Ask about the product, stock or delivery. For your safety, phone numbers, links and chat apps are blocked, and every order and payment must stay on TechStar."}
+                ? `💬 Ask anything about this product, stock, delivery or your order. ${site.siteName} will reply here in your Messages.`
+                : `🔒 Ask about the product, stock or delivery. For your safety, phone numbers, links and chat apps are blocked, and every order and payment must stay on ${site.siteName}.`}
             </div>
 
             <textarea

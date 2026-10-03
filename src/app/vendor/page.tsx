@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { money, useVendor } from "@/lib/vendorContext";
@@ -31,6 +32,7 @@ function Card({ label, value, sub, tone }: { label: string; value: string; sub?:
 
 export default function VendorDashboard() {
   const { vendor } = useVendor();
+  const { siteName } = useSite();
   const [stats, setStats] = useState<Stats | null>(null);
   const [recent, setRecent] = useState<RecentOrder[]>([]);
 
@@ -50,7 +52,7 @@ export default function VendorDashboard() {
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100">
-        TechStar commission on your sales: <b>{vendor?.effectiveCommissionRate}%</b>. You keep the rest. Earnings are
+        {siteName} commission on your sales: <b>{vendor?.effectiveCommissionRate}%</b>. You keep the rest. Earnings are
         added to your wallet once an order is <b>delivered and paid</b>.
       </div>
 

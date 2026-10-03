@@ -1,11 +1,13 @@
 
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function AddProductPage() {
+  const { siteName } = useSite();
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -488,7 +490,7 @@ export default function AddProductPage() {
                 marginTop: "8px",
               }}
             >
-              Add a new product to TechStar
+              Add a new product to {siteName}
             </p>
           </div>
 

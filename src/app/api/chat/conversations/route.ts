@@ -6,7 +6,7 @@ import Vendor from "@/models/Vendor";
 import ChatConversation from "@/models/ChatConversation";
 import { getChatCustomer } from "@/lib/chatAuth";
 import { postChatMessage } from "@/lib/chat";
-import { PLATFORM_NAME } from "@/lib/platform";
+import { getSiteSettings } from "@/lib/siteSettings";
 
 const needLogin = () =>
   NextResponse.json({ success: false, message: "Please login to chat with sellers.", redirectToLogin: true }, { status: 401 });
@@ -16,13 +16,14 @@ export async function GET(request: Request) {
   const customer = await getChatCustomer(request);
   if (!customer) return needLogin();
 
+  const site = await getSiteSettings();
   const convs = await ChatConversation.find({ customerId: customer.id }).sort({ lastMessageAt: -1 }).limit(50).lean();
 
   return NextResponse.json({
     success: true,
     conversations: convs.map((c) => ({
       _id: String(c._id),
-      title: c.isPlatform ? PLATFORM_NAME : c.vendorName,
+      title: c.isPlatform ? site.siteName : c.vendorName,
       subtitle: c.productName || "",
       lastMessageText: c.lastMessageText,
       lastMessageAt: c.lastMessageAt,
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
 /**
  * Customer starts (or continues) a chat about a product:
  *  - vendor product  -> chat with that vendor's shop
- *  - TechStar product -> chat with TechStar (the owner / admin)
+ *  - the website's own product -> chat with the owner / admin
  */
 export async function POST(request: Request) {
   const customer = await getChatCustomer(request);
@@ -73,11 +74,12 @@ export async function POST(request: Request) {
       { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
     );
   } else {
-    // TechStar's own product: one support chat per customer
+    // the website's own product: one support chat per customer
+    const site = await getSiteSettings();
     const filter = { customerId: customer.id, isPlatform: true };
     const update = {
       $setOnInsert: { customerName: customer.firstName, lastMessageAt: new Date() },
-      $set: { vendorName: PLATFORM_NAME, productId: product._id, productName: product.name },
+      $set: { vendorName: site.siteName, productId: product._id, productName: product.name },
     };
     try {
       conv = await ChatConversation.findOneAndUpdate(filter, update, {

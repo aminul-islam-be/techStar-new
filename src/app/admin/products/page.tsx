@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -19,6 +20,7 @@ type Product = {
 };
 
 export default function AdminProductsPage() {
+  const { siteName } = useSite();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -252,7 +254,7 @@ export default function AdminProductsPage() {
             </h1>
 
             <p style={{ color: "#94a3b8" }}>
-              TechStar product management
+              {siteName} product management
             </p>
           </div>
 

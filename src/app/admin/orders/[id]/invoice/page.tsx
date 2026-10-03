@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import { useEffect, useState, use as usePromise } from "react";
 import Link from "next/link";
 
@@ -43,6 +44,7 @@ export default function OrderInvoicePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const site = useSite();
   const { id } = usePromise(params);
 
   const [order, setOrder] = useState<Order | null>(null);
@@ -241,7 +243,7 @@ export default function OrderInvoicePage({
                     letterSpacing: "0.5px",
                   }}
                 >
-                  🛍️ TechStar
+                  🛍️ {site.siteName}
                 </div>
                 <div
                   style={{
@@ -550,7 +552,7 @@ export default function OrderInvoicePage({
                 textAlign: "center",
               }}
             >
-              Thank you for shopping with TechStar. For any
+              Thank you for shopping with {site.siteName}. For any
               questions about this order, please contact our
               support team with the Order No. shown above.
             </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSite } from "@/lib/siteContext";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -19,6 +20,7 @@ export default function ChatThread({
   getHeaders?: () => Record<string, string>;
   reportEndpoint?: string;
 }) {
+  const { siteName } = useSite();
   const [conv, setConv] = useState<Conv | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [text, setText] = useState("");
@@ -86,7 +88,7 @@ export default function ChatThread({
 
   async function report() {
     if (!reportEndpoint) return;
-    const reason = window.prompt("What went wrong? (for example: the seller asked me to order outside TechStar)") || "";
+    const reason = window.prompt(`What went wrong? (for example: the seller asked me to order outside ${siteName})`) || "";
     if (!reason.trim()) return;
     const res = await fetch(reportEndpoint, {
       method: "POST",
@@ -118,14 +120,14 @@ export default function ChatThread({
 
       {conv?.platform ? (
         <div className="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-[11px] leading-relaxed text-emerald-200">
-          💬 You are chatting with TechStar. TechStar support will reply here, check back soon.
+          💬 You are chatting with {siteName}. {siteName} support will reply here, check back soon.
         </div>
       ) : (
         <div className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] leading-relaxed text-amber-200">
-          🔒 Keep every order and payment on TechStar. Phone numbers, e-mails, links and chat apps are blocked, and chats are
+          🔒 Keep every order and payment on {siteName}. Phone numbers, e-mails, links and chat apps are blocked, and chats are
           monitored.{" "}
           {role === "customer"
-            ? "If a seller asks you to order outside TechStar, tap Report."
+            ? `If a seller asks you to order outside ${siteName}, tap Report.`
             : "Orders can only be placed by the customer on the website."}
         </div>
       )}
@@ -157,7 +159,7 @@ export default function ChatThread({
 
       {conv?.locked ? (
         <p className="mt-3 rounded-xl bg-slate-900 p-3 text-center text-sm text-red-300">
-          This chat is locked by TechStar support.
+          This chat is locked by {siteName} support.
         </p>
       ) : (
         <div className="mt-3 flex gap-2">

@@ -24,5 +24,5 @@ export async function POST(request: Request, { params }: Ctx) {
   );
   if (!conv) return NextResponse.json({ success: false, message: "Chat not found." }, { status: 404 });
 
-  return NextResponse.json({ success: true, message: "Thank you. TechStar support will review this chat." });
+  return NextResponse.json({ success: true, message: "Thank you. Our support team will review this chat." });
 }

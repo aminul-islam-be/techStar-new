@@ -7,7 +7,7 @@
  */
 
 export const CONTACT_BLOCK_MESSAGE =
-  "For your safety, phone numbers, e-mails, links and other contact details are not allowed. Please keep all orders and payments on TechStar.";
+  "For your safety, phone numbers, e-mails, links and other contact details are not allowed. Please keep all orders and payments on this website.";
 
 const BANGLA_DIGITS = "০১২৩৪৫৬৭৮৯";
 

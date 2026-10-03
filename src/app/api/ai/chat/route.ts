@@ -1,9 +1,11 @@
+import { getSiteSettings } from "@/lib/siteSettings";
 import { NextRequest, NextResponse } from "next/server";
 
 const MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free";
 
 export async function POST(req: NextRequest) {
   try {
+    const { siteName } = await getSiteSettings();
     const apiKey = process.env.OPENROUTER_API_KEY;
 
     if (!apiKey) {
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
           "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-          "X-Title": "TechStar AI Assistant",
+          "X-Title": `${siteName} AI Assistant`,
         },
         body: JSON.stringify({
           model: MODEL,
@@ -52,7 +54,7 @@ export async function POST(req: NextRequest) {
             {
               role: "system",
               content:
-                "You are TechStar AI Assistant. Help users with electrical, electronics, technology, products, shopping and general questions. Be helpful, accurate and concise. Reply in the same language as the user. TechStar's default website language is English, but users may communicate in Bangla, Banglish or other languages.",
+                "You are " + siteName + " AI Assistant. Help users with electrical, electronics, technology, products, shopping and general questions. Be helpful, accurate and concise. Reply in the same language as the user. " + siteName + "'s default website language is English, but users may communicate in Bangla, Banglish or other languages.",
             },
             ...safeMessages,
           ],
