@@ -1,5 +1,6 @@
 "use client";
 
+import { OrderActionsMenu } from "@/components/OrderActions";
 import { orderBreakdown } from "@/lib/refundPolicy";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -14,6 +15,7 @@ type Order = {
   items: OrderItem[]; totalAmount: number; currency?: string; paymentMethod?: string;
   paymentStatus?: string; status?: string; deliveryAddress?: DeliveryAddress; createdAt?: string;
   itemsTotal?: number; courierTotal?: number;
+  deliveredAt?: string; updatedAt?: string; cancelReason?: string;
 };
 
 export default function OrdersPage() {
@@ -22,6 +24,12 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // cancelled orders are moved out of this list and kept in History -> Cancelled
+
+  const activeOrders = orders.filter((o) => o.status !== "cancelled");
+
+  const cancelledCount = orders.length - activeOrders.length;
 
   useEffect(() => { loadOrders(); }, []);
 
@@ -97,7 +105,13 @@ export default function OrdersPage() {
           <Link href="/cart" className="inline-flex w-fit rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-slate-300 hover:bg-white/[0.08] hover:text-white">{`🛒 ${t("orders.myCart")}`}</Link>
         </div>
         {error && <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-300">⚠️ {error}</div>}
-        {orders.length === 0 ? (
+
+        {cancelledCount > 0 && (
+          <Link href="/history?tab=archive" className="mb-4 block rounded-2xl border border-white/10 bg-slate-900 p-3 text-sm text-slate-300">
+            🗂 {cancelledCount} cancelled order(s) are saved in History → <span className="font-semibold text-blue-400">View</span>
+          </Link>
+        )}
+        {activeOrders.length === 0 ? (
           <div className="rounded-3xl border border-white/[0.08] bg-slate-900/70 px-6 py-16 text-center">
             <div className="text-6xl">📦</div>
             <h2 className="mt-5 text-2xl font-extrabold">{t("orders.noOrdersYet")}</h2>
@@ -106,7 +120,7 @@ export default function OrdersPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {orders.map((order) => (
+            {activeOrders.map((order) => (
               <section key={order._id} className="overflow-hidden rounded-3xl border border-white/[0.08] bg-slate-900/70">
                 <div className="border-b border-white/[0.08] px-5 py-5 sm:px-7">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -118,6 +132,7 @@ export default function OrdersPage() {
                     <div className="flex flex-wrap gap-2">
                       <span className={`rounded-full border px-3 py-1.5 text-xs font-bold capitalize ${statusClass(order.status)}`}>{statusLabel(order.status)}</span>
                       <span className={`rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-bold capitalize ${paymentClass(order.paymentStatus)}`}>{`${t("orders.paymentLabel")}: ${paymentStatusLabel(order.paymentStatus)}`}</span>
+                        <OrderActionsMenu order={order} onChanged={loadOrders} />
                     </div>
                   </div>
                 </div>

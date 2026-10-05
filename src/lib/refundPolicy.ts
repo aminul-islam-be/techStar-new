@@ -31,3 +31,16 @@ export function orderBreakdown(o: OrderLike) {
     refundable: productTotal, // what the customer gets back on cancel / return
   };
 }
+
+/**
+ * One switch for the cancel-before-dispatch rule.
+ *  false = the customer always gets the product price back only (courier is never refunded)
+ *  true  = if the order is cancelled BEFORE it is sent, the courier charge is refunded too
+ */
+export const REFUND_COURIER_BEFORE_DISPATCH = false;
+
+/** What the customer gets back for this cancellation / return. */
+export function refundAmount(o: OrderLike, beforeDispatch: boolean) {
+  const b = orderBreakdown(o);
+  return REFUND_COURIER_BEFORE_DISPATCH && beforeDispatch ? round2(b.productTotal + b.courier) : b.refundable;
+}

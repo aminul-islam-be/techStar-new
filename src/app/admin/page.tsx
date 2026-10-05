@@ -125,6 +125,13 @@ export default async function AdminDashboard() {
             </p>
           </Link>
 
+          <Link href="/admin/requests" style={cardStyle}>
+            <h2>↩️ Returns & refunds</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Return, refund and exchange requests
+            </p>
+          </Link>
+
           <Link href="/admin/chats" style={cardStyle}>
             <h2>💬 Chats & support inbox</h2>
             <p style={{ color: "#94a3b8" }}>

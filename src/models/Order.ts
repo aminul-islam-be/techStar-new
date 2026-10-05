@@ -46,6 +46,9 @@ export interface IOrder extends Document {
   };
 
   cancelledAt?: Date;
+  cancelReason?: string;
+  cancelledBy?: "customer" | "admin";
+  returnedAt?: Date;
   deliveredAt?: Date;
 
   vendorSettledAt?: Date;
@@ -202,6 +205,10 @@ const OrderSchema = new Schema<IOrder>(
     cancelledAt: {
       type: Date,
     },
+
+    cancelReason: { type: String, trim: true, maxlength: 200 },
+    cancelledBy: { type: String, enum: ["customer", "admin"] },
+    returnedAt: { type: Date },
 
     deliveredAt: {
       type: Date,

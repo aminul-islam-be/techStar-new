@@ -31,6 +31,9 @@ type OrderItem = {
   status?: string;
   totalAmount: number;
   createdAt?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+  items?: { name: string }[];
 };
 
 export default function HistoryPage() {
@@ -38,7 +41,7 @@ export default function HistoryPage() {
   const { format } = useCurrency();
   const { t, language } = useLanguage();
 
-  const [tab, setTab] = useState<"viewed" | "search" | "orders">(
+  const [tab, setTab] = useState<"viewed" | "search" | "orders" | "archive">(
     "viewed"
   );
   const [viewed, setViewed] = useState<ViewedItem[]>([]);
@@ -48,6 +51,13 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [savingRetention, setSavingRetention] = useState(false);
   const [error, setError] = useState("");
+  const liveOrders = orders.filter((o) => o.status !== "cancelled");
+  const cancelledOrders = orders.filter((o) => o.status === "cancelled");
+
+  // /history?tab=archive opens the cancelled orders directly
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "archive") setTab("archive");
+  }, []);
 
   useEffect(() => {
     const user = getCustomerUser();
@@ -281,7 +291,7 @@ export default function HistoryPage() {
         )}
 
         <div className="mt-6 flex gap-2 border-b border-white/10">
-          {(["viewed", "search", "orders"] as const).map((key) => (
+          {(["viewed", "search", "orders", "archive"] as const).map((key) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -295,6 +305,8 @@ export default function HistoryPage() {
                 ? t("history.tabViewed")
                 : key === "search"
                 ? t("history.tabSearch")
+                : key === "archive"
+                ? "🗂 Cancelled"
                 : t("history.tabOrders")}
             </button>
           ))}
@@ -446,7 +458,7 @@ export default function HistoryPage() {
 
         {tab === "orders" && (
           <div className="mt-6">
-            {orders.length === 0 ? (
+            {liveOrders.length === 0 ? (
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-16 text-center">
                 <div className="text-4xl">📦</div>
                 <h2 className="mt-4 text-lg font-bold">
@@ -455,7 +467,7 @@ export default function HistoryPage() {
               </div>
             ) : (
               <div className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-                {orders.map((order) => (
+                {liveOrders.map((order) => (
                   <Link
                     key={order._id}
                     href="/orders"
@@ -491,6 +503,37 @@ export default function HistoryPage() {
                 {`${t("common.viewAll")} →`}
               </Link>
             </div>
+          </div>
+        )}
+
+        {tab === "archive" && (
+          <div className="mt-6">
+            {cancelledOrders.length === 0 ? (
+              <p className="rounded-2xl border border-white/10 bg-slate-900 p-6 text-center text-sm text-slate-400">
+                No cancelled orders. Orders you cancel are saved here.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {cancelledOrders.map((order) => (
+                  <Link
+                    key={order._id}
+                    href={`/orders/${order._id}`}
+                    className="block rounded-2xl border border-red-500/20 bg-slate-900 p-4 text-sm text-white"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-bold">#{order._id.slice(-8).toUpperCase()}</p>
+                      <span className="rounded-full bg-red-500/20 px-2.5 py-1 text-[11px] font-semibold text-red-300">Cancelled</span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {order.cancelledAt ? new Date(order.cancelledAt).toLocaleString() : ""}
+                      {order.cancelReason ? ` · ${order.cancelReason}` : ""}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-slate-300">{(order.items || []).map((i) => i.name).join(", ")}</p>
+                    <p className="mt-2 text-xs text-blue-400">View details &amp; refund status →</p>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

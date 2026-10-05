@@ -27,6 +27,12 @@ export default function NewChatPage() {
       .then((d) => setProduct(d.success ? d.product : null));
   }, [slug, router]);
 
+  // opened from "Contact Seller" on an order: start the message with the order number
+  useEffect(() => {
+    const order = new URLSearchParams(window.location.search).get("order");
+    if (order) setText((t) => t || `Hi, I have a question about my order #${order.slice(-8).toUpperCase()}: `);
+  }, []);
+
   async function send() {
     if (!product || !text.trim() || sending) return;
     setSending(true);
