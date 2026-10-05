@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCustomerUserId } from "@/lib/customerAuth";
 import { useSite } from "@/lib/siteContext";
+import ProductReviews from "@/components/ProductReviews";
 
 type Product = {
   _id: string;
@@ -610,9 +611,7 @@ export default function ProductDetailPage({
                 </p>
               )
             ) : (
-              <p className="text-sm text-slate-400">
-                No reviews yet.
-              </p>
+              <ProductReviews slug={slug} />
             )}
 
             <div className="mt-4">

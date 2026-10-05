@@ -125,6 +125,13 @@ export default async function AdminDashboard() {
             </p>
           </Link>
 
+          <Link href="/admin/reviews" style={cardStyle}>
+            <h2>⭐ Reviews</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Moderate customer product reviews
+            </p>
+          </Link>
+
           <Link href="/admin/requests" style={cardStyle}>
             <h2>↩️ Returns & refunds</h2>
             <p style={{ color: "#94a3b8" }}>
