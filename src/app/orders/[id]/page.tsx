@@ -227,6 +227,14 @@ export default function OrderDetailsPage() {
                   <p className="text-xs text-slate-400">Sold by {item.sellerName}</p>
                   <p className="text-xs text-slate-400">{item.quantity} × {format(item.price)}</p>
                   {item.courierCharge > 0 && <p className="text-[11px] text-sky-400">+ Courier {format(item.courierCharge)}</p>}
+                  {order.status === "delivered" && item.slug && (
+                    <Link
+                      href={`/products/${item.slug}?tab=reviews`}
+                      className="mt-1.5 inline-flex items-center gap-1 rounded-lg bg-amber-500/15 px-2.5 py-1 text-xs font-bold text-amber-300 hover:bg-amber-500/25"
+                    >
+                      ⭐ Rate this product
+                    </Link>
+                  )}
                 </div>
                 <p className="shrink-0 text-sm font-bold">{format(item.price * item.quantity)}</p>
               </div>

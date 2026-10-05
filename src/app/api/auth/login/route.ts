@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import { attachUserCookie } from "@/lib/userSession";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,10 +14,7 @@ export async function POST(request: NextRequest) {
 
     if (!phone || !password) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Phone and password are required.",
-        },
+        { success: false, message: "Phone and password are required." },
         { status: 400 }
       );
     }
@@ -25,35 +23,26 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid phone number or password.",
-        },
+        { success: false, message: "Invalid phone number or password." },
         { status: 401 }
       );
     }
 
     if (user.password !== password) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid phone number or password.",
-        },
+        { success: false, message: "Invalid phone number or password." },
         { status: 401 }
       );
     }
 
     if (!user.active) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Your account is inactive.",
-        },
+        { success: false, message: "Your account is inactive." },
         { status: 403 }
       );
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       message: "Login successful.",
       user: {
@@ -64,16 +53,17 @@ export async function POST(request: NextRequest) {
         role: user.role,
       },
     });
+
+    // signed httpOnly session cookie: this is what the review API trusts
+    await attachUserCookie(res, user._id.toString());
+
+    return res;
   } catch (error) {
     console.error("Login error:", error);
 
     return NextResponse.json(
-      {
-        success: false,
-        message: "Unable to login.",
-      },
+      { success: false, message: "Unable to login." },
       { status: 500 }
     );
   }
 }
-

@@ -24,6 +24,8 @@ type Product = {
   active?: boolean;
   vendorId?: string;
   vendorName?: string;
+  ratingAverage?: number;
+  reviewCount?: number;
 };
 
 const RELATED_COUNT = 6;
@@ -62,6 +64,15 @@ export default function ProductDetailPage({
   const [notifySubmitting, setNotifySubmitting] = useState(false);
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyError, setNotifyError] = useState("");
+
+  // /products/slug?tab=reviews opens the Reviews tab (used by the order page button)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "reviews") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTab("reviews");
+      setTimeout(() => document.getElementById("reviews-section")?.scrollIntoView({ behavior: "smooth" }), 600);
+    }
+  }, []);
 
   useEffect(() => {
     loadProduct();
@@ -507,6 +518,24 @@ export default function ProductDetailPage({
               </div>
             )}
 
+            {(product.reviewCount || 0) > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTab("reviews");
+                  document.getElementById("reviews-section")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="mt-3 flex items-center gap-2 text-sm"
+              >
+                <span className="text-amber-400">
+                  {"★".repeat(Math.round(product.ratingAverage || 0))}
+                  <span className="text-slate-300">{"★".repeat(5 - Math.round(product.ratingAverage || 0))}</span>
+                </span>
+                <span className="font-semibold text-slate-700">{(product.ratingAverage || 0).toFixed(1)}</span>
+                <span className="text-slate-400">({product.reviewCount} reviews)</span>
+              </button>
+            )}
+
             <hr className="my-5 border-slate-100" />
 
             <div className="text-sm text-slate-400">
@@ -611,7 +640,9 @@ export default function ProductDetailPage({
                 </p>
               )
             ) : (
-              <ProductReviews slug={slug} />
+              <div id="reviews-section">
+                <ProductReviews slug={slug} />
+              </div>
             )}
 
             <div className="mt-4">

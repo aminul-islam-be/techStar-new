@@ -17,6 +17,8 @@ export interface IProduct {
   vendorName?: string;
   approvalStatus?: "approved" | "pending" | "rejected" | "suspended";
   rejectionReason?: string;
+  ratingAverage?: number;
+  reviewCount?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -97,6 +99,9 @@ const ProductSchema = new Schema<IProduct>(
       index: true,
     },
     rejectionReason: { type: String, default: undefined },
+    // filled automatically from approved reviews (see lib/reviewStats.ts)
+    ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
+    reviewCount: { type: Number, default: 0, min: 0 },
   },
   {
     timestamps: true,

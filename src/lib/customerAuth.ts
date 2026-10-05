@@ -37,5 +37,7 @@ export function logoutCustomer() {
   if (typeof window === "undefined") return;
 
   localStorage.removeItem(USER_KEY);
+  // also clear the signed session cookie on the server
+  fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
 }
 

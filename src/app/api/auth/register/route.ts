@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import { attachUserCookie } from "@/lib/userSession";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,20 +16,14 @@ export async function POST(request: NextRequest) {
 
     if (!fullName || !phone || !password) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Full name, phone and password are required.",
-        },
+        { success: false, message: "Full name, phone and password are required." },
         { status: 400 }
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Password must be at least 6 characters.",
-        },
+        { success: false, message: "Password must be at least 6 characters." },
         { status: 400 }
       );
     }
@@ -37,10 +32,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "This phone number is already registered.",
-        },
+        { success: false, message: "This phone number is already registered." },
         { status: 409 }
       );
     }
@@ -54,7 +46,7 @@ export async function POST(request: NextRequest) {
       active: true,
     });
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       {
         success: true,
         message: "Account created successfully.",
@@ -68,16 +60,16 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
+
+    await attachUserCookie(res, user._id.toString());
+
+    return res;
   } catch (error) {
     console.error("Register error:", error);
 
     return NextResponse.json(
-      {
-        success: false,
-        message: "Unable to create account.",
-      },
+      { success: false, message: "Unable to create account." },
       { status: 500 }
     );
   }
 }
-
