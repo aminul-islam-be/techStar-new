@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { notifyBackInStock } from "@/lib/notify";
 import connectDB from "@/lib/mongodb";
 import Product from "@/models/Product";
 
@@ -144,6 +145,11 @@ export async function PATCH(request: NextRequest) {
         },
         { status: 404 }
       );
+    }
+
+    // product is available again: tell customers who pressed "notify me"
+    if ("stock" in cleanUpdates && Number(product.stock) > 0) {
+      await notifyBackInStock(product._id);
     }
 
     return NextResponse.json({

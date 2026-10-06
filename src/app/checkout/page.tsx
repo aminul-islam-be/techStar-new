@@ -8,6 +8,7 @@ import { useCurrency } from "@/lib/useCurrency";
 import { useLanguage } from "@/lib/language";
 import { useRouter } from "next/navigation";
 import { DISTRICTS, DIVISIONS, isDhakaDivision } from "@/lib/bdDistricts";
+import AddressForm, { titleIcon, type SavedAddress } from "@/components/AddressForm";
 
 type CartItem = {
   productId: string;
@@ -50,6 +51,19 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"sslcommerz" | "cod">("sslcommerz");
   const [rates, setRates] = useState({ insideDhaka: 80, outsideDhaka: 120 });
 
+  // ----- saved addresses (Home / Office / ...) -----
+  const [addresses, setAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [saveToBook, setSaveToBook] = useState(true);
+  const usingSaved = addresses.length > 0 && selectedAddressId !== "";
+
+  // ----- coupon -----
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [couponMessage, setCouponMessage] = useState("");
+  const [couponChecking, setCouponChecking] = useState(false);
+
   useEffect(() => {
     const user = getCustomerUser();
     if (user) {
@@ -60,10 +74,45 @@ export default function CheckoutPage() {
         email: user.email || "",
       }));
       loadCart(user.id);
+      loadAddresses();
     } else {
       loadCart(""); 
     }
   }, []);
+
+  function chooseAddress(a: SavedAddress) {
+    setSelectedAddressId(a._id);
+    setForm((current) => ({
+      ...current,
+      fullName: a.name,
+      phone: a.phone,
+      address: a.address,
+      city: a.city,
+      area: a.area || "",
+    }));
+  }
+
+  async function loadAddresses(selectId?: string) {
+    try {
+      const response = await fetch("/api/addresses", { cache: "no-store" });
+      const data = await response.json();
+
+      // not logged in / session expired: the normal manual form is used
+      if (!response.ok || !data.success) return;
+
+      const list: SavedAddress[] = data.addresses || [];
+      setAddresses(list);
+
+      const pick =
+        list.find((a) => a._id === selectId) ||
+        list.find((a) => a.isDefault) ||
+        list[0];
+
+      if (pick) chooseAddress(pick);
+    } catch {
+      /* manual form stays available */
+    }
+  }
 
   async function loadCart(userId: string) {
     try {
@@ -110,6 +159,48 @@ export default function CheckoutPage() {
   // every product is its own parcel and gets its own courier charge
   const courierPerProduct = form.city ? (isDhakaDivision(form.city) ? rates.insideDhaka : rates.outsideDhaka) : 0;
   const courierTotal = cart.items.length * courierPerProduct;
+  const discount = appliedCoupon ? Math.min(appliedCoupon.discount, subtotal) : 0;
+  const payable = subtotal + courierTotal - discount;
+
+  async function applyCoupon() {
+    const code = couponInput.trim();
+
+    if (!code) {
+      setCouponMessage("Please enter a coupon code.");
+      return;
+    }
+
+    try {
+      setCouponChecking(true);
+      setCouponMessage("");
+
+      const user = getCustomerUser();
+      const response = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-user-id": user ? user.id : "" },
+        body: JSON.stringify({ code, itemsTotal: subtotal }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setAppliedCoupon(null);
+        setCouponMessage(data.message || "This coupon is not valid.");
+        return;
+      }
+
+      setAppliedCoupon({ code: data.code, discount: data.discount });
+      setCouponInput("");
+    } catch {
+      setCouponMessage("Unable to check the coupon. Please try again.");
+    } finally {
+      setCouponChecking(false);
+    }
+  }
+
+  function removeCoupon() {
+    setAppliedCoupon(null);
+    setCouponMessage("");
+  }
 
   function updateField(field: keyof FormData, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -148,7 +239,8 @@ export default function CheckoutPage() {
           customerPhone: form.phone.trim(),
           customerEmail: form.email.trim(),
           items: cart.items,
-          totalAmount: subtotal + courierTotal,
+          totalAmount: payable,
+          couponCode: appliedCoupon ? appliedCoupon.code : "",
           deliveryAddress: {
             fullName: form.fullName.trim(),
             phone: form.phone.trim(),
@@ -168,7 +260,27 @@ export default function CheckoutPage() {
       }
 
       if (!response.ok || !data.success) {
+        if (data.couponError) {
+          setAppliedCoupon(null);
+          setCouponMessage(data.message || "This coupon is no longer valid.");
+        }
         throw new Error(data.message || t("checkout.unableToPlaceOrder"));
+      }
+
+      // typed a new address by hand? keep it in the address book for next time
+      if (saveToBook && !usingSaved && userId) {
+        fetch("/api/addresses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Home",
+            name: form.fullName.trim(),
+            phone: form.phone.trim(),
+            city: form.city.trim(),
+            area: form.area.trim(),
+            address: form.address.trim(),
+          }),
+        }).catch(() => {});
       }
 
       setMessage(data.message || t("checkout.orderPlacedSuccess"));
@@ -241,12 +353,62 @@ export default function CheckoutPage() {
               <h2 className="text-xl font-bold">{t("checkout.deliveryInfo")}</h2>
               <p className="mt-1 text-xs text-slate-500">{t("checkout.deliveryInfoHint")}</p>
             </div>
+            {addresses.length > 0 && (
+              <div className="mb-6">
+                <h3 className="mb-3 text-sm font-bold">Select Delivery Address</h3>
+                <div className="space-y-3">
+                  {addresses.map((a) => (
+                    <label
+                      key={a._id}
+                      className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${
+                        selectedAddressId === a._id
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-white/10 hover:border-white/25"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="deliveryAddress"
+                        checked={selectedAddressId === a._id}
+                        onChange={() => chooseAddress(a)}
+                        className="mt-1 h-4 w-4 accent-blue-500"
+                      />
+                      <div className="min-w-0 flex-1 text-sm">
+                        <div className="flex flex-wrap items-center gap-2 font-bold">
+                          <span>{titleIcon(a.title)} {a.title}</span>
+                          {a.isDefault && (
+                            <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-bold">Default</span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-slate-300">{a.name} · {a.phone}</p>
+                        <p className="text-slate-400">
+                          {[a.address, a.area, a.city].filter(Boolean).join(", ")}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddressForm(true)}
+                    className="rounded-xl border border-dashed border-blue-500/50 px-4 py-2.5 text-sm font-bold text-blue-300 hover:bg-blue-500/10"
+                  >
+                    + Add New Address
+                  </button>
+                  <Link href="/addresses" className="text-xs font-semibold text-slate-400 hover:text-white">
+                    Manage addresses
+                  </Link>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-5 sm:grid-cols-2">
-              <div>
+              <div className={usingSaved ? "hidden" : ""}>
                 <label className="mb-2 block text-sm font-semibold">{t("checkout.fullNameLabel")}</label>
                 <input value={form.fullName} onChange={(e) => updateField("fullName", e.target.value)} placeholder={t("checkout.fullNamePlaceholder")} className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500" />
               </div>
-              <div>
+              <div className={usingSaved ? "hidden" : ""}>
                 <label className="mb-2 block text-sm font-semibold">{t("checkout.phoneLabel")}</label>
                 <input value={form.phone} onChange={(e) => updateField("phone", e.target.value)} placeholder={t("checkout.phonePlaceholder")} className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500" />
               </div>
@@ -254,15 +416,15 @@ export default function CheckoutPage() {
                 <label className="mb-2 block text-sm font-semibold">{t("checkout.emailLabel")}</label>
                 <input type="email" value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder={t("checkout.emailPlaceholder")} className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500" />
               </div>
-              <div className="sm:col-span-2">
+              <div className={`sm:col-span-2 ${usingSaved ? "hidden" : ""}`}>
                 <label className="mb-2 block text-sm font-semibold">{t("checkout.addressLabel")}</label>
                 <textarea value={form.address} onChange={(e) => updateField("address", e.target.value)} placeholder={t("checkout.addressPlaceholder")} rows={4} className="w-full resize-none rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500" />
               </div>
-              <div>
+              <div className={usingSaved ? "hidden" : ""}>
                 <label className="mb-2 block text-sm font-semibold">{t("checkout.areaLabel")}</label>
                 <input value={form.area} onChange={(e) => updateField("area", e.target.value)} placeholder={t("checkout.areaPlaceholder")} className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none placeholder:text-slate-600 focus:border-blue-500" />
               </div>
-              <div>
+              <div className={usingSaved ? "hidden" : ""}>
                 <label className="mb-2 block text-sm font-semibold">{t("checkout.cityLabel")}</label>
                 <select value={form.city} onChange={(e) => updateField("city", e.target.value)} className="w-full rounded-xl border border-white/10 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500">
                   <option value="">Select district</option>
@@ -276,6 +438,18 @@ export default function CheckoutPage() {
                 </select>
               </div>
             </div>
+
+            {!usingSaved && getCustomerUser() && (
+              <label className="mt-5 flex cursor-pointer items-center gap-2 text-sm text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={saveToBook}
+                  onChange={(e) => setSaveToBook(e.target.checked)}
+                  className="h-4 w-4 accent-blue-500"
+                />
+                Save this address for next time
+              </label>
+            )}
           </section>
 
           <aside className="h-fit rounded-3xl border border-white/[0.08] bg-slate-900/70 p-5 lg:sticky lg:top-6">
@@ -301,6 +475,61 @@ export default function CheckoutPage() {
               ))}
             </div>
 
+            <div className="mt-6 border-t border-white/[0.08] pt-5">
+              <p className="mb-2 text-sm font-semibold">🎟️ Have a coupon?</p>
+
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+                  <div>
+                    <div className="font-mono text-sm font-extrabold tracking-wider text-emerald-300">
+                      {appliedCoupon.code}
+                    </div>
+                    <div className="text-xs text-emerald-200/80">
+                      You save {format(discount)}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeCoupon}
+                    className="rounded-lg px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-500/10"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase().replace(/\s/g, ""))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        applyCoupon();
+                      }
+                    }}
+                    placeholder="Enter code"
+                    maxLength={20}
+                    className="min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-950 px-4 py-2.5 font-mono text-sm tracking-wider outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-600 focus:border-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={applyCoupon}
+                    disabled={couponChecking}
+                    className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold hover:bg-blue-500 disabled:opacity-50"
+                  >
+                    {couponChecking ? "..." : "Apply"}
+                  </button>
+                </div>
+              )}
+
+              {couponMessage && (
+                <p className="mt-2 text-xs text-red-300">⚠️ {couponMessage}</p>
+              )}
+              <Link href="/coupons" className="mt-2 inline-block text-xs font-semibold text-slate-400 hover:text-white">
+                See available coupons
+              </Link>
+            </div>
+
             <div className="mt-6 space-y-3 border-t border-white/[0.08] pt-5 text-sm">
               <div className="flex justify-between text-slate-400">
                 <span>{t("cart.items")}</span>
@@ -314,9 +543,15 @@ export default function CheckoutPage() {
                 <span>{t("cart.delivery")}</span>
                 <span>{form.city ? format(courierTotal) : "Select district"}</span>
               </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-emerald-400">
+                  <span>Coupon discount</span>
+                  <span>- {format(discount)}</span>
+                </div>
+              )}
               <div className="flex justify-between border-t border-white/[0.08] pt-4 font-bold text-white">
                 <span>{t("checkout.total")}</span>
-                <span className="text-lg text-emerald-400">{format(subtotal + courierTotal)}</span>
+                <span className="text-lg text-emerald-400">{format(payable)}</span>
               </div>
             </div>
 
@@ -347,6 +582,16 @@ export default function CheckoutPage() {
             </button>
           </aside>
         </form>
+
+        {showAddressForm && (
+          <AddressForm
+            onCancel={() => setShowAddressForm(false)}
+            onSaved={(saved) => {
+              setShowAddressForm(false);
+              loadAddresses(saved._id);
+            }}
+          />
+        )}
       </div>
     </main>
   );

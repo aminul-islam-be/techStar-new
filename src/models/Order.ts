@@ -56,6 +56,8 @@ export interface IOrder extends Document {
   itemsTotal?: number;
   courierTotal?: number;
   shippingZone?: "dhaka" | "outside";
+  couponCode?: string;
+  discountAmount?: number;
   codCommissionAccruedAt?: Date;
   codCommissionReversedAt?: Date;
 
@@ -225,6 +227,8 @@ const OrderSchema = new Schema<IOrder>(
     itemsTotal: { type: Number, min: 0 },
     courierTotal: { type: Number, min: 0 },
     shippingZone: { type: String, enum: ["dhaka", "outside"] },
+    couponCode: { type: String },
+    discountAmount: { type: Number, default: 0, min: 0 },
 
     codCommissionAccruedAt: {
       type: Date,

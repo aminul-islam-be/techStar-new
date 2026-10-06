@@ -52,7 +52,7 @@ type Details = {
     items: Item[];
   };
   requests: Req[];
-  breakdown: { productTotal: number; courier: number; total: number; refundable: number };
+  breakdown: { productTotal: number; courier: number; discount?: number; couponCode?: string; total: number; refundable: number };
   can: { cancel: boolean; request: boolean; requestWindowDays: number; hasOpenRequest: boolean };
 };
 
@@ -245,6 +245,9 @@ export default function OrderDetailsPage() {
             <div className="flex justify-between text-slate-300"><span>Products</span><span>{format(data.breakdown.productTotal)}</span></div>
             {data.breakdown.courier > 0 && (
               <div className="flex justify-between text-slate-300"><span>Courier charge</span><span>{format(data.breakdown.courier)}</span></div>
+            )}
+            {(data.breakdown.discount || 0) > 0 && (
+              <div className="flex justify-between text-emerald-400"><span>Coupon{data.breakdown.couponCode ? ` (${data.breakdown.couponCode})` : ""}</span><span>- {format(data.breakdown.discount || 0)}</span></div>
             )}
             <div className="flex justify-between text-base font-extrabold"><span>Total</span><span className="text-emerald-400">{format(order.totalAmount)}</span></div>
             {data.breakdown.courier > 0 && (

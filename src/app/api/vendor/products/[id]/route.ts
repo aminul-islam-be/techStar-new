@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { notifyBackInStock } from "@/lib/notify";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import Product from "@/models/Product";
@@ -82,6 +83,12 @@ export async function PATCH(request: Request, { params }: Ctx) {
   }
 
   await product.save();
+
+  // product is available again: tell customers who pressed "notify me"
+  if (body.stock !== undefined && product.stock > 0) {
+    await notifyBackInStock(product._id);
+  }
+
   return NextResponse.json({ success: true, product });
 }
 

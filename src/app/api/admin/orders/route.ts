@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { notifyOrderStatus, notifyPaymentReceived } from "@/lib/notify";
+import { releaseCouponForOrder } from "@/lib/couponRules";
 import connectDB from "@/lib/mongodb";
 import Order from "@/models/Order";
 import { getAdminSession } from "@/lib/adminAuth";
@@ -72,6 +74,21 @@ export async function PATCH(request: NextRequest) {
       if (order.status === "cancelled") { await reverseAnyOrder(String(id)); }
     } catch (settleError) {
       console.error("Vendor settlement error:", settleError);
+    }
+
+    // tell the customer (bell + /notifications). Never blocks the update.
+    try {
+      if (status !== undefined) {
+        await notifyOrderStatus(order._id, order.userId, order.status);
+      }
+      if (paymentStatus === "paid") {
+        await notifyPaymentReceived(order._id, order.userId);
+      }
+      if (status === "cancelled") {
+        await releaseCouponForOrder(order._id);
+      }
+    } catch (notifyError) {
+      console.error("Order notification error:", notifyError);
     }
 
     return NextResponse.json({ success: true, message: "Order updated successfully.", order });

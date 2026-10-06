@@ -5,6 +5,7 @@ import Order from "@/models/Order";
 import OrderRequest from "@/models/OrderRequest";
 import { CANCEL_STATUSES } from "@/lib/orderRules";
 import { refundAmount } from "@/lib/refundPolicy";
+import { releaseCouponForOrder } from "@/lib/couponRules";
 
 export async function GET(
   request: NextRequest,
@@ -73,6 +74,9 @@ export async function PATCH(
         { status: 409 }
       );
     }
+
+    // the customer may use the coupon again
+    await releaseCouponForOrder(order._id);
 
     // paid online: a refund of the product price is now owed, the admin sees it in Returns & refunds
     let refund: { amount: number } | null = null;

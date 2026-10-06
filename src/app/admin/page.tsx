@@ -125,6 +125,20 @@ export default async function AdminDashboard() {
             </p>
           </Link>
 
+          <Link href="/admin/coupons" style={cardStyle}>
+            <h2>🎟️ Coupons</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Create and manage discount codes
+            </p>
+          </Link>
+
+          <Link href="/admin/notifications" style={cardStyle}>
+            <h2>🔔 Notifications</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Send offers to all customers
+            </p>
+          </Link>
+
           <Link href="/admin/reviews" style={cardStyle}>
             <h2>⭐ Reviews</h2>
             <p style={{ color: "#94a3b8" }}>

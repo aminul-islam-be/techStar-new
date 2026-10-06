@@ -16,6 +16,8 @@ type OrderLike = {
   totalAmount: number;
   itemsTotal?: number;
   courierTotal?: number;
+  discountAmount?: number;
+  couponCode?: string;
 };
 
 export function orderBreakdown(o: OrderLike) {
@@ -24,11 +26,16 @@ export function orderBreakdown(o: OrderLike) {
   // orders placed before courier charges existed have no courier at all
   const courier = round2(o.courierTotal ?? Math.max(0, Number(o.totalAmount) - productTotal));
 
+  // a coupon is paid by the store, so that part is never refunded as cash
+  const discount = round2(Math.max(0, Number(o.discountAmount) || 0));
+
   return {
     productTotal,
     courier,
+    discount,
+    couponCode: o.couponCode || "",
     total: round2(Number(o.totalAmount)),
-    refundable: productTotal, // what the customer gets back on cancel / return
+    refundable: round2(Math.max(0, productTotal - discount)), // what the customer gets back on cancel / return
   };
 }
 
@@ -42,5 +49,5 @@ export const REFUND_COURIER_BEFORE_DISPATCH = false;
 /** What the customer gets back for this cancellation / return. */
 export function refundAmount(o: OrderLike, beforeDispatch: boolean) {
   const b = orderBreakdown(o);
-  return REFUND_COURIER_BEFORE_DISPATCH && beforeDispatch ? round2(b.productTotal + b.courier) : b.refundable;
+  return REFUND_COURIER_BEFORE_DISPATCH && beforeDispatch ? round2(b.productTotal + b.courier - b.discount) : b.refundable;
 }

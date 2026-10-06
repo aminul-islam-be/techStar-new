@@ -19,11 +19,12 @@ const AddressSchema = new Schema<IAddress>({
   name: { type: String, required: true },
   phone: { type: String, required: true },
   address: { type: String, required: true },
-  area: { type: String, required: true },
+  area: { type: String, default: '' },
   city: { type: String, required: true },
   division: { type: String, required: true },
   country: { type: String, default: 'Bangladesh' },
   isDefault: { type: Boolean, default: false },
 }, { timestamps: true });
 
-export default mongoose.models.Address || mongoose.model<IAddress>('Address', AddressSchema);
+export default (mongoose.models.Address as mongoose.Model<IAddress>) ||
+  mongoose.model<IAddress>('Address', AddressSchema);

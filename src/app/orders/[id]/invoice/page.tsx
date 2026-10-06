@@ -23,7 +23,7 @@ type Details = {
     deliveryAddress?: { fullName?: string; phone?: string; address?: string; area?: string; city?: string };
     items: Item[];
   };
-  breakdown: { productTotal: number; courier: number; total: number; refundable: number };
+  breakdown: { productTotal: number; courier: number; discount?: number; couponCode?: string; total: number; refundable: number };
 };
 
 /** The customer's own invoice. "Download" opens the print dialog: choose "Save as PDF". */
@@ -124,6 +124,9 @@ export default function CustomerInvoicePage() {
           <div className="flex justify-between text-slate-600"><span>Products</span><span>{cur} {breakdown.productTotal}</span></div>
           {breakdown.courier > 0 && (
             <div className="flex justify-between text-slate-600"><span>Courier charge</span><span>{cur} {breakdown.courier}</span></div>
+          )}
+          {(breakdown.discount || 0) > 0 && (
+            <div className="flex justify-between text-slate-600"><span>Coupon{breakdown.couponCode ? ` (${breakdown.couponCode})` : ""}</span><span>- {cur} {breakdown.discount}</span></div>
           )}
           <div className="flex justify-between rounded-lg border-2 border-slate-900 p-3 text-base font-extrabold">
             <span>Total</span><span>{cur} {order.totalAmount}</span>

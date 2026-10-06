@@ -13,6 +13,7 @@ export default function BottomNav({ cartCount }: BottomNavProps) {
   const { t } = useLanguage();
   const { seasonInfo } = useSeasonTheme();
   const [isGlossy, setIsGlossy] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     const checkGlossy = () => setIsGlossy(localStorage.getItem("glossyTheme") === "true");
@@ -20,6 +21,30 @@ export default function BottomNav({ cartCount }: BottomNavProps) {
     window.addEventListener("glossyChange", checkGlossy);
     return () => window.removeEventListener("glossyChange", checkGlossy);
   }, []);
+
+  // unread notifications -> red number on the bell
+  useEffect(() => {
+    let alive = true;
+
+    function loadUnread() {
+      fetch("/api/notifications?countOnly=1", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (alive && d && d.success) setUnread(d.unread || 0);
+        })
+        .catch(() => {});
+    }
+
+    loadUnread();
+    const timer = setInterval(loadUnread, 60000);
+    window.addEventListener("notificationsChange", loadUnread);
+
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      window.removeEventListener("notificationsChange", loadUnread);
+    };
+  }, [pathname]);
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -69,7 +94,7 @@ export default function BottomNav({ cartCount }: BottomNavProps) {
         <div className="w-10" />
 
         <Link href="/notifications" className={tabClass("/notifications")} style={tabStyle("/notifications")}>
-          <span className={iconClass("/notifications")}>🔔</span>
+          <span className={`relative ${iconClass("/notifications")}`}>🔔{unread > 0 && (<span className="absolute -right-1 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black text-white">{unread > 99 ? "99+" : unread}</span>)}</span>
           <span className={`transition-colors ${isGlossy && isActive("/notifications") ? "text-green-400" : ""}`}>{t("nav.alerts")}</span>
         </Link>
 

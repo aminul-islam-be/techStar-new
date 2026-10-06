@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { notifyRequestUpdate } from "@/lib/notify";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import Order from "@/models/Order";
@@ -78,6 +79,7 @@ export async function PATCH(request: NextRequest) {
     req.adminNote = adminNote;
     req.processedAt = new Date();
     await req.save();
+    await notifyRequestUpdate(req, "rejected", adminNote);
     return NextResponse.json({ success: true });
   }
 
@@ -86,6 +88,7 @@ export async function PATCH(request: NextRequest) {
     req.status = "approved";
     if (adminNote) req.adminNote = adminNote;
     await req.save();
+    await notifyRequestUpdate(req, "approved");
     return NextResponse.json({ success: true });
   }
 
@@ -120,6 +123,7 @@ export async function PATCH(request: NextRequest) {
   if (adminNote) req.adminNote = adminNote;
   req.processedAt = new Date();
   await req.save();
+  await notifyRequestUpdate(req, "completed");
 
   return NextResponse.json({ success: true });
 }
