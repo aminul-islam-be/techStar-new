@@ -35,7 +35,7 @@ function statusOf(c: {
  * GET ?usage=<id>      who used one coupon (last 50 orders)
  */
 export async function GET(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("coupons"))) return noAuth();
 
   try {
     await connectDB();
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
 
 /** POST: create a coupon. */
 export async function POST(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("coupons"))) return noAuth();
 
   try {
     await connectDB();
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
  * PATCH { id, ...fields } edit (the code itself can not change)
  */
 export async function PATCH(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("coupons"))) return noAuth();
 
   try {
     await connectDB();
@@ -193,7 +193,7 @@ export async function PATCH(request: NextRequest) {
 
 /** DELETE ?id=  only a coupon nobody used yet. Otherwise turn it off. */
 export async function DELETE(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("coupons"))) return noAuth();
 
   try {
     await connectDB();

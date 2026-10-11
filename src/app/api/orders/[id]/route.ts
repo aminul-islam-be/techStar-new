@@ -6,11 +6,14 @@ import OrderRequest from "@/models/OrderRequest";
 import { CANCEL_STATUSES } from "@/lib/orderRules";
 import { refundAmount } from "@/lib/refundPolicy";
 import { releaseCouponForOrder } from "@/lib/couponRules";
+import { getSessionUserId } from "@/lib/userSession";
+import { releaseOrderStock } from "@/lib/orderFlow";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+/**
+ * The owner gets the full order. Anybody with only the order id (order tracking page)
+ * gets a short public version without phone, email, address or account details.
+ */
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
     const { id } = await params;
@@ -20,12 +23,30 @@ export async function GET(
     }
 
     const order = await Order.findById(id).lean();
-
     if (!order) {
       return NextResponse.json({ success: false, message: "Order not found." }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, order });
+    const me = await getSessionUserId();
+    if (me && String(order.userId) === me) {
+      return NextResponse.json({ success: true, order });
+    }
+
+    return NextResponse.json({
+      success: true,
+      order: {
+        _id: order._id,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod,
+        createdAt: order.createdAt,
+        deliveredAt: order.deliveredAt,
+        cancelledAt: order.cancelledAt,
+        totalAmount: order.totalAmount,
+        currency: order.currency,
+        items: order.items.map((i) => ({ name: i.name, quantity: i.quantity, price: i.price, image: i.image })),
+      },
+    });
   } catch (error) {
     console.error("GET /api/orders/[id] error:", error);
     return NextResponse.json({ success: false, message: "Server error." }, { status: 500 });
@@ -33,16 +54,13 @@ export async function GET(
 }
 
 /** The customer cancels their own order (only before it is being prepared / sent). */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
     const { id } = await params;
-    const userId = request.headers.get("x-user-id")?.trim() || "";
+    const userId = await getSessionUserId();
 
-    if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(userId)) {
+    if (!mongoose.Types.ObjectId.isValid(id) || !userId) {
       return NextResponse.json({ success: false, message: "Please login again." }, { status: 401 });
     }
 
@@ -75,7 +93,8 @@ export async function PATCH(
       );
     }
 
-    // the customer may use the coupon again
+    // the stock and the coupon use go back to the shop and the customer (each only once)
+    await releaseOrderStock(order._id);
     await releaseCouponForOrder(order._id);
 
     // paid online: a refund of the product price is now owed, the admin sees it in Returns & refunds

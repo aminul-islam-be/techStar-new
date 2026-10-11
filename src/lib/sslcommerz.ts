@@ -77,3 +77,68 @@ export async function validateSslPayment(valId: string) {
   const res = await fetch(url, { cache: "no-store" });
   return res.ok ? ((await res.json().catch(() => null)) as Record<string, string> | null) : null;
 }
+
+/**
+ * Starts a payment for a CUSTOMER order. Keys and sandbox / live host come from the
+ * environment (sslConfig), so there is nothing secret in the source code.
+ */
+export async function startOrderPayment(p: {
+  tranId: string;
+  amount: number;
+  baseUrl: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  productName: string;
+}) {
+  const cfg = sslConfig();
+  if (!cfg) {
+    return { ok: false as const, message: "Online payment is not set up yet. Please choose Cash on Delivery." };
+  }
+
+  const body = new URLSearchParams({
+    store_id: cfg.storeId,
+    store_passwd: cfg.storePass,
+    total_amount: p.amount.toFixed(2),
+    currency: "BDT",
+    tran_id: p.tranId,
+    success_url: `${p.baseUrl}/api/payment/success`,
+    fail_url: `${p.baseUrl}/api/payment/fail`,
+    cancel_url: `${p.baseUrl}/api/payment/cancel`,
+    ipn_url: `${p.baseUrl}/api/payment/ipn`,
+    cus_name: p.name || "Customer",
+    cus_email: p.email || "customer@techstar.local",
+    cus_add1: p.address || "Dhaka",
+    cus_city: p.city || "Dhaka",
+    cus_country: "Bangladesh",
+    cus_phone: p.phone || "01700000000",
+    shipping_method: "NO",
+    product_name: p.productName,
+    product_category: "General",
+    product_profile: "general",
+  });
+
+  const res = await fetch(`${cfg.host}/gwprocess/v4/api.php`, { method: "POST", body, cache: "no-store" });
+  const data = await res.json().catch(() => null);
+
+  if (data?.status === "SUCCESS" && data.GatewayPageURL) {
+    return { ok: true as const, gatewayUrl: String(data.GatewayPageURL) };
+  }
+  return { ok: false as const, message: String(data?.failedreason || "Could not open the payment page. Please try again.") };
+}
+
+/**
+ * Reads SSLCommerz's validator answer. Counts as paid only when the status is VALID
+ * or VALIDATED, the transaction id is ours, the amount is exactly the order total and
+ * the currency is BDT.
+ */
+export function isPaidSslResult(v: Record<string, string> | null, tranId: string, amount: number) {
+  if (!v) return false;
+  const okStatus = v.status === "VALID" || v.status === "VALIDATED";
+  const sameTran = v.tran_id === tranId;
+  const sameAmount = Math.abs(Number(v.amount) - Number(amount)) < 0.01;
+  const currency = String(v.currency_type || v.currency || "BDT").toUpperCase();
+  return okStatus && sameTran && sameAmount && currency === "BDT";
+}

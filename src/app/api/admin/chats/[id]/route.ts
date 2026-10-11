@@ -12,7 +12,7 @@ const noAuth = () => NextResponse.json({ success: false, message: "Admin login r
 
 /** Admin sees EVERYTHING, including the messages that were blocked. */
 export async function GET(_request: NextRequest, { params }: Ctx) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("chats"))) return noAuth();
   await connectDB();
 
   const { id } = await params;
@@ -30,7 +30,7 @@ export async function GET(_request: NextRequest, { params }: Ctx) {
 
 /** The owner / admin replies to a customer in a TechStar support chat. */
 export async function POST(request: NextRequest, { params }: Ctx) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("chats"))) return noAuth();
   await connectDB();
 
   const { id } = await params;
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest, { params }: Ctx) {
 }
 
 export async function PATCH(request: NextRequest, { params }: Ctx) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("chats"))) return noAuth();
   await connectDB();
 
   const { id } = await params;

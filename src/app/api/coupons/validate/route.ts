@@ -1,3 +1,4 @@
+import { getSessionUserId } from "@/lib/userSession";
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import { checkCoupon } from "@/lib/couponRules";
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
-    const userId = request.headers.get("x-user-id")?.trim() || "";
+    const userId = await getSessionUserId();
     const body = await request.json().catch(() => ({}));
     const itemsTotal = Number(body.itemsTotal);
 

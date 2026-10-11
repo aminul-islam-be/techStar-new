@@ -1,3 +1,4 @@
+import { getSessionUserId } from "@/lib/userSession";
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import StockAlert from "@/models/StockAlert";
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const productId = String(body.productId || "").trim();
     const contact = String(body.contact || "").trim();
-    const userId = request.headers.get("x-user-id") || undefined;
+    const userId = (await getSessionUserId()) || undefined;
 
     if (!productId) {
       return NextResponse.json(

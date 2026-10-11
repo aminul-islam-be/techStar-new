@@ -1,3 +1,4 @@
+import { getSessionUserId } from "@/lib/userSession";
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     const now = new Date();
-    const userId = request.headers.get("x-user-id")?.trim() || "";
+    const userId = await getSessionUserId();
 
     const coupons = await Coupon.find({
       isActive: true,

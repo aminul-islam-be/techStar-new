@@ -48,6 +48,14 @@ export interface IOrder extends Document {
   cancelledAt?: Date;
   cancelReason?: string;
   cancelledBy?: "customer" | "admin";
+  // online payment: every SSLCommerz attempt (tran_id) of this order
+  paymentTranIds?: string[];
+  paymentValId?: string;
+  bankTranId?: string;
+  paidAt?: Date;
+  // true while the order holds product stock; stockReleasedAt is set once it is given back
+  stockReserved?: boolean;
+  stockReleasedAt?: Date;
   returnedAt?: Date;
   deliveredAt?: Date;
 
@@ -210,6 +218,12 @@ const OrderSchema = new Schema<IOrder>(
 
     cancelReason: { type: String, trim: true, maxlength: 200 },
     cancelledBy: { type: String, enum: ["customer", "admin"] },
+    paymentTranIds: { type: [String], index: true },
+    paymentValId: { type: String },
+    bankTranId: { type: String },
+    paidAt: { type: Date },
+    stockReserved: { type: Boolean, default: false },
+    stockReleasedAt: { type: Date },
     returnedAt: { type: Date },
 
     deliveredAt: {

@@ -15,14 +15,14 @@ const pick = (s: Awaited<ReturnType<typeof getSettings>>) => ({
 });
 
 export async function GET() {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("pricing"))) return noAuth();
   await connectDB();
   return NextResponse.json({ success: true, pricing: pick(await getSettings()) });
 }
 
 /** Changes apply to NEW orders only. Old orders keep the amounts they were placed with. */
 export async function PUT(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("pricing"))) return noAuth();
   await connectDB();
 
   const b = await request.json();

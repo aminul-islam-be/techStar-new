@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import bcrypt from "bcryptjs";
 import { attachUserCookie } from "@/lib/userSession";
 
 export async function POST(request: NextRequest) {
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     const user = await User.create({
       fullName,
       phone,
-      password,
+      password: await bcrypt.hash(password, 10),
       ...(email ? { email } : {}),
       role: "customer",
       active: true,

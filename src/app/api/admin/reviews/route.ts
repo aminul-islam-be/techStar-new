@@ -17,7 +17,7 @@ function noAuth() {
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await getAdminSession())) {
+  if (!(await getAdminSession("reviews"))) {
     return noAuth();
   }
 
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!(await getAdminSession())) {
+  if (!(await getAdminSession("reviews"))) {
     return noAuth();
   }
 

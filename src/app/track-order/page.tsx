@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCurrency } from "@/lib/currency";
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -78,7 +79,7 @@ function TrackContent() {
             <div className="flex flex-wrap items-center justify-between gap-6 border-b border-white/[0.05] pb-8">
               <div><p className="mb-1 text-xs font-medium text-slate-500 uppercase tracking-wider">Order ID</p><p className="font-mono text-sm font-bold text-blue-400">#{order._id}</p></div>
               <div><p className="mb-1 text-xs font-medium text-slate-500 uppercase tracking-wider">Order Date</p><p className="text-sm font-bold text-slate-200">{new Date(order.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p></div>
-              <div><p className="mb-1 text-xs font-medium text-slate-500 uppercase tracking-wider">Total Amount</p><p className="text-lg font-black text-emerald-400">{format(order.totalAmount)}</p></div>
+              <div><p className="mb-1 text-xs font-medium text-slate-500 uppercase tracking-wider">Total Amount</p><p className="text-lg font-black text-emerald-400">{formatCurrency(order.totalAmount, "BDT", "৳")}</p></div>
             </div>
             <div className="py-8">
               <h3 className="mb-10 text-base font-bold text-slate-200">Delivery Status</h3>

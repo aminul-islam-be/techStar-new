@@ -8,7 +8,7 @@ import { generateProductDetails } from "@/lib/productDetailsAI";
 const noAuth = () => NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
 
 export async function GET(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("marketplace"))) return noAuth();
   await connectDB();
 
   const status = new URL(request.url).searchParams.get("status") || "pending";
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("marketplace"))) return noAuth();
   await connectDB();
 
   const { id, action, reason } = await request.json();

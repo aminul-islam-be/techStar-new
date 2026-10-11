@@ -1,7 +1,13 @@
+import { getAdminSession } from "@/lib/adminAuth";
 import { NextRequest, NextResponse } from "next/server";
 import { notifyBackInStock } from "@/lib/notify";
 import connectDB from "@/lib/mongodb";
 import Product from "@/models/Product";
+
+// the search text is typed by a person: escape it so "(" or "*" can not break the query
+function escapeRegex(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,9 +30,9 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { category: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
+        { name: { $regex: escapeRegex(search), $options: "i" } },
+        { category: { $regex: escapeRegex(search), $options: "i" } },
+        { description: { $regex: escapeRegex(search), $options: "i" } },
       ];
     }
 
@@ -51,6 +57,9 @@ export async function GET(request: NextRequest) {
   }
 }
 export async function PATCH(request: NextRequest) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
+  }
   try {
     await connectDB();
 
@@ -170,6 +179,9 @@ export async function PATCH(request: NextRequest) {
   }
 }
 export async function DELETE(request: NextRequest) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
+  }
   try {
     await connectDB();
 

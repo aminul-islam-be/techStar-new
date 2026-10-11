@@ -11,13 +11,13 @@ export const dynamic = "force-dynamic";
 const noAuth = () => NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
 
 export async function GET() {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("site-settings"))) return noAuth();
   return NextResponse.json({ success: true, site: await readSiteSettingsFromDb() });
 }
 
 /** Saves the settings and clears the site's cache, so the new name shows everywhere at once. */
 export async function PUT(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("site-settings"))) return noAuth();
 
   const body = await request.json();
   const checked = validateSiteInput(body);

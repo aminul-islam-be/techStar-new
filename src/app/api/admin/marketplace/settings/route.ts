@@ -11,7 +11,7 @@ const noAuth = () => NextResponse.json({ success: false, message: "Admin login r
 
 /** Settings + your platform earnings summary. */
 export async function GET() {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("marketplace"))) return noAuth();
   await connectDB();
 
   const [settings, totals, pendingVendors, pendingProducts, pendingPayouts] = await Promise.all([
@@ -52,7 +52,7 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("marketplace"))) return noAuth();
   await connectDB();
 
   const body = await request.json();

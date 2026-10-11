@@ -15,7 +15,7 @@ function noAuth() {
 
 /** GET: how many customers will receive an offer + the last offers sent. */
 export async function GET() {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("notifications"))) return noAuth();
 
   try {
     await connectDB();
@@ -58,7 +58,7 @@ export async function GET() {
 
 /** POST { title, message, link? }: sends an offer notification to every active customer. */
 export async function POST(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("notifications"))) return noAuth();
 
   try {
     await connectDB();

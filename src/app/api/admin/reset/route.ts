@@ -3,72 +3,67 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 
+// Temporary admin recovery route. Delete this file once admin login works.
 export async function POST(request: Request) {
+  // Check the setup key first, so nobody without it gets any information.
+  const setupKey = request.headers.get("x-admin-setup-key");
+  const requiredKey = process.env.ADMIN_SETUP_KEY;
+
+  if (!requiredKey || setupKey !== requiredKey) {
+    return NextResponse.json(
+      { success: false, message: "Unauthorized." },
+      { status: 401 }
+    );
+  }
+
   try {
-      await connectDB();
+    const body = await request.json();
+    const phone = String(body.phone || "").trim();
+    const password = String(body.password || "");
 
-          const setupKey = request.headers.get("x-admin-setup-key");
-              const requiredKey = process.env.ADMIN_SETUP_KEY;
+    if (!phone || password.length < 8) {
+      return NextResponse.json(
+        { success: false, message: "Valid phone and password are required." },
+        { status: 400 }
+      );
+    }
 
-                  if (!requiredKey || setupKey !== requiredKey) {
-                        return NextResponse.json(
-                                { success: false, message: "Unauthorized." },
-                                        { status: 401 }
-                                              );
-                                                  }
+    await connectDB();
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-                                                      const body = await request.json();
+    const existing = await User.findOne({ phone }).select("_id").lean();
 
-                                                          const phone = String(body.phone || "").trim();
-                                                              const password = String(body.password || "");
+    if (existing) {
+      // updateOne skips schema validation, so odd old data on the account cannot block the reset.
+      await User.updateOne(
+        { phone },
+        { $set: { password: hashedPassword, role: "admin", active: true } }
+      );
+    } else {
+      await User.create({
+        fullName: "TechStar Admin",
+        phone,
+        password: hashedPassword,
+        role: "admin",
+        active: true,
+      });
+    }
 
-                                                                  if (!phone || !password || password.length < 8) {
-                                                                        return NextResponse.json(
-                                                                                {
-                                                                                          success: false,
-                                                                                                    message: "Valid phone and password are required.",
-                                                                                                            },
-                                                                                                                    { status: 400 }
-                                                                                                                          );
-                                                                                                                              }
-
-                                                                                                                                  const hashedPassword = await bcrypt.hash(password, 12);
-
-                                                                                                                                      // First look for the phone number.
-                                                                                                                                          // If it already exists, make that account admin.
-                                                                                                                                              // If it doesn't exist, create a new admin account.
-                                                                                                                                                  let admin = await User.findOne({ phone });
-
-                                                                                                                                                      if (!admin) {
-                                                                                                                                                            admin = new User({
-                                                                                                                                                                    fullName: "TechStar Admin",
-                                                                                                                                                                            phone,
-                                                                                                                                                                                    password: hashedPassword,
-                                                                                                                                                                                            role: "admin",
-                                                                                                                                                                                                    active: true,
-                                                                                                                                                                                                          });
-                                                                                                                                                                                                              } else {
-                                                                                                                                                                                                                    admin.password = hashedPassword;
-                                                                                                                                                                                                                          admin.role = "admin";
-                                                                                                                                                                                                                                admin.active = true;
-                                                                                                                                                                                                                                    }
-
-                                                                                                                                                                                                                                        await admin.save();
-
-                                                                                                                                                                                                                                            return NextResponse.json({
-                                                                                                                                                                                                                                                  success: true,
-                                                                                                                                                                                                                                                        message: "Admin credentials updated successfully.",
-                                                                                                                                                                                                                                                              phone: admin.phone,
-                                                                                                                                                                                                                                                                  });
-                                                                                                                                                                                                                                                                    } catch (error) {
-                                                                                                                                                                                                                                                                        console.error("Admin reset error:", error);
-
-                                                                                                                                                                                                                                                                            return NextResponse.json(
-                                                                                                                                                                                                                                                                                  {
-                                                                                                                                                                                                                                                                                          success: false,
-                                                                                                                                                                                                                                                                                                  message: "Unable to update admin credentials.",
-                                                                                                                                                                                                                                                                                                        },
-                                                                                                                                                                                                                                                                                                              { status: 500 }
-                                                                                                                                                                                                                                                                                                                  );
-                                                                                                                                                                                                                                                                                                                    }
-                                                                                                                                                                                                                                                                                                                    }
+    return NextResponse.json({
+      success: true,
+      message: "Admin credentials updated successfully.",
+      phone,
+    });
+  } catch (error) {
+    const err = error as { name?: string; message?: string };
+    console.error("Admin reset error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Unable to update admin credentials.",
+        detail: (err?.name || "Error") + ": " + (err?.message || ""),
+      },
+      { status: 500 }
+    );
+  }
+}

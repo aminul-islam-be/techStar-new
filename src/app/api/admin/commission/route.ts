@@ -12,7 +12,7 @@ import { dhakaDate, round2 } from "@/lib/commissionMath";
 const noAuth = () => NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
 
 export async function GET(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("commission"))) return noAuth();
   await connectDB();
 
   const filter = new URL(request.url).searchParams.get("filter") || "owing";
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
  *   setGrace { days }                   0-10 days after the 1st before locking
  */
 export async function POST(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("commission"))) return noAuth();
   await connectDB();
 
   const body = await request.json();

@@ -5,7 +5,7 @@ import Vendor from "@/models/Vendor";
 import { getAdminSession } from "@/lib/adminAuth";
 
 export async function GET(request: NextRequest) {
-  if (!(await getAdminSession())) {
+  if (!(await getAdminSession("chats"))) {
     return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
   }
   await connectDB();

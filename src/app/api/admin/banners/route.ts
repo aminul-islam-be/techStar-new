@@ -1,8 +1,12 @@
+import { getAdminSession } from "@/lib/adminAuth";
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Banner from "@/models/Banner";
 
 export async function GET() {
+  if (!(await getAdminSession("banners"))) {
+    return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
+  }
   try {
     await connectDB();
 
@@ -28,6 +32,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await getAdminSession("banners"))) {
+    return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
+  }
   try {
     await connectDB();
 
@@ -89,6 +96,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  if (!(await getAdminSession("banners"))) {
+    return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
+  }
   try {
     await connectDB();
 
@@ -139,6 +149,9 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  if (!(await getAdminSession("banners"))) {
+    return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
+  }
   try {
     await connectDB();
 

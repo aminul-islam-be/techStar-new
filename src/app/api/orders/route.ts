@@ -4,21 +4,20 @@ import { redeemCoupon, releaseCouponCount, recordCouponUsage } from "@/lib/coupo
 import connectDB from "@/lib/mongodb";
 import Order from "@/models/Order";
 import { buildPricedOrder } from "@/lib/orderPricing";
+import { getSessionUserId } from "@/lib/userSession";
+import { reserveStock, giveBackStock, releaseStaleOnlineOrders, removeOrderItemsFromCart } from "@/lib/orderFlow";
 
-export async function GET(request: NextRequest) {
+const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+export async function GET() {
   try {
     await connectDB();
-
-    // Header থেকে ইউজার আইডি বের করা
-    const userId = request.headers.get("x-user-id");
-
+    // the logged-in customer, from the signed cookie (never from a header)
+    const userId = await getSessionUserId();
     if (!userId) {
       return NextResponse.json({ success: false, message: "Please login to view your orders." }, { status: 401 });
     }
-
-    // ইউজারের সব অর্ডার ডাটাবেজ থেকে খুঁজে বের করা (নতুন অর্ডার আগে দেখানোর জন্য createdAt: -1)
     const orders = await Order.find({ userId }).sort({ createdAt: -1 });
-
     return NextResponse.json({ success: true, orders });
   } catch (error) {
     console.error("GET orders error:", error);
@@ -29,83 +28,108 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
-    const userId = request.headers.get("x-user-id");
-    const body = await request.json();
+    const userId = await getSessionUserId();
+    const body = await request.json().catch(() => ({}));
 
-    const orderUserId = userId || body.userId;
-
-    if (!orderUserId) {
+    if (!userId) {
       return NextResponse.json({ success: false, message: "Unauthorized", redirectToLogin: true }, { status: 401 });
     }
 
-    // The server prices the order: product totals, courier charge for every
-    // parcel (80 / 120 by default) and the vendor commission snapshot.
-    const priced = await buildPricedOrder(Array.isArray(body.items) ? body.items : [], body.deliveryAddress);
+    const address = body.deliveryAddress || {};
+    const customerName = String(body.customerName || "").trim();
+    const customerPhone = String(body.customerPhone || "").trim();
+    const addressLine = String(address.address || "").trim();
+    const city = String(address.city || "").trim();
 
-    if (!priced.items.length) {
-      return NextResponse.json({ success: false, message: "Your cart has no valid items." }, { status: 400 });
+    if (!customerName || !customerPhone || !addressLine || !city) {
+      return NextResponse.json({ success: false, message: "Name, phone, address and city are required." }, { status: 400 });
     }
 
-    // ----- coupon: checked again here, the browser's discount is never trusted -----
+    const paymentMethod = body.paymentMethod === "cod" ? "cod" : "sslcommerz";
+
+    // 1) prices and stock checked on the server (the browser's prices are ignored)
+    const priced = await buildPricedOrder(Array.isArray(body.items) ? body.items : [], { city });
+    if (priced.ok === false) {
+      return NextResponse.json({ success: false, message: priced.message }, { status: 400 });
+    }
+
+    // 2) coupon: checked AND counted here, the browser's discount is never trusted
     const couponInput = String(body.couponCode || "").trim();
-    let appliedCoupon: { id: string; code: string; discount: number } | null = null;
-
+    let applied: { id: string; code: string; discount: number } | null = null;
     if (couponInput) {
-      const redeemed = await redeemCoupon(couponInput, String(orderUserId), priced.itemsTotal);
-
+      const redeemed = await redeemCoupon(couponInput, userId, priced.itemsTotal);
       if (redeemed.ok === false) {
-        return NextResponse.json(
-          { success: false, message: redeemed.message, couponError: true },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: redeemed.message, couponError: true }, { status: 400 });
       }
-
-      appliedCoupon = { id: redeemed.couponId, code: redeemed.code, discount: redeemed.discount };
+      applied = { id: redeemed.couponId, code: redeemed.code, discount: redeemed.discount };
     }
 
-    const finalTotal = Math.max(
-      0,
-      Math.round((priced.totalAmount - (appliedCoupon ? appliedCoupon.discount : 0)) * 100) / 100
-    );
+    // 3) unpaid online orders of this customer (and very old ones) give their stock back first
+    await releaseStaleOnlineOrders(userId);
 
+    // 4) stock: every line or nothing
+    const stockLines = priced.items.map((i) => ({ productId: i.productId, quantity: i.quantity }));
+    const reserved = await reserveStock(stockLines);
+    if (!reserved) {
+      if (applied) await releaseCouponCount(applied.id);
+      return NextResponse.json(
+        { success: false, message: "Some items just sold out. Please review your cart." },
+        { status: 409 }
+      );
+    }
+
+    // 5) save the order
     let newOrder;
     try {
       newOrder = await Order.create({
-      userId: orderUserId,
-      customerName: body.customerName,
-      customerPhone: body.customerPhone,
-      customerEmail: body.customerEmail,
-      items: priced.items,
-      totalAmount: finalTotal,
-      couponCode: appliedCoupon ? appliedCoupon.code : undefined,
-      discountAmount: appliedCoupon ? appliedCoupon.discount : 0,
-      itemsTotal: priced.itemsTotal,
-      courierTotal: priced.courierTotal,
-      shippingZone: priced.zone,
-      currency: body.currency,
-      paymentMethod: body.paymentMethod === "cod" ? "cod" : "sslcommerz",
-      deliveryAddress: body.deliveryAddress,
-      // Must match the lowercase values allowed by the Order schema.
-      status: "pending",
-      paymentStatus: "pending",
-    });
+        userId,
+        customerName,
+        customerPhone,
+        customerEmail: String(body.customerEmail || "").trim() || undefined,
+        items: priced.items,
+        totalAmount: Math.max(0, round2(priced.totalAmount - (applied ? applied.discount : 0))),
+        couponCode: applied ? applied.code : undefined,
+        discountAmount: applied ? applied.discount : 0,
+        itemsTotal: priced.itemsTotal,
+        courierTotal: priced.courierTotal,
+        shippingZone: priced.zone,
+        // always BDT: the gateway charges BDT, whatever currency the browser shows
+        currency: "BDT",
+        paymentMethod,
+        deliveryAddress: {
+          fullName: String(address.fullName || customerName).trim(),
+          phone: String(address.phone || customerPhone).trim(),
+          address: addressLine,
+          city,
+          area: String(address.area || "").trim(),
+        },
+        status: "pending",
+        paymentStatus: "pending",
+        stockReserved: true,
+      });
     } catch (createError) {
-      // the order did not save: give the coupon use back
-      if (appliedCoupon) await releaseCouponCount(appliedCoupon.id);
+      await giveBackStock(stockLines);
+      if (applied) await releaseCouponCount(applied.id);
       throw createError;
     }
 
-    if (appliedCoupon) {
+    if (applied) {
       await recordCouponUsage({
-        couponId: appliedCoupon.id,
-        code: appliedCoupon.code,
-        userId: String(orderUserId),
+        couponId: applied.id,
+        code: applied.code,
+        userId,
         orderId: newOrder._id,
-        discount: appliedCoupon.discount,
+        discount: applied.discount,
       });
     }
 
-    await notifyOrderPlaced(newOrder._id, orderUserId);
+    // Cash on delivery is final now, so the bought items leave the cart.
+    // Online payment removes them only after the payment is confirmed.
+    if (paymentMethod === "cod") {
+      await removeOrderItemsFromCart(userId, priced.items);
+    }
+
+    await notifyOrderPlaced(newOrder._id, userId);
 
     return NextResponse.json({
       success: true,

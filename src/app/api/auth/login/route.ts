@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import bcrypt from "bcryptjs";
 import { attachUserCookie } from "@/lib/userSession";
 
 export async function POST(request: NextRequest) {
@@ -28,11 +29,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.password !== password) {
+    // passwords are bcrypt hashes. Accounts made before this change still hold plain text:
+    // they are accepted once and upgraded to a hash right away.
+    const stored = String(user.password || "");
+    const isHash = stored.startsWith("$2");
+    const passwordOk = isHash ? await bcrypt.compare(password, stored) : stored === password;
+    if (!passwordOk) {
       return NextResponse.json(
         { success: false, message: "Invalid phone number or password." },
         { status: 401 }
       );
+    }
+    if (!isHash) {
+      await User.updateOne({ _id: user._id }, { $set: { password: await bcrypt.hash(password, 10) } });
     }
 
     if (!user.active) {

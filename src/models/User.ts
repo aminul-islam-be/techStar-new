@@ -18,7 +18,8 @@ export interface IUser {
   office?: string;
   study?: string;
   historyRetentionDays?: number;
-  role: "customer" | "admin";
+  role: "customer" | "moderator" | "admin";
+  permissions?: string[];
   active: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -114,9 +115,13 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ["customer", "admin"],
+      enum: ["customer", "moderator", "admin"],
       default: "customer",
       index: true,
+    },
+    permissions: {
+      type: [String],
+      default: [],
     },
     active: {
       type: Boolean,

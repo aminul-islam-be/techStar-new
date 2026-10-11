@@ -1,18 +1,19 @@
+import { getSessionUserId } from "@/lib/userSession";
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import Wishlist from "@/models/Wishlist";
 import Product from "@/models/Product";
 
-function getUserId(request: NextRequest) {
-  return request.headers.get("x-user-id")?.trim() || "";
+async function getUserId() {
+  return getSessionUserId();
 }
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const userId = getUserId(request);
+    const userId = await getUserId();
 
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return NextResponse.json(
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
-    const userId = getUserId(request);
+    const userId = await getUserId();
 
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return NextResponse.json(
@@ -125,7 +126,7 @@ export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
 
-    const userId = getUserId(request);
+    const userId = await getUserId();
 
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return NextResponse.json(

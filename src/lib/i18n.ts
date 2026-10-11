@@ -282,7 +282,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "addresses.title": "Saved Addresses",
     "addresses.subtitle": "Save your delivery addresses here for faster checkout.",
     "addresses.noSaved": "No saved addresses",
-    "addresses.hint": "Addresses entered during checkout can be saved here (coming soon).",
+    "addresses.hint": "Addresses you enter at checkout are saved here. You can choose a default, edit or delete them.",
     "addresses.goToProfile": "Go to Profile",
 
     "support.title": "Support",
@@ -605,7 +605,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "addresses.title": "সংরক্ষিত ঠিকানা",
     "addresses.subtitle": "দ্রুত চেকআউটের জন্য আপনার ডেলিভারি ঠিকানাগুলো এখানে সেভ রাখুন।",
     "addresses.noSaved": "কোনো সেভ করা ঠিকানা নেই",
-    "addresses.hint": "চেকআউটের সময় দেওয়া ঠিকানা এখানে সেভ করে রাখা যাবে (শীঘ্রই আসছে)।",
+    "addresses.hint": "চেকআউটের সময় দেওয়া ঠিকানা এখানে সংরক্ষিত থাকে। ডিফল্ট ঠিকানা বাছাই, সম্পাদনা বা মুছতে পারবেন।",
     "addresses.goToProfile": "প্রোফাইলে যান",
 
     "support.title": "সাহায্য ও সাপোর্ট",

@@ -1,3 +1,4 @@
+import { getAdminSession } from "@/lib/adminAuth";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import ProductDetail from "@/models/ProductDetail";
@@ -46,6 +47,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await getAdminSession())) {
+    return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
+  }
   try {
     const body = await request.json();
 

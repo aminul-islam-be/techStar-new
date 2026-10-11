@@ -1,8 +1,12 @@
+import { getAdminSession } from "@/lib/adminAuth";
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 
 export async function GET(request: NextRequest) {
+  if (!(await getAdminSession("users"))) {
+    return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
+  }
   try {
     await connectDB();
 
@@ -46,6 +50,9 @@ export async function GET(request: NextRequest) {
   }
 }
 export async function PATCH(request: NextRequest) {
+  if (!(await getAdminSession("users"))) {
+    return NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
+  }
   try {
     await connectDB();
 

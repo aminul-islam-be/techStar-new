@@ -1,3 +1,4 @@
+import { getSessionUserId } from "@/lib/userSession";
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     await connectDB();
     const { id } = await params;
-    const userId = request.headers.get("x-user-id")?.trim() || "";
+    const userId = await getSessionUserId();
 
     if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(userId)) {
       return NextResponse.json({ success: false, message: "Please login again." }, { status: 401 });

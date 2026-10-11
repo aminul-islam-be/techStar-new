@@ -1,3 +1,4 @@
+import { getSessionUserId } from "@/lib/userSession";
 import mongoose from "mongoose";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
@@ -9,7 +10,7 @@ import User from "@/models/User";
  * only this function has to change.
  */
 export async function getChatCustomer(request: Request) {
-  const id = request.headers.get("x-user-id") || "";
+  const id = await getSessionUserId();
   if (!mongoose.Types.ObjectId.isValid(id)) return null;
 
   await connectDB();

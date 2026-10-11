@@ -118,6 +118,13 @@ export default async function AdminDashboard() {
             </p>
           </Link>
 
+          <Link href="/admin/team" style={cardStyle}>
+            <h2>👥 Team &amp; permissions</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Make admins or moderators
+            </p>
+          </Link>
+
           <Link href="/admin/site-settings" style={cardStyle}>
             <h2>🌐 Website settings</h2>
             <p style={{ color: "#94a3b8" }}>

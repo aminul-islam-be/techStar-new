@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
-import Order from "@/models/Order";
+import { getBaseUrl } from "@/lib/sslcommerz";
+import { cancelUnpaidOrderByTran } from "@/lib/orderFlow";
 
+/** The gateway reports a failed payment: the UNPAID order is cancelled and its stock is given back. */
 export async function POST(request: NextRequest) {
+  const baseUrl = getBaseUrl(request);
   try {
     await connectDB();
-    const formData = await request.formData();
-    const tran_id = formData.get("tran_id");
-
-    if (tran_id) {
-      await Order.findByIdAndUpdate(tran_id, { 
-        paymentStatus: "failed", 
-        status: "cancelled" 
-      });
-    }
-    
-    // পেমেন্ট ফেইল হলে অর্ডার পেজেই ফেইল মেসেজ দেখাবে
-    const baseUrl = new URL(request.url).origin;
-    return NextResponse.redirect(`${baseUrl}/orders?payment=failed`, 303);
+    const form = await request.formData();
+    const tranId = String(form.get("tran_id") || "");
+    if (tranId) await cancelUnpaidOrderByTran(tranId, "Payment failed");
   } catch (error) {
-    return NextResponse.redirect(new URL("/orders", request.url).toString(), 303);
+    console.error("Payment fail error:", error);
   }
+  // the cart is still saved, so the customer can try again right away
+  return NextResponse.redirect(`${baseUrl}/checkout?payment=failed`, 303);
 }

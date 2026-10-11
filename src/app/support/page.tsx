@@ -3,6 +3,7 @@
 import { useSite } from "@/lib/siteContext";
 import Link from "next/link";
 import { useLanguage } from "@/lib/language";
+import SupportFaq from "@/components/SupportFaq";
 
 export default function SupportPage() {
   const { t } = useLanguage();
@@ -54,13 +55,9 @@ export default function SupportPage() {
         )}
         </div>
 
-        <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-          <h2 className="text-sm font-bold text-white">
-            {t("support.faqTitle")}
-          </h2>
-          <p className="mt-2 text-sm text-slate-400">
-            {t("support.faqHint")}
-          </p>
+        <div className="mt-8">
+          <h2 className="mb-3 text-sm font-bold text-white">{t("support.faqTitle")}</h2>
+          <SupportFaq />
         </div>
       </div>
     </main>

@@ -10,7 +10,7 @@ import { reverseAnyOrder } from "@/lib/commissionBilling";
 const noAuth = () => NextResponse.json({ success: false, message: "Admin login required." }, { status: 401 });
 
 export async function GET(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("requests"))) return noAuth();
   await connectDB();
 
   const status = new URL(request.url).searchParams.get("status") || "open";
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
  * vendor's commission / wallet credit.
  */
 export async function PATCH(request: NextRequest) {
-  if (!(await getAdminSession())) return noAuth();
+  if (!(await getAdminSession("requests"))) return noAuth();
   await connectDB();
 
   const { id, action, note, refundRef } = await request.json();
