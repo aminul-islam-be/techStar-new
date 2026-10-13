@@ -2,35 +2,88 @@
 
 import { useEffect, useState } from "react";
 
-export type SortOrder = "" | "low" | "high";
+export type SortOrder = "" | "low" | "high" | "popular";
+
+export type ListingFilters = {
+  sort: SortOrder;
+  category: string;
+  minPrice: string;
+  maxPrice: string;
+  minRating: number;
+  inStockOnly: boolean;
+};
 
 type FilterSortModalProps = {
   open: boolean;
   onClose: () => void;
   categories: string[];
-  sortOrder: SortOrder;
-  selectedCategory: string;
-  onApply: (sortOrder: SortOrder, category: string) => void;
+  value: ListingFilters;
+  onApply: (next: ListingFilters) => void;
 };
+
+const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: "", label: "Newest" },
+  { value: "low", label: "Price: Low to High" },
+  { value: "high", label: "Price: High to Low" },
+  { value: "popular", label: "Most Popular" },
+];
+
+const RATING_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: "Any" },
+  { value: 2, label: "2★ & up" },
+  { value: 3, label: "3★ & up" },
+  { value: 4, label: "4★ & up" },
+];
+
+const DEFAULT_FILTERS: ListingFilters = {
+  sort: "",
+  category: "all",
+  minPrice: "",
+  maxPrice: "",
+  minRating: 0,
+  inStockOnly: false,
+};
+
+const chipClass = (active: boolean) =>
+  `rounded-xl border px-4 py-3 text-sm font-bold transition ${
+    active
+      ? "border-blue-500/40 bg-blue-500/15 text-blue-300"
+      : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"
+  }`;
+
+const pillClass = (active: boolean) =>
+  `rounded-full border px-4 py-2 text-xs font-bold transition ${
+    active
+      ? "border-blue-500/50 bg-blue-500/15 text-blue-300"
+      : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"
+  }`;
+
+const inputClass =
+  "w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-blue-500/50";
+
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <div className="mb-2 text-[11px] font-bold tracking-[0.15em] text-slate-500">
+      {children}
+    </div>
+  );
+}
 
 export default function FilterSortModal({
   open,
   onClose,
   categories,
-  sortOrder,
-  selectedCategory,
+  value,
   onApply,
 }: FilterSortModalProps) {
-  const [draftSort, setDraftSort] = useState<SortOrder>(sortOrder);
-  const [draftCategory, setDraftCategory] =
-    useState(selectedCategory);
+  const [draft, setDraft] = useState<ListingFilters>(value);
+  const [wasOpen, setWasOpen] = useState(open);
 
-  useEffect(() => {
-    if (open) {
-      setDraftSort(sortOrder);
-      setDraftCategory(selectedCategory);
-    }
-  }, [open, sortOrder, selectedCategory]);
+  // Each time the sheet opens, start the draft from the applied filters.
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setDraft(value);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -42,14 +95,16 @@ export default function FilterSortModal({
     };
   }, [open]);
 
-  function handleApply() {
-    onApply(draftSort, draftCategory);
-    onClose();
+  function update<K extends keyof ListingFilters>(
+    key: K,
+    nextValue: ListingFilters[K]
+  ) {
+    setDraft((current) => ({ ...current, [key]: nextValue }) as ListingFilters);
   }
 
-  function handleReset() {
-    setDraftSort("");
-    setDraftCategory("all");
+  function handleApply() {
+    onApply(draft);
+    onClose();
   }
 
   return (
@@ -75,12 +130,10 @@ export default function FilterSortModal({
         aria-label="Filter and sort products"
       >
         <div className="mx-auto flex max-h-[85vh] w-full max-w-2xl flex-col">
-          {/* Handle */}
           <div className="flex justify-center pt-3">
             <div className="h-1.5 w-10 rounded-full bg-white/15" />
           </div>
 
-          {/* Header */}
           <div className="flex items-center justify-between px-5 pb-4 pt-3">
             <h2 className="text-lg font-extrabold text-white">
               Filter & Sort Products
@@ -96,56 +149,69 @@ export default function FilterSortModal({
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 pb-5">
-            {/* Sort by price */}
-            <div className="mb-2 text-[11px] font-bold tracking-[0.15em] text-slate-500">
-              SORT BY PRICE
-            </div>
-
+            <SectionLabel>SORT BY</SectionLabel>
             <div className="mb-6 grid grid-cols-2 gap-3">
-              <button
-                onClick={() =>
-                  setDraftSort((current) =>
-                    current === "low" ? "" : "low"
-                  )
-                }
-                className={`rounded-xl border px-4 py-3 text-sm font-bold transition ${
-                  draftSort === "low"
-                    ? "border-blue-500/40 bg-blue-500/15 text-blue-300"
-                    : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"
-                }`}
-              >
-                Low to High
-              </button>
+              {SORT_OPTIONS.map((option) => (
+                <button
+                  key={option.label}
+                  onClick={() => update("sort", option.value)}
+                  className={chipClass(draft.sort === option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
 
+            <SectionLabel>PRICE RANGE</SectionLabel>
+            <div className="mb-6 grid grid-cols-2 gap-3">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                placeholder="Min price"
+                value={draft.minPrice}
+                onChange={(event) => update("minPrice", event.target.value)}
+                className={inputClass}
+              />
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                placeholder="Max price"
+                value={draft.maxPrice}
+                onChange={(event) => update("maxPrice", event.target.value)}
+                className={inputClass}
+              />
+            </div>
+
+            <SectionLabel>MINIMUM RATING</SectionLabel>
+            <div className="mb-6 flex flex-wrap gap-2">
+              {RATING_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => update("minRating", option.value)}
+                  className={pillClass(draft.minRating === option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <SectionLabel>AVAILABILITY</SectionLabel>
+            <div className="mb-6">
               <button
-                onClick={() =>
-                  setDraftSort((current) =>
-                    current === "high" ? "" : "high"
-                  )
-                }
-                className={`rounded-xl border px-4 py-3 text-sm font-bold transition ${
-                  draftSort === "high"
-                    ? "border-blue-500/40 bg-blue-500/15 text-blue-300"
-                    : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"
-                }`}
+                onClick={() => update("inStockOnly", !draft.inStockOnly)}
+                className={chipClass(draft.inStockOnly)}
               >
-                High to Low
+                In stock only
               </button>
             </div>
 
-            {/* Categories */}
-            <div className="mb-2 text-[11px] font-bold tracking-[0.15em] text-slate-500">
-              CATEGORIES
-            </div>
-
+            <SectionLabel>CATEGORIES</SectionLabel>
             <div className="mb-2 flex flex-wrap gap-2">
               <button
-                onClick={() => setDraftCategory("all")}
-                className={`rounded-full border px-4 py-2 text-xs font-bold transition ${
-                  draftCategory === "all"
-                    ? "border-blue-500/50 bg-blue-500/15 text-blue-300"
-                    : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"
-                }`}
+                onClick={() => update("category", "all")}
+                className={pillClass(draft.category === "all")}
               >
                 All
               </button>
@@ -153,12 +219,8 @@ export default function FilterSortModal({
               {categories.map((category) => (
                 <button
                   key={category}
-                  onClick={() => setDraftCategory(category)}
-                  className={`rounded-full border px-4 py-2 text-xs font-bold transition ${
-                    draftCategory === category
-                      ? "border-blue-500/50 bg-blue-500/15 text-blue-300"
-                      : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"
-                  }`}
+                  onClick={() => update("category", category)}
+                  className={pillClass(draft.category === category)}
                 >
                   {category}
                 </button>
@@ -166,10 +228,9 @@ export default function FilterSortModal({
             </div>
           </div>
 
-          {/* Footer */}
           <div className="flex gap-3 border-t border-white/10 px-5 py-4">
             <button
-              onClick={handleReset}
+              onClick={() => setDraft(DEFAULT_FILTERS)}
               className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold text-slate-300 transition hover:bg-white/[0.08]"
             >
               Reset

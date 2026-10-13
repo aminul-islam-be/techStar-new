@@ -8,6 +8,7 @@ import { useCurrency } from "@/lib/useCurrency";
 import { ORDER_STEPS, REQUEST_REASONS, REQUEST_TYPES, RETURN_WINDOW_DAYS } from "@/lib/orderRules";
 import { COURIER_NOTE } from "@/lib/refundPolicy";
 import { OrderModals, useOrderActions } from "@/components/OrderActions";
+import OrderDeliveryPanel, { type DeliveryShipment } from "@/components/OrderDeliveryPanel";
 
 type Item = {
   productId: string;
@@ -46,6 +47,9 @@ type Details = {
     cancelReason?: string;
     cancelledBy?: string;
     shippingZone?: string;
+    estimatedDeliveryDate?: string;
+    deliveryInstructions?: string;
+    shipments?: DeliveryShipment[];
     customerName?: string;
     customerPhone?: string;
     deliveryAddress?: { fullName?: string; phone?: string; address?: string; area?: string; city?: string };
@@ -205,6 +209,8 @@ export default function OrderDetailsPage() {
             </div>
           </div>
         )}
+
+        <OrderDeliveryPanel order={order} showInstructions />
 
         {/* items */}
         <div className="rounded-2xl border border-white/10 bg-slate-900 p-4">

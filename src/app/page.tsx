@@ -18,6 +18,8 @@ import SeasonBackgroundVideo from "@/components/SeasonBackgroundVideo";
 import { useLanguage } from "@/lib/language";
 import { useSeasonTheme } from "@/lib/theme";
 
+const PRODUCTS_PER_PAGE = 12;
+
 type Product = {
   _id: string;
   name: string;
@@ -31,6 +33,8 @@ type Product = {
   stock: number;
   featured?: boolean;
   active?: boolean;
+  ratingAverage?: number;
+  reviewCount?: number;
 };
 
 type Banner = {
@@ -105,6 +109,11 @@ export default function Home() {
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [minRating, setMinRating] = useState(0);
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(
     new Set()
   );
@@ -445,17 +454,82 @@ export default function Home() {
       );
     }
 
+    const min = Number(minPrice);
+    const max = Number(maxPrice);
+    if (minPrice !== "" && Number.isFinite(min)) {
+      list = list.filter((product) => product.price >= min);
+    }
+    if (maxPrice !== "" && Number.isFinite(max)) {
+      list = list.filter((product) => product.price <= max);
+    }
+    if (minRating > 0) {
+      list = list.filter(
+        (product) => (product.ratingAverage || 0) >= minRating
+      );
+    }
+    if (inStockOnly) {
+      list = list.filter((product) => product.stock > 0);
+    }
+
     if (sortOrder === "low") {
       list.sort((a, b) => a.price - b.price);
     } else if (sortOrder === "high") {
       list.sort((a, b) => b.price - a.price);
+    } else if (sortOrder === "popular") {
+      list.sort(
+        (a, b) =>
+          (b.reviewCount || 0) - (a.reviewCount || 0) ||
+          (b.ratingAverage || 0) - (a.ratingAverage || 0)
+      );
     }
 
     return list;
-  }, [products, categoryFilter, sortOrder]);
+  }, [
+    products,
+    categoryFilter,
+    sortOrder,
+    minPrice,
+    maxPrice,
+    minRating,
+    inStockOnly,
+  ]);
+
+  const displayedProducts = useMemo(
+    () => visibleProducts.slice(0, visibleCount),
+    [visibleProducts, visibleCount]
+  );
+
+  // Go back to the first page whenever the listing changes.
+  const listingKey = [
+    sortOrder,
+    categoryFilter,
+    minPrice,
+    maxPrice,
+    minRating,
+    inStockOnly,
+    products.length,
+  ].join("|");
+  const [pagedListingKey, setPagedListingKey] = useState(listingKey);
+  if (pagedListingKey !== listingKey) {
+    setPagedListingKey(listingKey);
+    setVisibleCount(PRODUCTS_PER_PAGE);
+  }
 
   const activeFilterCount =
-    (sortOrder ? 1 : 0) + (categoryFilter !== "all" ? 1 : 0);
+    (sortOrder ? 1 : 0) +
+    (categoryFilter !== "all" ? 1 : 0) +
+    (minPrice !== "" || maxPrice !== "" ? 1 : 0) +
+    (minRating > 0 ? 1 : 0) +
+    (inStockOnly ? 1 : 0);
+
+  function resetListingFilters() {
+    setSortOrder("");
+    setCategoryFilter("all");
+    setMinPrice("");
+    setMaxPrice("");
+    setMinRating(0);
+    setInStockOnly(false);
+  }
 
   async function buyNow(product: Product) {
     const userId = getCustomerUserId();
@@ -609,11 +683,21 @@ export default function Home() {
         open={filterModalOpen}
         onClose={() => setFilterModalOpen(false)}
         categories={productCategories}
-        sortOrder={sortOrder}
-        selectedCategory={categoryFilter}
-        onApply={(nextSort, nextCategory) => {
-          setSortOrder(nextSort);
-          setCategoryFilter(nextCategory);
+        value={{
+          sort: sortOrder,
+          category: categoryFilter,
+          minPrice,
+          maxPrice,
+          minRating,
+          inStockOnly,
+        }}
+        onApply={(next) => {
+          setSortOrder(next.sort);
+          setCategoryFilter(next.category);
+          setMinPrice(next.minPrice);
+          setMaxPrice(next.maxPrice);
+          setMinRating(next.minRating);
+          setInStockOnly(next.inStockOnly);
         }}
       />
       <section className="relative isolate overflow-hidden">
@@ -976,11 +1060,44 @@ export default function Home() {
                 {t("home.showAllProducts")}
               </button>
             )}
+            {products.length > 0 && (
+              <div className="mt-8 flex flex-col items-center gap-4">
+                <button
+                  onClick={resetListingFilters}
+                  className="rounded-xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-bold text-white hover:bg-white/[0.08]"
+                >
+                  Clear all filters
+                </button>
+                <p className="text-xs font-semibold text-slate-500">
+                  Try these instead
+                </p>
+                <div className="grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+                  {(featuredProducts.length > 0 ? featuredProducts : products)
+                    .slice(0, 4)
+                    .map((alternative) => (
+                      <button
+                        key={alternative._id}
+                        onClick={() =>
+                          router.push(`/products/${alternative.slug}`)
+                        }
+                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-left transition hover:bg-white/[0.06]"
+                      >
+                        <div className="line-clamp-2 text-sm font-bold text-white">
+                          {alternative.name}
+                        </div>
+                        <div className="mt-1 text-xs font-semibold text-slate-400">
+                          {format(alternative.price)}
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="overflow-hidden rounded-3xl bg-white">
             <div className="grid grid-cols-2 divide-x divide-y divide-slate-200 sm:grid-cols-3 lg:grid-cols-4">
-              {visibleProducts.map((product) => (
+              {displayedProducts.map((product) => (
                 <article
                   key={product._id}
                   onClick={() =>
@@ -1049,6 +1166,18 @@ export default function Home() {
                 </article>
               ))}
             </div>
+            {visibleProducts.length > displayedProducts.length && (
+              <div className="flex justify-center border-t border-slate-200 p-5">
+                <button
+                  onClick={() =>
+                    setVisibleCount((count) => count + PRODUCTS_PER_PAGE)
+                  }
+                  className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-700"
+                >
+                  Load more ({visibleProducts.length - displayedProducts.length} remaining)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>

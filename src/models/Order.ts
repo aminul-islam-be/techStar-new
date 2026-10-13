@@ -15,6 +15,23 @@ export interface IOrderItem {
   courierCharge?: number;
 }
 
+export interface IShipmentItem {
+  productId: mongoose.Types.ObjectId;
+  name: string;
+  quantity: number;
+}
+
+export interface IShipment {
+  _id?: mongoose.Types.ObjectId;
+  items: IShipmentItem[];
+  courierName?: string;
+  trackingNumber?: string;
+  status: "preparing" | "shipped" | "delivered";
+  shippedAt?: Date;
+  deliveredAt?: Date;
+  createdAt?: Date;
+}
+
 export interface IOrder extends Document {
   userId: mongoose.Types.ObjectId;
   customerName: string;
@@ -58,6 +75,9 @@ export interface IOrder extends Document {
   stockReleasedAt?: Date;
   returnedAt?: Date;
   deliveredAt?: Date;
+  deliveryInstructions?: string;
+  estimatedDeliveryDate?: Date;
+  shipments?: IShipment[];
 
   vendorSettledAt?: Date;
   vendorReversedAt?: Date;
@@ -109,6 +129,28 @@ const OrderItemSchema = new Schema<IOrderItem>(
     courierCharge: { type: Number, min: 0 },
   },
   { _id: false }
+);
+
+const ShipmentItemSchema = new Schema<IShipmentItem>(
+  {
+    productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+    name: { type: String, required: true, trim: true },
+    quantity: { type: Number, required: true, min: 1 },
+  },
+  { _id: false }
+);
+
+const ShipmentSchema = new Schema<IShipment>(
+  {
+    items: { type: [ShipmentItemSchema], required: true },
+    courierName: { type: String, trim: true, maxlength: 60 },
+    trackingNumber: { type: String, trim: true, maxlength: 60 },
+    status: { type: String, enum: ["preparing", "shipped", "delivered"], default: "preparing" },
+    shippedAt: { type: Date },
+    deliveredAt: { type: Date },
+    createdAt: { type: Date, default: () => new Date() },
+  },
+  { _id: true }
 );
 
 const OrderSchema = new Schema<IOrder>(
@@ -229,6 +271,10 @@ const OrderSchema = new Schema<IOrder>(
     deliveredAt: {
       type: Date,
     },
+
+    deliveryInstructions: { type: String, trim: true, maxlength: 300 },
+    estimatedDeliveryDate: { type: Date },
+    shipments: { type: [ShipmentSchema], default: [] },
 
     vendorSettledAt: {
       type: Date,

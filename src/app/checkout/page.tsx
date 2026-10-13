@@ -49,6 +49,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"sslcommerz" | "cod">("sslcommerz");
+  const [deliveryNote, setDeliveryNote] = useState("");
   const [rates, setRates] = useState({ insideDhaka: 80, outsideDhaka: 120 });
 
   // ----- saved addresses (Home / Office / ...) -----
@@ -248,6 +249,7 @@ export default function CheckoutPage() {
             city: form.city.trim(),
             area: form.area.trim(),
           },
+          deliveryInstructions: deliveryNote.trim(),
           paymentMethod: paymentMethod,
         }),
       });
@@ -556,6 +558,18 @@ export default function CheckoutPage() {
             </div>
 
             <p className="mt-3 rounded-lg bg-white/[0.04] p-2.5 text-[11px] leading-relaxed text-slate-400">ⓘ {COURIER_NOTE}</p>
+
+            <div className="mt-6 space-y-2">
+              <p className="text-sm font-semibold text-white">Delivery instructions (optional)</p>
+              <textarea
+                value={deliveryNote}
+                onChange={(e) => setDeliveryNote(e.target.value)}
+                rows={2}
+                maxLength={300}
+                placeholder="e.g. call before coming, gate code, nearby landmark"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-white placeholder:text-slate-500"
+              />
+            </div>
 
             <div className="mt-6 space-y-2">
               <p className="text-sm font-semibold text-white">Payment method</p>

@@ -5,9 +5,10 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCurrency } from "@/lib/useCurrency";
+import OrderDeliveryPanel, { type DeliveryShipment } from "@/components/OrderDeliveryPanel";
 
-type OrderItem = { name: string; price: number; quantity: number; image?: string; };
-type OrderDetails = { _id: string; customerName: string; customerPhone: string; totalAmount: number; status: string; paymentStatus: string; items: OrderItem[]; createdAt: string; };
+type OrderItem = { productId?: string; name: string; price: number; quantity: number; image?: string; };
+type OrderDetails = { _id: string; customerName: string; customerPhone: string; totalAmount: number; status: string; paymentStatus: string; estimatedDeliveryDate?: string; shipments?: DeliveryShipment[]; items: OrderItem[]; createdAt: string; };
 
 function TrackContent() {
   const { format } = useCurrency();
@@ -103,6 +104,7 @@ function TrackContent() {
                 </div>
               </div>
             </div>
+            <OrderDeliveryPanel order={order} />
             <div className="border-t border-white/[0.05] pt-8">
               <h4 className="mb-6 text-sm font-bold text-slate-300">Ordered Items</h4>
               <div className="space-y-3">

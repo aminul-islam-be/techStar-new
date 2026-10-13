@@ -44,7 +44,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         cancelledAt: order.cancelledAt,
         totalAmount: order.totalAmount,
         currency: order.currency,
-        items: order.items.map((i) => ({ name: i.name, quantity: i.quantity, price: i.price, image: i.image })),
+        items: order.items.map((i) => ({ productId: String(i.productId), name: i.name, quantity: i.quantity, price: i.price, image: i.image })),
+        estimatedDeliveryDate: order.estimatedDeliveryDate,
+        shipments: (order.shipments || []).map((s) => ({
+          status: s.status,
+          courierName: s.courierName,
+          trackingNumber: s.trackingNumber,
+          shippedAt: s.shippedAt,
+          deliveredAt: s.deliveredAt,
+          items: s.items.map((it) => ({ productId: String(it.productId), name: it.name, quantity: it.quantity })),
+        })),
       },
     });
   } catch (error) {

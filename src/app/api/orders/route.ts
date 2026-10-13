@@ -6,6 +6,7 @@ import Order from "@/models/Order";
 import { buildPricedOrder } from "@/lib/orderPricing";
 import { getSessionUserId } from "@/lib/userSession";
 import { reserveStock, giveBackStock, releaseStaleOnlineOrders, removeOrderItemsFromCart } from "@/lib/orderFlow";
+import { estimateDelivery } from "@/lib/shipments";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -103,6 +104,8 @@ export async function POST(request: NextRequest) {
           city,
           area: String(address.area || "").trim(),
         },
+        deliveryInstructions: String(body.deliveryInstructions || "").trim().slice(0, 300) || undefined,
+        estimatedDeliveryDate: estimateDelivery(priced.zone),
         status: "pending",
         paymentStatus: "pending",
         stockReserved: true,
