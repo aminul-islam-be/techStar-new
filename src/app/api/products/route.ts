@@ -3,18 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { notifyBackInStock } from "@/lib/notify";
 import connectDB from "@/lib/mongodb";
 import Product from "@/models/Product";
-
-// the search text is typed by a person: escape it so "(" or "*" can not break the query
-function escapeRegex(text: string) {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
+import { cleanBrand, cleanSku, skuTaken } from "@/lib/productFields";
+import { cleanSearchQuery, searchClauses } from "@/lib/searchTerms";
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search")?.trim() || "";
+    const search = cleanSearchQuery(searchParams.get("search"));
     const category = searchParams.get("category")?.trim() || "";
 
     const filter: Record<string, unknown> = {
@@ -29,11 +26,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      filter.$or = [
-        { name: { $regex: escapeRegex(search), $options: "i" } },
-        { category: { $regex: escapeRegex(search), $options: "i" } },
-        { description: { $regex: escapeRegex(search), $options: "i" } },
-      ];
+      // "tshirt", "t shirt", "jota" and "জুতা" find the same products (see lib/searchTerms.ts)
+      filter.$and = searchClauses(search);
     }
 
     const products = await Product.find(filter)
@@ -89,6 +83,8 @@ export async function PATCH(request: NextRequest) {
       "stock",
       "featured",
       "active",
+      "brand",
+      "sku",
     ];
 
     const cleanUpdates: Record<string, unknown> = {};
@@ -113,6 +109,21 @@ export async function PATCH(request: NextRequest) {
       }
 
       cleanUpdates.stock = stock;
+    }
+
+    if ("brand" in cleanUpdates) {
+      cleanUpdates.brand = cleanBrand(cleanUpdates.brand);
+    }
+
+    if ("sku" in cleanUpdates) {
+      const sku = cleanSku(cleanUpdates.sku);
+      if (sku.error) {
+        return NextResponse.json({ success: false, message: sku.error }, { status: 400 });
+      }
+      if (await skuTaken(sku.sku, id)) {
+        return NextResponse.json({ success: false, message: "This SKU is already used by another product." }, { status: 409 });
+      }
+      cleanUpdates.sku = sku.sku;
     }
 
     if ("compareAtPrice" in cleanUpdates) {

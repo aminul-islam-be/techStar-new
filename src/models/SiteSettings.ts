@@ -16,6 +16,10 @@ const SiteSettingsSchema = new Schema<ISiteSettings>(
     supportPhone: { type: String, default: DEFAULT_SITE.supportPhone, trim: true },
     address: { type: String, default: DEFAULT_SITE.address, trim: true },
     facebookUrl: { type: String, default: DEFAULT_SITE.facebookUrl, trim: true },
+    paymentBkash: { type: String, default: DEFAULT_SITE.paymentBkash, trim: true },
+    paymentNagad: { type: String, default: DEFAULT_SITE.paymentNagad, trim: true },
+    paymentRocket: { type: String, default: DEFAULT_SITE.paymentRocket, trim: true },
+    paymentNote: { type: String, default: DEFAULT_SITE.paymentNote, trim: true, maxlength: 300 },
   },
   { timestamps: true }
 );

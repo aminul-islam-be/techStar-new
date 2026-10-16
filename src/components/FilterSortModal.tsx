@@ -11,12 +11,14 @@ export type ListingFilters = {
   maxPrice: string;
   minRating: number;
   inStockOnly: boolean;
+  brand: string;
 };
 
 type FilterSortModalProps = {
   open: boolean;
   onClose: () => void;
   categories: string[];
+  brands: string[];
   value: ListingFilters;
   onApply: (next: ListingFilters) => void;
 };
@@ -42,6 +44,7 @@ const DEFAULT_FILTERS: ListingFilters = {
   maxPrice: "",
   minRating: 0,
   inStockOnly: false,
+  brand: "all",
 };
 
 const chipClass = (active: boolean) =>
@@ -73,6 +76,7 @@ export default function FilterSortModal({
   open,
   onClose,
   categories,
+  brands,
   value,
   onApply,
 }: FilterSortModalProps) {
@@ -206,6 +210,30 @@ export default function FilterSortModal({
                 In stock only
               </button>
             </div>
+
+            {brands.length > 0 && (
+              <>
+                <SectionLabel>BRAND</SectionLabel>
+                <div className="mb-6 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => update("brand", "all")}
+                    className={pillClass(draft.brand === "all")}
+                  >
+                    All brands
+                  </button>
+
+                  {brands.map((brand) => (
+                    <button
+                      key={brand}
+                      onClick={() => update("brand", brand)}
+                      className={pillClass(draft.brand === brand)}
+                    >
+                      {brand}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             <SectionLabel>CATEGORIES</SectionLabel>
             <div className="mb-2 flex flex-wrap gap-2">

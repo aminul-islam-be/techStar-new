@@ -3,6 +3,7 @@
 import { useSite } from "@/lib/siteContext";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { manualMethodLabel } from "@/lib/manualPayment";
 
 type OrderItem = { productId: string; name: string; price: number; quantity: number; image?: string; };
 
@@ -13,6 +14,7 @@ type Order = {
   status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled";
   deliveryAddress: { fullName: string; phone: string; address: string; city?: string; area?: string; };
   createdAt?: string; cancelledAt?: string; deliveredAt?: string;
+  manualPayment?: { method: string; senderNumber: string; trxId: string; status: "submitted" | "verified" | "rejected"; adminNote?: string };
 };
 
 const statusOptions = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
@@ -47,6 +49,26 @@ export default function AdminOrdersPage() {
   }
 
   useEffect(() => { loadOrders(); }, [status]);
+
+  async function checkManualPayment(id: string, action: "verify" | "reject") {
+    if (action === "verify" && !window.confirm("Did you find this TrxID in your bKash / Nagad / Rocket statement?")) return;
+    const note = action === "reject" ? window.prompt("Why is this payment rejected? The customer will see this.") : "";
+    if (note === null) return;
+    try {
+      setError(""); setMessage("");
+      const response = await fetch(`/api/admin/orders/${id}/payment`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, note }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to update the payment.");
+      setMessage(data.message);
+      await loadOrders();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to update the payment.");
+    }
+  }
 
   async function updateOrder(id: string, updates: { status?: Order["status"]; paymentStatus?: Order["paymentStatus"]; }) {
     try {
@@ -159,6 +181,24 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
 
+                {order.manualPayment && (
+                  <div style={{ marginTop: "15px", padding: "13px", borderRadius: "9px", background: "#020617", border: `1px solid ${order.manualPayment.status === "verified" ? "#166534" : order.manualPayment.status === "rejected" ? "#991b1b" : "#92400e"}` }}>
+                    <div style={{ color: "#94a3b8", fontSize: "12px", marginBottom: "6px" }}>💸 Send money · {manualMethodLabel(order.manualPayment.method)}</div>
+                    <div style={{ fontSize: "14px" }}>
+                      TrxID: <b style={{ fontFamily: "monospace" }}>{order.manualPayment.trxId}</b> · From: {order.manualPayment.senderNumber}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "4px" }}>
+                      {order.manualPayment.status === "submitted" ? "Waiting for you to check the statement" : order.manualPayment.status === "verified" ? "Verified" : "Rejected"}
+                      {order.manualPayment.adminNote ? ` · ${order.manualPayment.adminNote}` : ""}
+                    </div>
+                    {order.manualPayment.status !== "verified" && (
+                      <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+                        <button onClick={() => checkManualPayment(order._id, "verify")} style={{ padding: "8px 12px", borderRadius: "8px", border: "none", background: "#059669", color: "#fff", fontWeight: 700, cursor: "pointer" }}>✓ Verify payment</button>
+                        <button onClick={() => checkManualPayment(order._id, "reject")} style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #7f1d1d", background: "#450a0a", color: "#fecaca", fontWeight: 700, cursor: "pointer" }}>✕ Reject</button>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "15px", flexWrap: "wrap", marginTop: "16px" }}>
                   <div>
                     <span style={{ color: "#94a3b8", fontSize: "12px" }}>Total Amount</span>

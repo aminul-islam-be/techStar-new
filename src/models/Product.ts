@@ -15,6 +15,8 @@ export interface IProduct {
   active: boolean;
   vendorId?: mongoose.Types.ObjectId;
   vendorName?: string;
+  brand?: string;
+  sku?: string;
   approvalStatus?: "approved" | "pending" | "rejected" | "suspended";
   rejectionReason?: string;
   ratingAverage?: number;
@@ -99,6 +101,9 @@ const ProductSchema = new Schema<IProduct>(
       index: true,
     },
     rejectionReason: { type: String, default: undefined },
+    // brand is shown in the brand filter; the SKU is a shop code and must be unique (checked in the API)
+    brand: { type: String, default: "", trim: true, maxlength: 60 },
+    sku: { type: String, default: "", trim: true, uppercase: true, maxlength: 40 },
     // filled automatically from approved reviews (see lib/reviewStats.ts)
     ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
     reviewCount: { type: Number, default: 0, min: 0 },

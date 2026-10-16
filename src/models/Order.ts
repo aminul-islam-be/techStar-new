@@ -32,6 +32,16 @@ export interface IShipment {
   createdAt?: Date;
 }
 
+export interface IManualPayment {
+  method: "bkash" | "nagad" | "rocket";
+  senderNumber: string;
+  trxId: string;
+  status: "submitted" | "verified" | "rejected";
+  submittedAt?: Date;
+  verifiedAt?: Date;
+  adminNote?: string;
+}
+
 export interface IOrder extends Document {
   userId: mongoose.Types.ObjectId;
   customerName: string;
@@ -78,6 +88,7 @@ export interface IOrder extends Document {
   deliveryInstructions?: string;
   estimatedDeliveryDate?: Date;
   shipments?: IShipment[];
+  manualPayment?: IManualPayment;
 
   vendorSettledAt?: Date;
   vendorReversedAt?: Date;
@@ -151,6 +162,19 @@ const ShipmentSchema = new Schema<IShipment>(
     createdAt: { type: Date, default: () => new Date() },
   },
   { _id: true }
+);
+
+const ManualPaymentSchema = new Schema<IManualPayment>(
+  {
+    method: { type: String, enum: ["bkash", "nagad", "rocket"], required: true },
+    senderNumber: { type: String, required: true, trim: true, maxlength: 20 },
+    trxId: { type: String, required: true, trim: true, uppercase: true, maxlength: 30 },
+    status: { type: String, enum: ["submitted", "verified", "rejected"], default: "submitted" },
+    submittedAt: { type: Date },
+    verifiedAt: { type: Date },
+    adminNote: { type: String, trim: true, maxlength: 200 },
+  },
+  { _id: false }
 );
 
 const OrderSchema = new Schema<IOrder>(
@@ -275,6 +299,7 @@ const OrderSchema = new Schema<IOrder>(
     deliveryInstructions: { type: String, trim: true, maxlength: 300 },
     estimatedDeliveryDate: { type: Date },
     shipments: { type: [ShipmentSchema], default: [] },
+    manualPayment: { type: ManualPaymentSchema },
 
     vendorSettledAt: {
       type: Date,
@@ -302,6 +327,8 @@ const OrderSchema = new Schema<IOrder>(
     timestamps: true,
   }
 );
+
+OrderSchema.index({ "manualPayment.trxId": 1 });
 
 const Order: Model<IOrder> =
   mongoose.models.Order ||

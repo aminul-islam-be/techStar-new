@@ -7,6 +7,8 @@ import { buildPricedOrder } from "@/lib/orderPricing";
 import { getSessionUserId } from "@/lib/userSession";
 import { reserveStock, giveBackStock, releaseStaleOnlineOrders, removeOrderItemsFromCart } from "@/lib/orderFlow";
 import { estimateDelivery } from "@/lib/shipments";
+import { getSiteSettings } from "@/lib/siteSettings";
+import { cleanPhone, cleanTrxId, configuredManualMethods, isValidBdMobile, isValidTrxId, type ManualMethod } from "@/lib/manualPayment";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -46,7 +48,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Name, phone, address and city are required." }, { status: 400 });
     }
 
-    const paymentMethod = body.paymentMethod === "cod" ? "cod" : "sslcommerz";
+    const paymentMethod = body.paymentMethod === "cod" ? "cod" : body.paymentMethod === "manual" ? "manual" : "sslcommerz";
+
+    // Send money: the customer paid bKash / Nagad / Rocket to the shop and gives the TrxID.
+    // The admin checks it in the statement before the order counts as paid.
+    let manualPayment: { method: ManualMethod; senderNumber: string; trxId: string } | null = null;
+    if (paymentMethod === "manual") {
+      const offered = configuredManualMethods(await getSiteSettings());
+      const method = String(body.manualPayment?.method || "") as ManualMethod;
+      const senderNumber = cleanPhone(String(body.manualPayment?.senderNumber || ""));
+      const trxId = cleanTrxId(String(body.manualPayment?.trxId || ""));
+      if (!offered.includes(method)) {
+        return NextResponse.json({ success: false, message: "Choose a send-money option that the shop offers." }, { status: 400 });
+      }
+      if (!isValidBdMobile(senderNumber)) {
+        return NextResponse.json({ success: false, message: "Enter the 11-digit mobile number you sent the money from." }, { status: 400 });
+      }
+      if (!isValidTrxId(trxId)) {
+        return NextResponse.json({ success: false, message: "Enter the TrxID from your bKash / Nagad / Rocket message." }, { status: 400 });
+      }
+      if (await Order.exists({ "manualPayment.trxId": trxId })) {
+        return NextResponse.json({ success: false, message: "This TrxID is already used for another order." }, { status: 409 });
+      }
+      manualPayment = { method, senderNumber, trxId };
+    }
 
     // 1) prices and stock checked on the server (the browser's prices are ignored)
     const priced = await buildPricedOrder(Array.isArray(body.items) ? body.items : [], { city });
@@ -97,6 +122,7 @@ export async function POST(request: NextRequest) {
         // always BDT: the gateway charges BDT, whatever currency the browser shows
         currency: "BDT",
         paymentMethod,
+        manualPayment: manualPayment ? { ...manualPayment, status: "submitted", submittedAt: new Date() } : undefined,
         deliveryAddress: {
           fullName: String(address.fullName || customerName).trim(),
           phone: String(address.phone || customerPhone).trim(),
@@ -126,9 +152,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Cash on delivery is final now, so the bought items leave the cart.
-    // Online payment removes them only after the payment is confirmed.
-    if (paymentMethod === "cod") {
+    // Cash on delivery and send money (TrxID given) are final now, so the bought items leave the cart.
+    // Gateway payment removes them only after the payment is confirmed.
+    if (paymentMethod === "cod" || paymentMethod === "manual") {
       await removeOrderItemsFromCart(userId, priced.items);
     }
 

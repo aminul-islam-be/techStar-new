@@ -35,6 +35,14 @@ type Product = {
   active?: boolean;
   ratingAverage?: number;
   reviewCount?: number;
+  brand?: string;
+};
+
+type SearchSuggestions = {
+  query: string;
+  products: { _id: string; name: string; slug: string; image?: string; price: number }[];
+  terms: string[];
+  recent: string[];
 };
 
 type Banner = {
@@ -113,6 +121,9 @@ export default function Home() {
   const [maxPrice, setMaxPrice] = useState("");
   const [minRating, setMinRating] = useState(0);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [brandFilter, setBrandFilter] = useState("all");
+  const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(
     new Set()
@@ -316,20 +327,61 @@ export default function Home() {
     loadBanners();
   }, []);
 
-  async function handleSearch() {
-    await loadProducts(search);
+  // Suggestions appear under the search box while it is open. They are asked for
+  // 200 ms after the last key press, and an answer is ignored if the text has changed.
+  useEffect(() => {
+    if (!suggestOpen) return;
+
+    let ignore = false;
+    const query = search.trim();
+
+    const timer = setTimeout(() => {
+      fetch(`/api/products/suggest?q=${encodeURIComponent(query)}`, {
+        cache: "no-store",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (ignore || !data.success) return;
+
+          setSuggestions({
+            query: query.toLowerCase(),
+            products: data.products || [],
+            terms: data.terms || [],
+            recent: data.recent || [],
+          });
+        })
+        .catch(() => {});
+    }, 200);
+
+    return () => {
+      ignore = true;
+      clearTimeout(timer);
+    };
+  }, [search, suggestOpen]);
+
+  // One place for every search: the box, Enter, a suggested word and a recent search.
+  async function runSearch(text: string) {
+    const query = text.trim();
+
+    setSearch(query);
+    setSuggestOpen(false);
+    await loadProducts(query);
 
     const searcherId = getCustomerUserId();
-    if (searcherId && search.trim()) {
+    if (searcherId && query) {
       fetch("/api/history/search", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-user-id": searcherId,
         },
-        body: JSON.stringify({ query: search.trim() }),
+        body: JSON.stringify({ query }),
       }).catch(() => {});
     }
+  }
+
+  function handleSearch() {
+    runSearch(search);
   }
 
   function handleSearchKeyDown(
@@ -337,6 +389,10 @@ export default function Home() {
   ) {
     if (event.key === "Enter") {
       handleSearch();
+    }
+
+    if (event.key === "Escape") {
+      setSuggestOpen(false);
     }
   }
   useEffect(() => {
@@ -445,6 +501,17 @@ export default function Home() {
     return Array.from(unique).sort();
   }, [products]);
 
+  const productBrands = useMemo(() => {
+    const byName = new Map<string, string>();
+    for (const product of products) {
+      const name = product.brand?.trim();
+      if (name && !byName.has(name.toLowerCase())) {
+        byName.set(name.toLowerCase(), name);
+      }
+    }
+    return Array.from(byName.values()).sort((a, b) => a.localeCompare(b));
+  }, [products]);
+
   const visibleProducts = useMemo(() => {
     let list = [...products];
 
@@ -465,6 +532,12 @@ export default function Home() {
     if (minRating > 0) {
       list = list.filter(
         (product) => (product.ratingAverage || 0) >= minRating
+      );
+    }
+    if (brandFilter !== "all") {
+      list = list.filter(
+        (product) =>
+          (product.brand || "").trim().toLowerCase() === brandFilter.toLowerCase()
       );
     }
     if (inStockOnly) {
@@ -492,6 +565,7 @@ export default function Home() {
     maxPrice,
     minRating,
     inStockOnly,
+    brandFilter,
   ]);
 
   const displayedProducts = useMemo(
@@ -507,6 +581,7 @@ export default function Home() {
     maxPrice,
     minRating,
     inStockOnly,
+    brandFilter,
     products.length,
   ].join("|");
   const [pagedListingKey, setPagedListingKey] = useState(listingKey);
@@ -520,11 +595,13 @@ export default function Home() {
     (categoryFilter !== "all" ? 1 : 0) +
     (minPrice !== "" || maxPrice !== "" ? 1 : 0) +
     (minRating > 0 ? 1 : 0) +
-    (inStockOnly ? 1 : 0);
+    (inStockOnly ? 1 : 0) +
+    (brandFilter !== "all" ? 1 : 0);
 
   function resetListingFilters() {
     setSortOrder("");
     setCategoryFilter("all");
+    setBrandFilter("all");
     setMinPrice("");
     setMaxPrice("");
     setMinRating(0);
@@ -683,9 +760,11 @@ export default function Home() {
         open={filterModalOpen}
         onClose={() => setFilterModalOpen(false)}
         categories={productCategories}
+        brands={productBrands}
         value={{
           sort: sortOrder,
           category: categoryFilter,
+          brand: brandFilter,
           minPrice,
           maxPrice,
           minRating,
@@ -694,6 +773,7 @@ export default function Home() {
         onApply={(next) => {
           setSortOrder(next.sort);
           setCategoryFilter(next.category);
+          setBrandFilter(next.brand);
           setMinPrice(next.minPrice);
           setMaxPrice(next.maxPrice);
           setMinRating(next.minRating);
@@ -744,7 +824,12 @@ export default function Home() {
                     setSearch(event.target.value)
                   }
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="Search products..."
+                  onFocus={() => setSuggestOpen(true)}
+                  onBlur={() => {
+                    // a short wait, so a tap on a suggestion still counts on phones
+                    setTimeout(() => setSuggestOpen(false), 200);
+                  }}
+                  placeholder={t("common.search")}
                   className="min-w-0 flex-1 bg-transparent px-1 text-sm text-white outline-none placeholder:text-slate-500 sm:text-[15px]"
                 />
               </div>
@@ -763,6 +848,95 @@ export default function Home() {
                 </span>
               </button>
             </div>
+
+            {/* search suggestions: shown under the box while it is open */}
+            {suggestOpen &&
+              suggestions &&
+              suggestions.query === search.trim().toLowerCase() &&
+              (suggestions.recent.length > 0 ||
+                suggestions.terms.length > 0 ||
+                suggestions.products.length > 0) && (
+                <div
+                  onMouseDown={(event) => event.preventDefault()}
+                  className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 text-left shadow-2xl shadow-black/40"
+                >
+                  {suggestions.recent.length > 0 && (
+                    <div className="p-2">
+                      <div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                        {t("home.recentSearches")}
+                      </div>
+                      {suggestions.recent.map((term) => (
+                        <button
+                          key={`recent-${term}`}
+                          type="button"
+                          onClick={() => runSearch(term)}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-300 transition hover:bg-white/[0.06]"
+                        >
+                          <span className="text-slate-500">↺</span>
+                          <span className="truncate">{term}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {suggestions.terms.length > 0 && (
+                    <div className="border-t border-white/[0.06] p-2">
+                      <div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                        {t("home.suggestedSearches")}
+                      </div>
+                      {suggestions.terms.map((term) => (
+                        <button
+                          key={`term-${term}`}
+                          type="button"
+                          onClick={() => runSearch(term)}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-slate-300 transition hover:bg-white/[0.06]"
+                        >
+                          <span className="text-slate-500">⌕</span>
+                          <span className="truncate">{term}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {suggestions.products.length > 0 && (
+                    <div className="border-t border-white/[0.06] p-2">
+                      <div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                        {t("home.suggestedProducts")}
+                      </div>
+                      {suggestions.products.map((product) => (
+                        <button
+                          key={product._id}
+                          type="button"
+                          onClick={() => {
+                            setSuggestOpen(false);
+                            router.push(`/products/${product.slug}`);
+                          }}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-white/[0.06]"
+                        >
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.05]">
+                            {product.image && (
+                              <img
+                                src={product.image}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            )}
+                          </div>
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
+                            {product.name}
+                          </span>
+                          <span
+                            className="shrink-0 text-xs font-bold"
+                            style={{ color: seasonInfo.accent }}
+                          >
+                            {format(product.price)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
             <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] text-slate-600">
               <span>English</span>

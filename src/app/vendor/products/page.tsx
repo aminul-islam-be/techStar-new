@@ -11,6 +11,8 @@ type P = {
   description?: string;
   price: number;
   compareAtPrice?: number;
+  brand?: string;
+  sku?: string;
   stock: number;
   image?: string;
   images?: string[];
@@ -29,7 +31,7 @@ const badge: Record<string, string> = {
   suspended: "bg-slate-500/20 text-slate-300",
 };
 
-const emptyForm = { name: "", category: categories[0][1], description: "", price: "", compareAtPrice: "", stock: "" };
+const emptyForm = { name: "", category: categories[0][1], description: "", price: "", compareAtPrice: "", brand: "", sku: "", stock: "" };
 
 export default function VendorProductsPage() {
   const { vendor } = useVendor();
@@ -65,6 +67,8 @@ export default function VendorProductsPage() {
       description: p.description || "",
       price: String(p.price),
       compareAtPrice: p.compareAtPrice ? String(p.compareAtPrice) : "",
+      brand: p.brand || "",
+      sku: p.sku || "",
       stock: String(p.stock),
     });
     setImages(p.images?.length ? p.images : p.image ? [p.image] : []);
@@ -157,6 +161,10 @@ export default function VendorProductsPage() {
           ))}
         </select>
         <textarea className={field} rows={4} placeholder="Description" value={form.description} onChange={set("description")} />
+        <div className="grid grid-cols-2 gap-3">
+          <input className={field} placeholder="Brand (optional)" value={form.brand} onChange={set("brand")} />
+          <input className={field} placeholder="SKU (optional, unique)" value={form.sku} onChange={set("sku")} />
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <input className={field} type="number" placeholder="Price (৳) *" value={form.price} onChange={set("price")} />
           <input className={field} type="number" placeholder="Old price (optional)" value={form.compareAtPrice} onChange={set("compareAtPrice")} />

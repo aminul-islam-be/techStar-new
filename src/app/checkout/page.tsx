@@ -6,6 +6,9 @@ import Link from "next/link";
 import { getCustomerUser } from "@/lib/customerAuth";
 import { useCurrency } from "@/lib/useCurrency";
 import { useLanguage } from "@/lib/language";
+import { useSite } from "@/lib/siteContext";
+import { formatCurrency } from "@/lib/currency";
+import { cleanPhone, cleanTrxId, configuredManualMethods, isValidBdMobile, isValidTrxId, manualMethodLabel, manualNumber, type ManualMethod } from "@/lib/manualPayment";
 import { useRouter } from "next/navigation";
 import { DISTRICTS, DIVISIONS, isDhakaDivision } from "@/lib/bdDistricts";
 import AddressForm, { titleIcon, type SavedAddress } from "@/components/AddressForm";
@@ -48,7 +51,13 @@ export default function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"sslcommerz" | "cod">("sslcommerz");
+  const [paymentMethod, setPaymentMethod] = useState<"sslcommerz" | "cod" | "manual">("sslcommerz");
+  const site = useSite();
+  const sendMoneyOptions = configuredManualMethods(site);
+  const [sendMethod, setSendMethod] = useState<ManualMethod>("bkash");
+  const chosenSendMethod: ManualMethod = sendMoneyOptions.includes(sendMethod) ? sendMethod : sendMoneyOptions[0];
+  const [senderNumber, setSenderNumber] = useState("");
+  const [trxId, setTrxId] = useState("");
   const [deliveryNote, setDeliveryNote] = useState("");
   const [rates, setRates] = useState({ insideDhaka: 80, outsideDhaka: 120 });
 
@@ -220,6 +229,17 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (paymentMethod === "manual") {
+      if (!isValidBdMobile(cleanPhone(senderNumber))) {
+        setError("Enter the 11-digit mobile number you sent the money from.");
+        return;
+      }
+      if (!isValidTrxId(cleanTrxId(trxId))) {
+        setError("Enter the TrxID from your bKash / Nagad / Rocket message.");
+        return;
+      }
+    }
+
     try {
       setPlacing(true);
       setError("");
@@ -251,6 +271,10 @@ export default function CheckoutPage() {
           },
           deliveryInstructions: deliveryNote.trim(),
           paymentMethod: paymentMethod,
+          manualPayment:
+            paymentMethod === "manual"
+              ? { method: chosenSendMethod, senderNumber: cleanPhone(senderNumber), trxId: cleanTrxId(trxId) }
+              : undefined,
         }),
       });
 
@@ -289,7 +313,9 @@ export default function CheckoutPage() {
       setCart({ items: [] });
 
       setTimeout(() => {
-        router.push(paymentMethod === "cod" ? "/orders?placed=cod" : `/payment/${data.orderId}`);
+        router.push(
+          paymentMethod === "cod" ? "/orders?placed=cod" : paymentMethod === "manual" ? `/orders/${data.orderId}` : `/payment/${data.orderId}`
+        );
       }, 500);
     } catch (err) {
       console.error(err);
@@ -581,6 +607,39 @@ export default function CheckoutPage() {
                   <span className="text-xs text-slate-400">bKash, Nagad, cards</span>
                 </span>
               </label>
+              {sendMoneyOptions.length > 0 && (
+                <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm ${paymentMethod === "manual" ? "border-orange-500 bg-orange-500/10" : "border-white/10"}`}>
+                  <input type="radio" name="paymentMethod" className="mt-1" checked={paymentMethod === "manual"} onChange={() => setPaymentMethod("manual")} />
+                  <span>
+                    <b>Send money</b>
+                    <br />
+                    <span className="text-xs text-slate-400">bKash, Nagad or Rocket, then enter the TrxID</span>
+                  </span>
+                </label>
+              )}
+              {paymentMethod === "manual" && sendMoneyOptions.length > 0 && (
+                <div className="space-y-3 rounded-xl border border-orange-500/30 bg-white/[0.03] p-3 text-sm">
+                  <p className="text-xs text-slate-300">
+                    Send <b>{formatCurrency(payable, "BDT", "৳")}</b> by <b>Send Money</b> (not Cash In or Payment) to:
+                  </p>
+                  {sendMoneyOptions.map((method) => (
+                    <p key={method} className="text-xs text-slate-200">
+                      {manualMethodLabel(method)}: <b className="font-mono">{manualNumber(site, method)}</b>
+                    </p>
+                  ))}
+                  {site.paymentNote && <p className="text-xs text-slate-400">{site.paymentNote}</p>}
+                  <div className="grid grid-cols-2 gap-2">
+                    <select value={chosenSendMethod} onChange={(e) => setSendMethod(e.target.value as ManualMethod)} className="rounded-lg border border-white/10 bg-slate-950 p-2.5 text-sm text-white">
+                      {sendMoneyOptions.map((method) => (
+                        <option key={method} value={method}>{manualMethodLabel(method)}</option>
+                      ))}
+                    </select>
+                    <input value={senderNumber} onChange={(e) => setSenderNumber(e.target.value)} inputMode="tel" maxLength={16} placeholder="Your number 01…" className="rounded-lg border border-white/10 bg-slate-950 p-2.5 text-sm text-white placeholder:text-slate-500" />
+                  </div>
+                  <input value={trxId} onChange={(e) => setTrxId(e.target.value.toUpperCase())} maxLength={20} placeholder="TrxID, e.g. 8N7A6B5C4D" className="w-full rounded-lg border border-white/10 bg-slate-950 p-2.5 font-mono text-sm uppercase text-white placeholder:text-slate-500" />
+                  <p className="text-[11px] text-slate-500">The shop checks the TrxID before it confirms your payment. A wrong TrxID will be rejected.</p>
+                </div>
+              )}
               <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm ${paymentMethod === "cod" ? "border-orange-500 bg-orange-500/10" : "border-white/10"}`}>
                 <input type="radio" name="paymentMethod" className="mt-1" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} />
                 <span>
@@ -592,7 +651,7 @@ export default function CheckoutPage() {
             </div>
 
             <button type="submit" disabled={placing || !cart.items.length} className="mt-6 w-full rounded-2xl bg-orange-600 py-4 text-sm font-bold text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-500 hover:shadow-orange-500/30 disabled:cursor-not-allowed disabled:opacity-50">
-              {placing ? t("checkout.processing") : paymentMethod === "cod" ? "Place Order (Cash on Delivery)" : "Proceed to Payment"}
+              {placing ? t("checkout.processing") : paymentMethod === "cod" ? "Place Order (Cash on Delivery)" : paymentMethod === "manual" ? "Place Order (Send Money)" : "Proceed to Payment"}
             </button>
           </aside>
         </form>

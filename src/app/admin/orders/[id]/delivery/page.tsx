@@ -26,6 +26,7 @@ type AdminOrder = {
   estimatedDeliveryDate?: string;
   items: { productId: string; name: string; quantity: number }[];
   shipments?: Shipment[];
+  manualPayment?: { trxId: string; status: string };
 };
 
 const card: CSSProperties = { background: "#0f172a", border: "1px solid #1e293b", borderRadius: "15px", padding: "18px", marginBottom: "16px" };
@@ -164,6 +165,11 @@ export default function AdminOrderDeliveryPage() {
           Order: <b style={{ color: "#fff" }}>{order.status}</b> · Payment: <b style={{ color: "#fff" }}>{order.paymentStatus}</b>
         </p>
 
+        {order.manualPayment && order.manualPayment.status !== "verified" && (
+          <div style={{ padding: "12px 14px", marginBottom: "15px", borderRadius: "9px", background: "#451a03", border: "1px solid #92400e", color: "#fde68a" }}>
+            💸 Send money payment is not verified yet (TrxID {order.manualPayment.trxId}). Check it on the Orders page before you ship.
+          </div>
+        )}
         {message && <div style={{ padding: "12px 14px", marginBottom: "15px", borderRadius: "9px", background: "#052e16", border: "1px solid #166534", color: "#bbf7d0" }}>✓ {message}</div>}
         {error && <div style={{ padding: "12px 14px", marginBottom: "15px", borderRadius: "9px", background: "#450a0a", border: "1px solid #991b1b", color: "#fecaca" }}>⚠ {error}</div>}
 

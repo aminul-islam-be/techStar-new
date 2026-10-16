@@ -26,6 +26,8 @@ type Product = {
   vendorName?: string;
   ratingAverage?: number;
   reviewCount?: number;
+  brand?: string;
+  sku?: string;
 };
 
 const RELATED_COUNT = 6;
@@ -345,7 +347,7 @@ export default function ProductDetailPage({
     product.compareAtPrice &&
     product.compareAtPrice > product.price;
 
-  const sku = product._id.slice(-8).toUpperCase();
+  const sku = product.sku || product._id.slice(-8).toUpperCase();
 
   return (    
     <main className="min-h-screen bg-white pb-24 text-slate-900">
@@ -666,6 +668,17 @@ export default function ProductDetailPage({
               <span className="text-slate-500">
                 {product.category}
               </span>
+              {product.brand && (
+                <>
+                  <span className="text-slate-300">/</span>
+                  <span className="font-bold text-slate-700">
+                    Brand:
+                  </span>
+                  <span className="text-slate-500">
+                    {product.brand}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>

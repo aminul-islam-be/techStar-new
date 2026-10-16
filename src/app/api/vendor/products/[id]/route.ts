@@ -6,6 +6,7 @@ import Product from "@/models/Product";
 import { getCurrentVendor, unauthorized } from "@/lib/vendorAuth";
 import { getSettings } from "@/lib/marketplace";
 import { findContactInfo, CONTACT_BLOCK_MESSAGE } from "@/lib/chatFilter";
+import { cleanBrand, cleanSku, skuTaken } from "@/lib/productFields";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -26,7 +27,7 @@ export async function PATCH(request: Request, { params }: Ctx) {
   }
 
   const body = await request.json();
-  if (findContactInfo(`${body.name || ""} ${body.description || ""}`, "listing")) {
+  if (findContactInfo(`${body.name || ""} ${body.description || ""} ${body.brand || ""}`, "listing")) {
     return NextResponse.json({ success: false, message: CONTACT_BLOCK_MESSAGE }, { status: 400 });
   }
 
@@ -71,6 +72,23 @@ export async function PATCH(request: Request, { params }: Ctx) {
       return NextResponse.json({ success: false, message: "Invalid stock." }, { status: 400 });
     }
     product.stock = Math.floor(stock);
+  }
+  if (typeof body.brand === "string" && cleanBrand(body.brand) !== (product.brand || "")) {
+    product.brand = cleanBrand(body.brand);
+    needsReview = true;
+  }
+  if (typeof body.sku === "string") {
+    const sku = cleanSku(body.sku);
+    if (sku.error) {
+      return NextResponse.json({ success: false, message: sku.error }, { status: 400 });
+    }
+    if (sku.sku !== (product.sku || "")) {
+      if (await skuTaken(sku.sku, id)) {
+        return NextResponse.json({ success: false, message: "This SKU is already used by another product." }, { status: 409 });
+      }
+      product.sku = sku.sku;
+      needsReview = true;
+    }
   }
   if (typeof body.active === "boolean") product.active = body.active;
 

@@ -2,6 +2,7 @@ import { getAdminSession } from "@/lib/adminAuth";
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Product from "@/models/Product";
+import { cleanBrand, cleanSku, skuTaken } from "@/lib/productFields";
 import { generateProductDetails } from "@/lib/productDetailsAI";
 
 export async function POST(request: NextRequest) {
@@ -17,6 +18,8 @@ export async function POST(request: NextRequest) {
     const slug = String(body.slug || "").trim().toLowerCase();
     const category = String(body.category || "").trim();
     const description = String(body.description || "").trim();
+    const brand = cleanBrand(body.brand);
+    const skuResult = cleanSku(body.sku);
 
     const price = Number(body.price);
     const stock = Number(body.stock);
@@ -102,6 +105,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (skuResult.error) {
+      return NextResponse.json({ success: false, message: skuResult.error }, { status: 400 });
+    }
+    if (await skuTaken(skuResult.sku)) {
+      return NextResponse.json({ success: false, message: "This SKU is already used by another product." }, { status: 409 });
+    }
+
     const existingProduct = await Product.findOne({ slug });
 
     if (existingProduct) {
@@ -117,6 +127,8 @@ export async function POST(request: NextRequest) {
     const product = await Product.create({
       name,
       slug,
+      brand,
+      sku: skuResult.sku,
       category,
       description,
       price,

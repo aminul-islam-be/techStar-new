@@ -9,6 +9,7 @@ import { ORDER_STEPS, REQUEST_REASONS, REQUEST_TYPES, RETURN_WINDOW_DAYS } from 
 import { COURIER_NOTE } from "@/lib/refundPolicy";
 import { OrderModals, useOrderActions } from "@/components/OrderActions";
 import OrderDeliveryPanel, { type DeliveryShipment } from "@/components/OrderDeliveryPanel";
+import { manualMethodLabel } from "@/lib/manualPayment";
 
 type Item = {
   productId: string;
@@ -39,6 +40,7 @@ type Details = {
     status: string;
     paymentMethod?: string;
     paymentStatus?: string;
+    manualPayment?: { method: string; senderNumber: string; trxId: string; status: string; adminNote?: string };
     totalAmount: number;
     createdAt: string;
     updatedAt?: string;
@@ -274,8 +276,24 @@ export default function OrderDetailsPage() {
           </div>
           <div className="rounded-2xl border border-white/10 bg-slate-900 p-4 text-sm">
             <h2 className="mb-2 font-bold">Payment</h2>
-            <p className="text-slate-300">{order.paymentMethod === "cod" ? "Cash on Delivery" : "Paid online"}</p>
+            <p className="text-slate-300">{order.paymentMethod === "cod" ? "Cash on Delivery" : order.paymentMethod === "manual" ? "Send money (bKash / Nagad / Rocket)" : "Paid online"}</p>
             <p className="capitalize text-slate-400">Status: {order.paymentStatus || "pending"}</p>
+            {order.manualPayment && (
+              <div className="mt-2 space-y-1 text-xs text-slate-400">
+                <p>Sent with {manualMethodLabel(order.manualPayment.method)} from {order.manualPayment.senderNumber}</p>
+                <p>
+                  TrxID: <span className="font-mono text-slate-200">{order.manualPayment.trxId}</span>
+                </p>
+                <p className={order.manualPayment.status === "verified" ? "text-emerald-300" : order.manualPayment.status === "rejected" ? "text-red-300" : "text-amber-300"}>
+                  {order.manualPayment.status === "verified"
+                    ? "✓ Payment verified"
+                    : order.manualPayment.status === "rejected"
+                      ? "Could not be verified. Please contact the shop."
+                      : "Waiting for the shop to check your payment"}
+                </p>
+                {order.manualPayment.status === "rejected" && order.manualPayment.adminNote && <p>Note: {order.manualPayment.adminNote}</p>}
+              </div>
+            )}
             {order.deliveredAt && <p className="mt-1 text-xs text-slate-400">Delivered {new Date(order.deliveredAt).toLocaleDateString()}</p>}
           </div>
         </div>

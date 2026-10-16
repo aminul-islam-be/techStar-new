@@ -12,6 +12,8 @@ type Product = {
   description: string;
   price: number;
   compareAtPrice?: number;
+  brand?: string;
+  sku?: string;
   currency: string;
   image?: string;
   stock: number;
@@ -32,6 +34,8 @@ export default function AdminProductsPage() {
   const [editStock, setEditStock] = useState("");
   const [editCategory, setEditCategory] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editBrand, setEditBrand] = useState("");
+  const [editSku, setEditSku] = useState("");
 
   async function loadProducts() {
     try {
@@ -117,6 +121,8 @@ export default function AdminProductsPage() {
     setEditStock(String(product.stock));
     setEditCategory(product.category);
     setEditDescription(product.description);
+    setEditBrand(product.brand || "");
+    setEditSku(product.sku || "");
     setError("");
     setMessage("");
   }
@@ -152,6 +158,8 @@ export default function AdminProductsPage() {
           ? undefined
           : Number(editCompareAtPrice),
       stock,
+      brand: editBrand.trim(),
+      sku: editSku.trim(),
     });
 
     setEditing(null);
@@ -384,6 +392,20 @@ export default function AdminProductsPage() {
               value={editCategory}
               onChange={(e) => setEditCategory(e.target.value)}
               placeholder="Category"
+              style={inputStyle}
+            />
+
+            <input
+              value={editBrand}
+              onChange={(e) => setEditBrand(e.target.value)}
+              placeholder="Brand (optional)"
+              style={inputStyle}
+            />
+
+            <input
+              value={editSku}
+              onChange={(e) => setEditSku(e.target.value.toUpperCase())}
+              placeholder="SKU (optional, must be unique)"
               style={inputStyle}
             />
 

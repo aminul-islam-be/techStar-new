@@ -16,6 +16,10 @@ export type SiteSettings = {
   supportPhone: string;
   address: string;
   facebookUrl: string;
+  paymentBkash: string; // bKash send-money number, empty = not offered
+  paymentNagad: string; // Nagad send-money number, empty = not offered
+  paymentRocket: string; // Rocket send-money number, empty = not offered
+  paymentNote: string; // shown to customers at checkout (optional)
 };
 
 export const DEFAULT_SITE: SiteSettings = {
@@ -28,6 +32,10 @@ export const DEFAULT_SITE: SiteSettings = {
   supportPhone: "01922964696",
   address: "Level 4, Block B, Tech Park\nDhaka, Bangladesh",
   facebookUrl: "",
+  paymentBkash: "",
+  paymentNagad: "",
+  paymentRocket: "",
+  paymentNote: "",
 };
 
 export const SITE_FIELDS = Object.keys(DEFAULT_SITE) as (keyof SiteSettings)[];
@@ -48,6 +56,10 @@ export function validateSiteInput(body: Record<string, unknown>): { ok: boolean;
     supportPhone: get("supportPhone"),
     address: String(body.address ?? "").trim(),
     facebookUrl: get("facebookUrl"),
+    paymentBkash: get("paymentBkash").replace(/[\s-]/g, ""),
+    paymentNagad: get("paymentNagad").replace(/[\s-]/g, ""),
+    paymentRocket: get("paymentRocket").replace(/[\s-]/g, ""),
+    paymentNote: get("paymentNote"),
   };
 
   if (!data.siteName) return { ok: false, message: "Website name is required." };
@@ -65,6 +77,12 @@ export function validateSiteInput(body: Record<string, unknown>): { ok: boolean;
   if (data.supportPhone && !/^[0-9+\-\s()]{5,30}$/.test(data.supportPhone)) {
     return { ok: false, message: "Support phone can only have digits, spaces, + and -." };
   }
+  for (const [label, value] of [["bKash", data.paymentBkash], ["Nagad", data.paymentNagad], ["Rocket", data.paymentRocket]] as const) {
+    if (value && !/^01[3-9]\d{8}$/.test(value)) {
+      return { ok: false, message: `${label} number must be 11 digits, like 01XXXXXXXXX (or leave it empty).` };
+    }
+  }
+  if (data.paymentNote.length > 300) return { ok: false, message: "Payment note must be 300 characters or less." };
 
   return { ok: true, data };
 }

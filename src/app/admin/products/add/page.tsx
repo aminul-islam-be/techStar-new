@@ -17,6 +17,8 @@ export default function AddProductPage() {
     description: "",
     price: "",
     compareAtPrice: "",
+    brand: "",
+    sku: "",
     currency: "BDT",
     image: "",
     stock: "",
@@ -403,6 +405,8 @@ export default function AddProductPage() {
             form.compareAtPrice === ""
               ? undefined
               : Number(form.compareAtPrice),
+          brand: form.brand,
+          sku: form.sku,
           currency: form.currency,
           image: form.image,
           images: galleryImages,
@@ -611,6 +615,38 @@ export default function AddProductPage() {
             }
             placeholder="Arduino, ESP32, Sensor..."
             required
+            style={inputStyle}
+          />
+
+          <label style={labelStyle}>
+            Brand
+          </label>
+
+          <input
+            value={form.brand}
+            onChange={(event) =>
+              updateField(
+                "brand",
+                event.target.value
+              )
+            }
+            placeholder="e.g. Arduino, Sony, Local brand (optional)"
+            style={inputStyle}
+          />
+
+          <label style={labelStyle}>
+            SKU (product code)
+          </label>
+
+          <input
+            value={form.sku}
+            onChange={(event) =>
+              updateField(
+                "sku",
+                event.target.value.toUpperCase()
+              )
+            }
+            placeholder="e.g. ARD-UNO-R3 (optional, must be unique)"
             style={inputStyle}
           />
 

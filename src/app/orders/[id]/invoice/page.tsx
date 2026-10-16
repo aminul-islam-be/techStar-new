@@ -93,7 +93,7 @@ export default function CustomerInvoicePage() {
           <div className="sm:text-right">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Order</p>
             <p className="mt-1 capitalize">Status: <b>{order.status}</b></p>
-            <p>Payment: <b>{order.paymentMethod === "cod" ? "Cash on Delivery" : "Online"}</b> · <span className="capitalize">{order.paymentStatus || "pending"}</span></p>
+            <p>Payment: <b>{order.paymentMethod === "cod" ? "Cash on Delivery" : order.paymentMethod === "manual" ? "Send money" : "Online"}</b> · <span className="capitalize">{order.paymentStatus || "pending"}</span></p>
           </div>
         </div>
 

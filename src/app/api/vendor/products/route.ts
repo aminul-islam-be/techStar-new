@@ -4,6 +4,7 @@ import Product from "@/models/Product";
 import { getCurrentVendor, unauthorized } from "@/lib/vendorAuth";
 import { getSettings } from "@/lib/marketplace";
 import { findContactInfo, CONTACT_BLOCK_MESSAGE } from "@/lib/chatFilter";
+import { cleanBrand, cleanSku, skuTaken } from "@/lib/productFields";
 
 export async function GET() {
   const vendor = await getCurrentVendor();
@@ -37,6 +38,8 @@ export async function POST(request: Request) {
     const name = String(body.name || "").trim();
     const category = String(body.category || "").trim();
     const description = String(body.description || "").trim();
+    const brand = cleanBrand(body.brand);
+    const skuResult = cleanSku(body.sku);
     const price = Number(body.price);
     const stock = Number(body.stock);
     const compareAtRaw = body.compareAtPrice === "" || body.compareAtPrice == null ? undefined : Number(body.compareAtPrice);
@@ -55,7 +58,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Please enter a valid stock quantity." }, { status: 400 });
     }
 
-    if (findContactInfo(`${name} ${description}`, "listing")) {
+    if (skuResult.error) {
+      return NextResponse.json({ success: false, message: skuResult.error }, { status: 400 });
+    }
+    if (await skuTaken(skuResult.sku)) {
+      return NextResponse.json({ success: false, message: "This SKU is already used by another product." }, { status: 409 });
+    }
+
+    if (findContactInfo(`${name} ${description} ${brand}`, "listing")) {
       return NextResponse.json({ success: false, message: CONTACT_BLOCK_MESSAGE }, { status: 400 });
     }
 
@@ -66,6 +76,8 @@ export async function POST(request: Request) {
       category,
       description,
       price,
+      brand,
+      sku: skuResult.sku,
       compareAtPrice: compareAtRaw !== undefined && Number.isFinite(compareAtRaw) && compareAtRaw > price ? compareAtRaw : undefined,
       currency: "BDT",
       image: image || images[0] || "",

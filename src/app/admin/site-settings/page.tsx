@@ -164,6 +164,31 @@ export default function AdminSiteSettingsPage() {
               </label>
             </div>
 
+            <div className="mt-4 space-y-4 rounded-2xl border border-white/10 bg-slate-900 p-4">
+              <h2 className="font-bold">Send money (bKash / Nagad / Rocket)</h2>
+              <p className="text-[11px] text-slate-500">
+                Customers see these numbers at checkout. Leave a number empty to hide that option. Use your personal Send Money number.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <label className="block text-xs text-slate-400">
+                  bKash number
+                  <input className={input} type="tel" value={s.paymentBkash} onChange={set("paymentBkash")} placeholder="01XXXXXXXXX" />
+                </label>
+                <label className="block text-xs text-slate-400">
+                  Nagad number
+                  <input className={input} type="tel" value={s.paymentNagad} onChange={set("paymentNagad")} placeholder="01XXXXXXXXX" />
+                </label>
+                <label className="block text-xs text-slate-400">
+                  Rocket number
+                  <input className={input} type="tel" value={s.paymentRocket} onChange={set("paymentRocket")} placeholder="01XXXXXXXXX" />
+                </label>
+              </div>
+              <label className="block text-xs text-slate-400">
+                Note for customers (optional)
+                <textarea className={input} rows={2} maxLength={300} value={s.paymentNote} onChange={set("paymentNote")} placeholder="e.g. Send Money only. Do not use Cash In." />
+              </label>
+            </div>
+
             <div className="mt-4 flex gap-3">
               <button onClick={save} disabled={busy} className="flex-1 rounded-xl bg-blue-600 p-3 text-sm font-bold disabled:opacity-60">
                 {busy ? "Saving..." : "Save"}
