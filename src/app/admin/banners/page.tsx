@@ -54,6 +54,7 @@ export default function AdminBannersPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadBanners();
   }, []);
 

@@ -20,6 +20,7 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
   const { t } = useLanguage();
   const site = useSite();
   const [user, setUser] = useState<CustomerUser | null>(null);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   const [isGlossy, setIsGlossy] = useState(false); useEffect(() => { setIsGlossy(localStorage.getItem("glossyTheme") === "true"); }, []); const toggleGlossy = () => { const val = !isGlossy; setIsGlossy(val); localStorage.setItem("glossyTheme", val.toString()); window.dispatchEvent(new Event("glossyChange")); }; // Glossy state added
 
   const mainLinks = [
@@ -42,6 +43,7 @@ export default function SideMenu({ open, onClose }: SideMenuProps) {
   useEffect(() => {
     if (!open) return;
     const current = getCustomerUser();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(current);
     if (!current) return;
 

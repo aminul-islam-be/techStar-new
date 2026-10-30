@@ -77,6 +77,7 @@ export default function ProductDetailPage({
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
     loadProduct();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);

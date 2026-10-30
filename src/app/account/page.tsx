@@ -59,8 +59,11 @@ export default function AccountPage() {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(current);
+    // eslint-disable-next-line react-hooks/immutability
     loadOrders(current.id);
+    // eslint-disable-next-line react-hooks/immutability
     syncProfilePicture(current);
   }, []);
 

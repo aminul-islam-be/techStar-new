@@ -211,7 +211,7 @@ JSON structure:
         "Use according to the product label and manufacturer's instructions.",
       suitableFor: parsed.suitableFor || "Not specified",
       ingredients: Array.isArray(parsed.ingredients)
-        ? parsed.ingredients.map((item: any) => ({
+        ? parsed.ingredients.map((item: Partial<Ingredient> | null) => ({
             name: item?.name || "Ingredient information",
             function: item?.function || "Not provided",
             amount: item?.amount || "Not provided",
@@ -258,13 +258,13 @@ export async function generateProductDetails(product: ProductInput) {
 
     if (
       existing &&
-      ["manual", "pdf"].includes((existing as any).source) &&
-      Array.isArray((existing as any).ingredients) &&
-      (existing as any).ingredients.length > 0
+      ["manual", "pdf"].includes(existing.source) &&
+      Array.isArray(existing.ingredients) &&
+      existing.ingredients.length > 0
     ) {
-      ingredientsToSave = (existing as any).ingredients;
+      ingredientsToSave = existing.ingredients;
       hasManualFormula = true;
-      preservedSource = (existing as any).source;
+      preservedSource = existing.source as "pdf" | "manual";
     }
   }
 

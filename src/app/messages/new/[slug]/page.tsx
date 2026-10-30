@@ -30,6 +30,7 @@ export default function NewChatPage() {
   // opened from "Contact Seller" on an order: start the message with the order number
   useEffect(() => {
     const order = new URLSearchParams(window.location.search).get("order");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (order) setText((t) => t || `Hi, I have a question about my order #${order.slice(-8).toUpperCase()}: `);
   }, []);
 

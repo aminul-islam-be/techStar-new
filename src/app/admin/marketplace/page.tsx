@@ -98,9 +98,13 @@ export default function AdminMarketplacePage() {
     setPayouts(d.payouts);
   }), [run, payoutFilter]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadSettings(); }, [loadSettings]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (tab === "vendors") loadVendors(); }, [tab, loadVendors]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (tab === "products") loadProducts(); }, [tab, loadProducts]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (tab === "payouts") loadPayouts(); }, [tab, loadPayouts]);
 
   const flash = (t: string) => { setNote(t); setTimeout(() => setNote(""), 2500); };

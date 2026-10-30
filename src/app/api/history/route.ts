@@ -10,7 +10,7 @@ async function getUserId() {
   return getSessionUserId();
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await connectDB();
 
@@ -38,22 +38,34 @@ export async function GET(request: NextRequest) {
         .lean(),
     ]);
 
-    const viewed = viewedDocs.map((doc: any) => ({
-      _id: String(doc._id),
-      at: doc.at,
-      product: doc.productId
-        ? {
-            _id: String(doc.productId._id),
-            name: doc.productId.name,
-            slug: doc.productId.slug,
-            image: doc.productId.image,
-            price: doc.productId.price,
-            stock: doc.productId.stock,
-          }
-        : null,
-    }));
+    // productId is populated by the query, but the type is just an ObjectId here.
+    type PopulatedProduct = {
+      _id: unknown;
+      name: string;
+      slug: string;
+      image: string;
+      price: number;
+      stock: number;
+    };
+    const viewed = viewedDocs.map((doc) => {
+      const product = doc.productId as unknown as PopulatedProduct | null;
+      return {
+        _id: String(doc._id),
+        at: doc.at,
+        product: product
+          ? {
+              _id: String(product._id),
+              name: product.name,
+              slug: product.slug,
+              image: product.image,
+              price: product.price,
+              stock: product.stock,
+            }
+          : null,
+      };
+    });
 
-    const search = searchDocs.map((doc: any) => ({
+    const search = searchDocs.map((doc) => ({
       _id: String(doc._id),
       query: doc.query,
       at: doc.at,

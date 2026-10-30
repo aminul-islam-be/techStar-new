@@ -9,7 +9,7 @@ async function getUserId() {
   return getSessionUserId();
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await connectDB();
 
@@ -85,7 +85,7 @@ export async function PUT(request: NextRequest) {
         .lean();
 
       await Promise.all(
-        allEntries.map((entry: any) =>
+        allEntries.map((entry) =>
           History.updateOne(
             { _id: entry._id },
             {

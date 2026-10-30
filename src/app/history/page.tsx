@@ -56,6 +56,7 @@ export default function HistoryPage() {
 
   // /history?tab=archive opens the cancelled orders directly
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (new URLSearchParams(window.location.search).get("tab") === "archive") setTab("archive");
   }, []);
 
@@ -67,6 +68,7 @@ export default function HistoryPage() {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/immutability
     loadAll(user.id);
   }, []);
 

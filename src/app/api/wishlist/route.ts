@@ -9,7 +9,7 @@ async function getUserId() {
   return getSessionUserId();
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await connectDB();
 

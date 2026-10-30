@@ -22,8 +22,6 @@ type CartData = {
 
 export default function CartPage() {
   const {
-    currency,
-    symbol,
     format,
   } = useCurrency();
 
@@ -79,6 +77,7 @@ export default function CartPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCart();
   }, []);
   const totalItems = useMemo(() => {

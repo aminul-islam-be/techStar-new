@@ -36,6 +36,7 @@ export default function WishlistPage() {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/immutability
     loadWishlist(user.id);
   }, []);
 

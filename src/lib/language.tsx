@@ -49,6 +49,7 @@ export function LanguageProvider({
     const saved = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
 
     if (saved === "en" || saved === "bn") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLanguageState(saved);
     }
   }, []);

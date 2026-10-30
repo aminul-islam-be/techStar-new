@@ -37,6 +37,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (saved === "none") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsAuto(false); setSeasonState("none");
     } else if (saved && saved !== "auto" && saved in seasons) {
       setIsAuto(false); setSeasonState(saved as Season);

@@ -5,11 +5,29 @@ import { useSite } from "@/lib/siteContext";
 import { useEffect, useState, use as usePromise } from "react";
 import { useCurrency } from "@/lib/useCurrency";
 
+type InvoiceOrder = {
+  _id: string;
+  createdAt: string;
+  customerName: string;
+  customerPhone: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  totalAmount: number;
+  deliveryAddress?: {
+    fullName?: string;
+    phone?: string;
+    address?: string;
+    area?: string;
+    city?: string;
+  };
+  items: { name: string; quantity: number; price: number }[];
+};
+
 export default function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
   const site = useSite();
   const { format } = useCurrency();
   const { id } = usePromise(params);
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<InvoiceOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -80,7 +98,7 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
             </tr>
           </thead>
           <tbody>
-            {order.items.map((item: any, i: number) => (
+            {order.items.map((item, i: number) => (
               <tr key={i} className="border-b border-gray-100 text-sm">
                 <td className="py-3.5 font-semibold text-gray-700">{item.name}</td>
                 <td className="py-3.5 text-center font-medium text-gray-600">{item.quantity}</td>

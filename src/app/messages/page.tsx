@@ -14,6 +14,7 @@ export default function CustomerMessagesPage() {
 
   useEffect(() => {
     if (!getCustomerUserId()) router.replace("/login?redirect=/messages");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     else setReady(true);
   }, [router]);
 

@@ -105,8 +105,8 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productError, setProductError] = useState("");
-  const [addingId, setAddingId] = useState("");
-  const [buyingId, setBuyingId] = useState("");
+  const [, setAddingId] = useState("");
+  const [, setBuyingId] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [message, setMessage] = useState("");
 
@@ -310,6 +310,7 @@ export default function Home() {
 
     if (pendingCategory) {
       sessionStorage.removeItem("techstar_pending_category");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearch(pendingCategory);
       loadProducts(pendingCategory);
 

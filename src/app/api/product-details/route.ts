@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const productId = searchParams.get("productId");
     const search = searchParams.get("search");
 
-    const filter: Record<string, any> = {};
+    const filter: Record<string, unknown> = {};
 
     if (productId) {
       filter.productId = productId;
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     const ingredients = Array.isArray(body.ingredients)
       ? body.ingredients
-          .map((ing: any) => ({
+          .map((ing: { name?: unknown; function?: unknown; amount?: unknown }) => ({
             name: String(ing?.name || "").trim(),
             function: String(ing?.function || "").trim(),
             amount: String(ing?.amount || "").trim(),

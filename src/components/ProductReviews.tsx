@@ -111,7 +111,7 @@ export default function ProductReviews({ slug }: { slug: string }) {
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [slug]);
 

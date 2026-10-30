@@ -42,6 +42,7 @@ export default function LocationCurrencySelector() {
         const parsed = JSON.parse(saved) as Preferences;
 
         if (parsed.country && parsed.currency && parsed.symbol) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setPreferences(parsed);
         }
       }

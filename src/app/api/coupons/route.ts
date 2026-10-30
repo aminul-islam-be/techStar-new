@@ -6,7 +6,7 @@ import Coupon from "@/models/Coupon";
 import CouponUsage from "@/models/CouponUsage";
 
 /** Public list for the customer's Coupons page: only live, public coupons. */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await connectDB();
 

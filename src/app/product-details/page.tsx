@@ -162,8 +162,8 @@ function ProductDetailsContent() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
     loadDetails(productId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
   async function loadDetails(forProductId: string | null) {

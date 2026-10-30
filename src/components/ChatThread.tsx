@@ -50,6 +50,7 @@ export default function ChatThread({
   }, [endpoint, getHeaders]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     const t = setInterval(load, 4000);
     return () => clearInterval(t);

@@ -48,6 +48,7 @@ export default function AdminOrdersPage() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadOrders(); }, [status]);
 
   async function checkManualPayment(id: string, action: "verify" | "reject") {

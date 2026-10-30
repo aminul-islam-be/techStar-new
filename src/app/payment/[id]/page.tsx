@@ -4,9 +4,19 @@ import { useEffect, useState, use as usePromise } from "react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
 
+type PaymentOrder = {
+  _id: string;
+  customerName: string;
+  customerPhone: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  status: string;
+  totalAmount: number;
+};
+
 export default function PaymentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = usePromise(params);
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<PaymentOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");

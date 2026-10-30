@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     // not "guessed" by the AI.
     const ingredients = Array.isArray(body.ingredients)
       ? body.ingredients
-          .map((ing: any) => ({
+          .map((ing: { name?: unknown; function?: unknown; amount?: unknown }) => ({
             name: String(ing?.name || "").trim(),
             function: String(ing?.function || "").trim(),
             amount: String(ing?.amount || "").trim(),

@@ -387,7 +387,6 @@ export default function ProfilePage() {
     // Fetch-on-mount: the setState calls inside loadProfile are async-safe here.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function updateField(
@@ -509,7 +508,7 @@ export default function ProfilePage() {
       document.body.removeChild(link);
 
       URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       setError(t("profile.errorDownload"));
     } finally {
       setDownloadingPicture(false);

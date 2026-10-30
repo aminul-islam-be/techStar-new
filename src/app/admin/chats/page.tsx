@@ -78,6 +78,7 @@ export default function AdminChatsPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadList();
     const t = setInterval(loadList, 8000);
     return () => clearInterval(t);

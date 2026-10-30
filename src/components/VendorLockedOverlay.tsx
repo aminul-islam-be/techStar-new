@@ -11,6 +11,7 @@ export default function VendorLockedOverlay({ due, onLogout }: { due: number; on
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get("payment");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (p === "failed") setFlash("পেমেন্ট সম্পন্ন হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন।");
     if (p === "cancelled") setFlash("পেমেন্ট বাতিল করা হয়েছে। সার্ভিস চালু করতে বকেয়া পরিশোধ করুন।");
   }, []);

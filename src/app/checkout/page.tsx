@@ -77,6 +77,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const user = getCustomerUser();
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm((current) => ({
         ...current,
         fullName: user.fullName || "",

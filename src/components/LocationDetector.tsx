@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import {
-  DEFAULT_COUNTRY,
   LOCATION_STORAGE_KEY,
   getCountryInfo,
 } from "@/lib/locationCurrency";
