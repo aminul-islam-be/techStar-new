@@ -3,7 +3,7 @@
   "appName": "TechStar",
   "webDir": "public",
   "server": {
-    "url": "https://YOUR-SITE.vercel.app",
+    "url": "https://tech-star-new.vercel.app",
     "cleartext": false
   }
 }
