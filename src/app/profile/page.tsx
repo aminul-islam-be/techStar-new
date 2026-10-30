@@ -50,6 +50,16 @@ const bloodGroups = [
   "O-",
 ];
 
+// Age 30+ defaults to "unmarried", younger to "single" (unless already married).
+function withDefaultMarital(data: ProfileData): ProfileData {
+  const age = calculateAge(data.dateOfBirth);
+  if (age === null || data.maritalStatus === "married") return data;
+  const defaultStatus = age >= 30 ? "unmarried" : "single";
+  return data.maritalStatus === defaultStatus
+    ? data
+    : { ...data, maritalStatus: defaultStatus };
+}
+
 function calculateAge(date: string) {
   if (!date) return null;
 
@@ -318,10 +328,6 @@ export default function ProfilePage() {
 
   const { t } = useLanguage();
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
   async function loadProfile() {
     const user = getCustomerUser();
 
@@ -346,7 +352,7 @@ export default function ProfilePage() {
         );
       }
 
-      setForm({
+      setForm(withDefaultMarital({
         profilePicture:
           data.user.profilePicture || "",
         fullName: data.user.fullName || "",
@@ -364,7 +370,7 @@ export default function ProfilePage() {
         city: data.user.city || "",
         office: data.user.office || "",
         study: data.user.study || "",
-      });
+      }));
     } catch (err) {
       setError(
         err instanceof Error
@@ -376,14 +382,24 @@ export default function ProfilePage() {
     }
   }
 
+  // Load the profile once when the page opens (defined after loadProfile).
+  useEffect(() => {
+    // Fetch-on-mount: the setState calls inside loadProfile are async-safe here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function updateField(
     field: keyof ProfileData,
     value: string
   ) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setForm((current) => {
+      const next = { ...current, [field]: value };
+      return field === "dateOfBirth"
+        ? withDefaultMarital(next)
+        : next;
+    });
   }
 
   const age = useMemo(
@@ -392,27 +408,6 @@ export default function ProfilePage() {
   );
 
 
-  useEffect(() => {
-    if (age === null) return;
-
-    setForm((current) => {
-      if (current.maritalStatus === "married") {
-        return current;
-      }
-
-      const defaultStatus =
-        age >= 30 ? "unmarried" : "single";
-
-      if (current.maritalStatus === defaultStatus) {
-        return current;
-      }
-
-      return {
-        ...current,
-        maritalStatus: defaultStatus,
-      };
-    });
-  }, [age]);
 
   async function saveProfile(
     event: FormEvent<HTMLFormElement>
@@ -1123,7 +1118,7 @@ export default function ProfilePage() {
 
               {age !== null && (
                 <p className="mt-2 text-[11px] text-slate-500">
-                  t("profile.defaultLabel"){" "}
+                  {t("profile.defaultLabel")}{" "}
                   {age >= 30
                     ? t("profile.unmarried")
                     : t("profile.single")

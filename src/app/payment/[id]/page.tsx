@@ -39,8 +39,8 @@ export default function PaymentPage({ params }: { params: Promise<{ id: string }
         throw new Error(data.message || "Payment could not be started. Please try again.");
       }
       window.location.href = data.gatewayUrl;
-    } catch (err: any) {
-      setError(err.message || "Payment could not be started.");
+    } catch (err: unknown) {
+      setError(err instanceof Error && err.message ? err.message : "Payment could not be started.");
       setPaying(false);
     }
   }

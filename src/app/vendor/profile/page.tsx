@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useVendor } from "@/lib/vendorContext";
 
 const field =
@@ -22,8 +22,11 @@ export default function VendorProfilePage() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!vendor) return;
+  // Sync the form when the vendor loads/changes. Done during render (React's
+  // recommended "adjust state from props" pattern) instead of in an effect.
+  const [syncedVendor, setSyncedVendor] = useState<unknown>(null);
+  if (vendor && vendor !== syncedVendor) {
+    setSyncedVendor(vendor);
     setForm({
       shopName: vendor.shopName || "",
       ownerName: vendor.ownerName || "",
@@ -35,7 +38,7 @@ export default function VendorProfilePage() {
       accountNumber: vendor.payoutMethod?.accountNumber || "",
       bankName: vendor.payoutMethod?.bankName || "",
     });
-  }, [vendor]);
+  }
 
   const set = (k: keyof typeof form) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));

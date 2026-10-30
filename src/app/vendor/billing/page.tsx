@@ -26,6 +26,7 @@ export default function VendorBillingPage() {
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get("payment");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (p === "success") setFlash({ ok: true, text: "Payment received. Thank you!" });
     if (p === "failed") setFlash({ ok: false, text: "The payment was not completed. You were not charged for this attempt." });
     if (p === "cancelled") setFlash({ ok: false, text: "Payment cancelled." });
