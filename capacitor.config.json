@@ -1,0 +1,9 @@
+{
+  "appId": "com.techstar.app",
+  "appName": "TechStar",
+  "webDir": "public",
+  "server": {
+    "url": "https://YOUR-SITE.vercel.app",
+    "cleartext": false
+  }
+}

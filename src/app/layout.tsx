@@ -4,6 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/lib/language";
 import { ThemeProvider } from "@/lib/theme";
 import RouteProgressBar from "@/components/RouteProgressBar";
+import PwaInstaller from "@/components/PwaInstaller";
 import { SiteProvider } from "@/lib/siteContext";
 import { getSiteSettings } from "@/lib/siteSettings";
 
@@ -58,6 +59,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <RouteProgressBar />
+        <PwaInstaller />
         <SiteProvider initial={site}>
           <LanguageProvider>
             <ThemeProvider>{children}</ThemeProvider>
